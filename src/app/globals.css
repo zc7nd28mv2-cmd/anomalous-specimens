@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-bg: #050505;
+  --color-bg-2: #0a0a0a;
+  --color-ink: #e8e8e5;
+  --color-mute: #8a8a86;
+  --color-dim: #4a4a47;
+  --color-line: #202020;
+  --color-danger: #b33a32;
+  --font-sans: var(--font-zh), "Noto Sans SC", sans-serif;
+  --font-mono: var(--font-sys), "IBM Plex Mono", ui-monospace, monospace;
+}
+
+html,
+body {
+  min-height: 100%;
+  background: #050505;
+  color: #e8e8e5;
+}
+
+body {
+  font-family: var(--font-sys), "IBM Plex Mono", ui-monospace, monospace;
+}
+
+::selection {
+  background: #202020;
+  color: #e8e8e5;
+}
+
+@keyframes cursor-blink {
+  0%,
+  46% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes micro-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  41% {
+    opacity: 0.94;
+  }
+  43% {
+    opacity: 0.72;
+  }
+  45% {
+    opacity: 1;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dim-out {
+  to {
+    opacity: 0;
+  }
+}
+
+.cursor-glyph {
+  display: inline-block;
+  width: 0.52em;
+  height: 1.05em;
+  margin-left: 0.08em;
+  background: #e8e8e5;
+  transform: translateY(0.14em);
+  vertical-align: baseline;
+}
+
+.cursor-glyph.is-blink {
+  animation: cursor-blink 1.15s step-end infinite;
+}
+
+.cursor-glyph.is-still {
+  opacity: 1;
+  animation: none;
+}
+
+.micro-flicker {
+  animation: micro-flicker 8s step-end infinite;
+}
+
+.rise {
+  animation: rise 600ms ease-out both;
+}
+
+.fade {
+  animation: fade 1000ms ease-out both;
+}
+
+.vanish {
+  animation: dim-out 1500ms ease-in forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor-glyph.is-blink,
+  .micro-flicker,
+  .rise,
+  .fade,
+  .vanish {
+    animation: none;
+  }
+
+  .rise,
+  .fade {
+    opacity: 1;
+    transform: none;
+  }
+}
