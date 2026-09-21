@@ -629,7 +629,8 @@ body {
   box-shadow: none;
 }
 
-.invest-open.is-enter {
+.invest-open.is-enter,
+.sys-cmd.is-enter {
   animation: invest-rise 500ms ease-out 780ms both;
 }
 
@@ -955,6 +956,71 @@ body {
   color: #62625f;
 }
 
+.sys-cmd {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 14px;
+  border: 1px solid #2d2d2a;
+  border-radius: 0;
+  background: transparent;
+  color: #e8e8e5;
+  font-family: var(--font-sys), "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  line-height: 1.3;
+  box-shadow: none;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease,
+    opacity 80ms ease;
+}
+
+.sys-cmd:hover,
+.sys-cmd:focus-visible {
+  border-color: #62625f;
+  color: #ffffff;
+  outline: none;
+}
+
+.sys-cmd:active {
+  opacity: 0.72;
+}
+
+.sys-cmd:disabled {
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+.boot-bar {
+  width: min(78%, 360px);
+  height: 4px;
+  margin-top: 28px;
+  overflow: hidden;
+  border: 1px solid #2d2d2a;
+  background: transparent;
+}
+
+.boot-bar-fill {
+  height: 100%;
+  background: #8a8a86;
+  transition: width 280ms ease-out;
+}
+
+.grant-breathe {
+  animation: grant-breathe 860ms ease-in-out 3 both;
+}
+
+@keyframes grant-breathe {
+  0%,
+  100% {
+    opacity: 0.42;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 .act {
   background: rgba(89, 232, 120, 0.08);
   color: #59e878;
@@ -1039,7 +1105,9 @@ body {
   .invest-panel.is-enter,
   .invest-en,
   .invest-zh,
-  .invest-open.is-enter {
+  .invest-open.is-enter,
+  .sys-cmd.is-enter,
+  .grant-breathe {
     animation: none;
     opacity: 1;
     transform: none;

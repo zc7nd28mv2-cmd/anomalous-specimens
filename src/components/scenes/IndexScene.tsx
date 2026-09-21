@@ -64,16 +64,9 @@ export function IndexScene({ onAccess }: { onAccess: () => void }) {
                   ) : null}
                 </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    audio.click();
-                    onAccess();
-                  }}
-                  className="read-tag"
-                >
+                <Command className="mt-5" onClick={onAccess}>
                   读取档案
-                </button>
+                </Command>
               )}
             </section>
           ))}

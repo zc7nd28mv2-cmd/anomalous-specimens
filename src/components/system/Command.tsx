@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties, ReactNode } from "react";
 import { useAudio } from "@/context/AudioContext";
 import { cn } from "@/lib/cn";
 
@@ -8,11 +9,15 @@ export function Command({
   onClick,
   disabled,
   className,
+  style,
+  bracket = true,
 }: {
-  children: string;
+  children: ReactNode;
   onClick?: () => void;
   disabled?: boolean;
   className?: string;
+  style?: CSSProperties;
+  bracket?: boolean;
 }) {
   const audio = useAudio();
 
@@ -20,18 +25,15 @@ export function Command({
     <button
       type="button"
       disabled={disabled}
-      onClick={() => {
+      onClick={(event) => {
+        event.stopPropagation();
         audio.click();
         onClick?.();
       }}
-      className={cn(
-        "mt-12 text-left font-sans text-[13px] tracking-[0.08em] text-mute transition-colors duration-300",
-        "hover:text-green focus-visible:text-green focus-visible:outline-none",
-        "disabled:pointer-events-none disabled:opacity-30",
-        className,
-      )}
+      style={style}
+      className={cn("sys-cmd", className)}
     >
-      [ {children} ]
+      {bracket ? `[ ${children} ]` : children}
     </button>
   );
 }

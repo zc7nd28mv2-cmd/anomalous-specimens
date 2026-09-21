@@ -52,7 +52,6 @@ export function StoryArchive() {
     if (finale !== "off") {
       return;
     }
-    audio.click();
     setFinale("run");
   }
 
@@ -203,6 +202,7 @@ export function StoryArchive() {
                     return;
                   }
                   if (canLeave) {
+                    audio.click();
                     leaveArchive();
                     return;
                   }

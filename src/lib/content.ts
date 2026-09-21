@@ -10,7 +10,8 @@ export const SYSTEM = {
   integrity47: "SOURCE INTEGRITY .... 47%",
   warning: "WARNING",
   corrupted: "档案部分损坏",
-  detected: "已检测到 3 份样本",
+  detected: "已检测到3份样本",
+  enter: "進入樣本",
   count: "3 / 3 样本",
 } as const;
 
