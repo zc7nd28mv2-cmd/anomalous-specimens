@@ -800,6 +800,25 @@ body {
   background: rgba(89, 232, 120, 0.14);
 }
 
+@keyframes sense-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  55% {
+    opacity: 0.6;
+    transform: translateY(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sense-enter {
+  animation: sense-enter 450ms ease-out both;
+}
+
 @media (max-width: 640px) {
   .title-product,
   .title-specimen,
@@ -850,7 +869,8 @@ body {
   .fail-panel.is-in,
   .fail-panel.is-out,
   .scan-panel,
-  .scan-panel.is-out {
+  .scan-panel.is-out,
+  .sense-enter {
     animation: none;
   }
 

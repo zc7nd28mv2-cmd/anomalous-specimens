@@ -20,7 +20,7 @@ export function SensoryChoice({
       </p>
       <p className="mt-3 font-sans text-[14px] text-green">{pack.prompt}</p>
       <div className="mt-5 space-y-2">
-        {pack.options.map((option) => (
+        {pack.options.map((option, index) => (
           <button
             key={option.id}
             type="button"
@@ -29,7 +29,8 @@ export function SensoryChoice({
               audio.click();
               onPick(option.id);
             }}
-            className="act block w-full px-3 py-3 text-left"
+            className="act sense-enter block w-full px-3 py-3 text-left"
+            style={{ animationDelay: `${index * 100}ms` }}
           >
             <span className="block font-mono text-[11px] text-green-dim">
               {option.id}
