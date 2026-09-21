@@ -73,3 +73,21 @@ export function writeFieldSession(session: FieldSession) {
   }
   window.sessionStorage.setItem(FIELD_STORAGE_KEY, JSON.stringify(session));
 }
+
+export function clearFieldSession() {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.sessionStorage.removeItem(FIELD_STORAGE_KEY);
+}
+
+export function isYumeStoryPhase(phase: string) {
+  return (
+    phase === "specimen" ||
+    phase === "story" ||
+    phase === "constitution" ||
+    phase === "pd001" ||
+    phase === "unknown" ||
+    phase === "ending"
+  );
+}

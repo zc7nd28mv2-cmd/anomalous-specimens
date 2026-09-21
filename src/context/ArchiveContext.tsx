@@ -5,12 +5,16 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { FOLDER_FILES, type FileId, type FolderId } from "@/lib/folders";
 import {
+  EMPTY_FIELD,
+  clearFieldSession,
+  isYumeStoryPhase,
   loadFieldSession,
   writeFieldSession,
   type FieldSession,
@@ -44,6 +48,7 @@ type ArchiveContextValue = {
   openField: () => void;
   closeField: () => void;
   patchField: (patch: Partial<FieldSession>) => void;
+  resetYumeMomoStory: () => void;
 };
 
 const ArchiveContext = createContext<ArchiveContextValue | null>(null);
@@ -103,17 +108,37 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
   const [pd001Done, setPd001Done] = useState(false);
   const [fieldOpen, setFieldOpen] = useState(autoOpenPd001);
   const [field, setField] = useState<FieldSession>(loadFieldSession);
+  const persistAllowed = useRef(true);
 
   const current = phase ?? urlPhase ?? "boot";
+  const currentRef = useRef(current);
+  currentRef.current = current;
 
-  const go = useCallback((next: Phase) => {
-    setPhase(
-      next === "pd001" || next === "unknown" || next === "ending" ? "story" : next,
-    );
-    setFolder(null);
-    setFile(null);
-    window.scrollTo(0, 0);
+  const resetYumeMomoStory = useCallback(() => {
+    persistAllowed.current = false;
+    setFieldOpen(false);
+    setPd001Done(false);
+    setField(EMPTY_FIELD);
+    clearFieldSession();
   }, []);
+
+  const go = useCallback(
+    (next: Phase) => {
+      const dest =
+        next === "pd001" || next === "unknown" || next === "ending" ? "story" : next;
+      const from = currentRef.current;
+      if (isYumeStoryPhase(from) && !isYumeStoryPhase(dest)) {
+        resetYumeMomoStory();
+      } else if (isYumeStoryPhase(dest)) {
+        persistAllowed.current = true;
+      }
+      setPhase(dest);
+      setFolder(null);
+      setFile(null);
+      window.scrollTo(0, 0);
+    },
+    [resetYumeMomoStory],
+  );
 
   const openFolder = useCallback((id: FolderId) => {
     setFolder(id);
@@ -143,6 +168,9 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const patchField = useCallback((patch: Partial<FieldSession>) => {
+    if (!persistAllowed.current) {
+      return;
+    }
     setField((prev) => {
       const next = { ...prev, ...patch };
       writeFieldSession(next);
@@ -168,6 +196,7 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       openField,
       closeField,
       patchField,
+      resetYumeMomoStory,
     }),
     [
       autoOpenPd001,
@@ -185,6 +214,7 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       openFolder,
       patchField,
       pd001Done,
+      resetYumeMomoStory,
       startFinale,
     ],
   );
