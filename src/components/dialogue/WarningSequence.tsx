@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useScaledMs } from "@/hooks/useTiming";
 import {
   WARNING_SCREENS,
   WARNING_SEQUENCE_STEPS,
@@ -34,11 +33,7 @@ function clearTimers() {
   timerIds.length = 0;
 }
 
-function startRun(
-  runId: number,
-  scale: (ms: number) => number,
-  onDone: () => void,
-) {
+function startRun(runId: number, onDone: () => void) {
   if (activeRun === runId) {
     return;
   }
@@ -54,7 +49,7 @@ function startRun(
           return;
         }
         emit(next);
-      }, scale(at)),
+      }, at),
     );
   });
 }
@@ -112,7 +107,6 @@ export function WarningSequence({
   runId: number;
   onDone: () => void;
 }) {
-  const scale = useScaledMs();
   const [phase, setPhase] = useState<WarningSequenceState>(phaseNow);
   const done = useRef(onDone);
 
@@ -121,13 +115,13 @@ export function WarningSequence({
   }, [onDone]);
 
   useEffect(() => {
-    startRun(runId, scale, () => done.current());
+    startRun(runId, () => done.current());
     listeners.add(setPhase);
     setPhase(phaseNow);
     return () => {
       listeners.delete(setPhase);
     };
-  }, [runId, scale]);
+  }, [runId]);
 
   if (phase === "complete") {
     return null;
