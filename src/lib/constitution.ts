@@ -2,6 +2,13 @@ export const CONSTITUTION = {
   title: "構成代碼",
   en: "CONSTITUTION CODE",
   record: "MATERIAL COMPOSITION RECORD",
+  result: "分析结果",
+  scan: "ANALYZE(SAMPLE_001::COMPOSITION)",
+  traces: {
+    "01": "TRACE::TOP_NOTE",
+    "02": "TRACE::HEART_NOTE",
+    "03": "TRACE::BASE_NOTE",
+  },
   groups: [
     {
       id: "01",
