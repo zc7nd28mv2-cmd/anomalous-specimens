@@ -82,6 +82,8 @@ export function FieldRecord({
   onComplete,
   onWarning,
   warningCleared = false,
+  onWarningSequence,
+  warningSequenceCleared = false,
   onAnalysis,
   analysisCleared = false,
   onReadyToLeave,
@@ -90,6 +92,8 @@ export function FieldRecord({
   onComplete: () => void;
   onWarning?: () => void;
   warningCleared?: boolean;
+  onWarningSequence?: () => void;
+  warningSequenceCleared?: boolean;
   onAnalysis?: (lines: string[]) => void;
   analysisCleared?: boolean;
   onReadyToLeave?: () => void;
@@ -133,8 +137,10 @@ export function FieldRecord({
   const audioRef = useRef(audio);
   const persistRef = useRef(persistField);
   const onWarningRef = useRef(onWarning);
+  const onWarningSequenceRef = useRef(onWarningSequence);
   const onAnalysisRef = useRef(onAnalysis);
   const warningClearedRef = useRef(warningCleared);
+  const warningSequenceClearedRef = useRef(warningSequenceCleared);
   const analysisClearedRef = useRef(analysisCleared);
 
   indexRef.current = index;
@@ -149,10 +155,15 @@ export function FieldRecord({
   audioRef.current = audio;
   persistRef.current = persistField;
   onWarningRef.current = onWarning;
+  onWarningSequenceRef.current = onWarningSequence;
   onAnalysisRef.current = onAnalysis;
   warningClearedRef.current = warningCleared;
+  warningSequenceClearedRef.current = warningSequenceCleared;
   analysisClearedRef.current = analysisCleared;
 
+  const warningSequenceStartedRef = useRef(
+    saved.current.warningSequence === "run" || saved.current.warningSequence === "done",
+  );
   const force = useRef(false);
   const picked = useRef(saved.current.picked);
   const pickedOptionRef = useRef<SensoryBranchId | null>(saved.current.pickedOption);
@@ -284,6 +295,21 @@ export function FieldRecord({
     }
   }
 
+  function startWarningSequence() {
+    if (warningSequenceStartedRef.current || warningSequenceClearedRef.current) {
+      return false;
+    }
+    if (!onWarningSequenceRef.current) {
+      return false;
+    }
+    warningSequenceStartedRef.current = true;
+    onWarningSequenceRef.current();
+    setStatusNow("time_21_18_02");
+    persistProgress();
+    playing.current = false;
+    return true;
+  }
+
   function resetLineUi() {
     setDraftNow("");
     setDraftSpeakerNow("");
@@ -309,6 +335,11 @@ export function FieldRecord({
       if (beat.kind === "time") {
         pushOnce({ id: beatId(next), kind: "time", text: beat.text });
         markTimeStatus(beat.text);
+        if (beat.text === "21:18:02" && startWarningSequence()) {
+          resetLineUi();
+          setIndexNow(next);
+          return;
+        }
         next += 1;
         continue;
       }
@@ -632,6 +663,10 @@ export function FieldRecord({
       return;
     }
 
+    if (currentStatus === "time_21_18_02" && !warningSequenceClearedRef.current) {
+      return;
+    }
+
     if (currentStatus === "warn") {
       if (warningClearedRef.current) {
         setStatusNow("time_21_18_02");
@@ -725,6 +760,9 @@ export function FieldRecord({
         pushOnce({ id: beatId(beatIndex), kind: "time", text: beat.text });
         markTimeStatus(beat.text);
         playing.current = false;
+        if (beat.text === "21:18:02" && startWarningSequence()) {
+          return;
+        }
         advanceAndPlay();
       }, scaleRef.current(280));
       return;
@@ -824,10 +862,13 @@ export function FieldRecord({
     if (statusRef.current === "warn" && warningCleared) {
       playRef.current();
     }
+    if (statusRef.current === "time_21_18_02" && warningSequenceCleared) {
+      playRef.current();
+    }
     if (statusRef.current === "matching_result" && analysisCleared) {
       playRef.current();
     }
-  }, [active, analysisCleared, warningCleared]);
+  }, [active, analysisCleared, warningCleared, warningSequenceCleared]);
 
   useEffect(() => {
     const node = scroller.current;

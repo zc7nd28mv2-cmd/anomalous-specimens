@@ -7,6 +7,7 @@ import { BackLink } from "@/components/system/BackLink";
 import { PulseNode } from "@/components/dialogue/PulseNode";
 import { FieldRecord } from "@/components/dialogue/FieldRecord";
 import { WarningOverlay } from "@/components/dialogue/WarningOverlay";
+import { WarningSequence } from "@/components/dialogue/WarningSequence";
 import { AnalysisOverlay } from "@/components/dialogue/AnalysisOverlay";
 import { InfectionOverlay } from "@/components/finale/InfectionOverlay";
 import { STORY } from "@/lib/story";
@@ -34,6 +35,11 @@ export function StoryArchive() {
     startFinale ? "run" : pd001Done ? "done" : "off",
   );
   const [fail, setFail] = useState<"off" | "run" | "done">(field.warning);
+  const [intrusion, setIntrusion] = useState<"off" | "run" | "done">(
+    field.warningSequence,
+  );
+  const intrusionLock = useRef(field.warningSequence !== "off");
+  const [intrusionRun, setIntrusionRun] = useState(0);
   const [scan, setScan] = useState<"off" | "run" | "resume" | "done">(field.scan);
   const [scanLines, setScanLines] = useState<string[] | null>(field.scanLines);
   const [canLeave, setCanLeave] = useState(field.canLeave);
@@ -96,6 +102,10 @@ export function StoryArchive() {
       setScan("done");
       patchField({ scan: "done" });
     }
+    if (intrusion === "run") {
+      setIntrusion("done");
+      patchField({ warningSequence: "done" });
+    }
     setClosing(true);
     if (closeTimer.current != null) {
       window.clearTimeout(closeTimer.current);
@@ -105,7 +115,7 @@ export function StoryArchive() {
       closeField();
       setClosing(false);
     }, 240);
-  }, [closeField, finale, patchField, scan]);
+  }, [closeField, finale, intrusion, patchField, scan]);
 
   const leaveArchive = useCallback(() => {
     if (finale !== "off") {
@@ -118,6 +128,16 @@ export function StoryArchive() {
   const handleWarning = useCallback(() => {
     setFail("run");
     patchField({ warning: "run" });
+  }, [patchField]);
+
+  const handleWarningSequence = useCallback(() => {
+    if (intrusionLock.current) {
+      return;
+    }
+    intrusionLock.current = true;
+    setIntrusionRun((value) => value + 1);
+    setIntrusion("run");
+    patchField({ warningSequence: "run" });
   }, [patchField]);
 
   const handleAnalysis = useCallback((lines: string[]) => {
@@ -276,7 +296,7 @@ export function StoryArchive() {
               <button
                 type="button"
                 onClick={() => {
-                  if (fail === "run") {
+                  if (fail === "run" || intrusion === "run") {
                     return;
                   }
                   if (canLeave) {
@@ -296,6 +316,8 @@ export function StoryArchive() {
               active={fieldActive}
               onWarning={handleWarning}
               warningCleared={fail === "done"}
+              onWarningSequence={handleWarningSequence}
+              warningSequenceCleared={intrusion === "done"}
               onAnalysis={handleAnalysis}
               analysisCleared={scan === "done"}
               onReadyToLeave={handleReadyToLeave}
@@ -315,6 +337,16 @@ export function StoryArchive() {
           onDone={() => {
             setScan("done");
             patchField({ scan: "done" });
+          }}
+        />
+      ) : null}
+
+      {intrusion === "run" ? (
+        <WarningSequence
+          runId={intrusionRun}
+          onDone={() => {
+            setIntrusion("done");
+            patchField({ warningSequence: "done" });
           }}
         />
       ) : null}

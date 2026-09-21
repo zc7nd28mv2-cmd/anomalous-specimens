@@ -1062,6 +1062,136 @@ body {
   border: 1px solid #681a17;
 }
 
+.intrude-root {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 320;
+  background: #080807;
+}
+
+.intrude-root.is-flash,
+.intrude-root.is-cut {
+  z-index: 420;
+}
+
+.intrude-root.is-cut {
+  background: #000;
+}
+
+.intrude-flash {
+  position: absolute;
+  inset: 0;
+  background: #f3d6d2;
+}
+
+.intrude-frame {
+  max-width: 34rem;
+  padding: 48px 40px 0;
+}
+
+.intrude-kicker {
+  font-family: var(--font-sys), "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: #681a17;
+}
+
+.intrude-title {
+  margin-top: 20px;
+  font-family: var(--font-sys), "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  line-height: 1.6;
+  color: #ff3b30;
+}
+
+.intrude-title.is-key {
+  font-size: 16px;
+  letter-spacing: 0.12em;
+}
+
+.intrude-body {
+  margin-top: 20px;
+  font-family: var(--font-sys), "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  line-height: 1.7;
+  color: #a33a34;
+}
+
+.intrude-foot {
+  margin-top: 28px;
+  font-family: var(--font-sys), "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: #681a17;
+}
+
+.intrude-root.is-2 .intrude-frame {
+  animation: intrude-shift 180ms ease-out;
+}
+
+.intrude-root.is-3 .intrude-title {
+  color: #ff3b30;
+}
+
+.intrude-root.is-3 .intrude-foot {
+  color: #ff3b30;
+}
+
+.intrude-root.is-4 .intrude-frame {
+  animation: intrude-tear 220ms ease-out;
+}
+
+.intrude-root.is-4 .intrude-body {
+  color: #ff3b30;
+}
+
+.intrude-root.is-5 .intrude-frame {
+  animation: intrude-hold 240ms ease-out;
+}
+
+.intrude-root.is-5 .intrude-foot {
+  color: #ff3b30;
+}
+
+@keyframes intrude-shift {
+  0% {
+    transform: translateX(0);
+  }
+  40% {
+    transform: translateX(2px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes intrude-tear {
+  0% {
+    transform: translate(0, 0);
+  }
+  30% {
+    transform: translate(3px, -1px);
+  }
+  60% {
+    transform: translate(-2px, 0);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes intrude-hold {
+  0% {
+    opacity: 0.72;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 .chat-content {
   min-height: 0;
   flex: 1;
@@ -1241,6 +1371,9 @@ body {
   .pd-modal.is-out,
   .fail-panel.is-in,
   .fail-panel.is-out,
+  .intrude-root.is-2 .intrude-frame,
+  .intrude-root.is-4 .intrude-frame,
+  .intrude-root.is-5 .intrude-frame,
   .scan-panel,
   .scan-panel.is-out,
   .sense-enter,

@@ -47,6 +47,7 @@ export type FieldState = {
   investStep: number;
   canLeave: boolean;
   warning: "off" | "run" | "done";
+  warningSequence: "off" | "run" | "done";
   scan: "off" | "run" | "resume" | "done";
   scanLines: string[] | null;
   draft: string;
@@ -66,6 +67,7 @@ export const EMPTY_FIELD: FieldState = {
   investStep: 0,
   canLeave: false,
   warning: "off",
+  warningSequence: "off",
   scan: "off",
   scanLines: null,
   draft: "",
