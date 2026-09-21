@@ -4,13 +4,21 @@ import { useEffect, useState } from "react";
 import { useAfter, useReveal } from "@/hooks/useReveal";
 import { useScaledMs } from "@/hooks/useTiming";
 import { useAudio } from "@/context/AudioContext";
-import { Cursor } from "@/components/system/Cursor";
 import { CodeLine } from "@/components/system/CodeLine";
-import { charInterval } from "@/lib/dialogue";
 import { SOURCE_BIND, SOURCE_BOOT, SOURCE_EXIT, SOURCE_RETURN } from "@/lib/source";
 import { ENDING } from "@/lib/content";
 
-const PROMPT = "Are you still there？";
+const PROMPT = "Are you still there?";
+
+function promptDelay(char: string) {
+  if (char === " ") {
+    return 30 + Math.random() * 20;
+  }
+  if (char === "?" || char === "？" || char === "." || char === "!") {
+    return 100 + Math.random() * 80;
+  }
+  return 50 + Math.random() * 20;
+}
 
 const DENY_CODE = [
   SOURCE_BOOT[0],
@@ -58,28 +66,44 @@ function StillThere({
 }) {
   const scale = useScaledMs();
   const audio = useAudio();
-  const [count, setCount] = useState(0);
-  const ready = count >= PROMPT.length;
+  const [typed, setTyped] = useState("");
+  const [caret, setCaret] = useState<"on" | "blink" | "off">("on");
+  const [choices, setChoices] = useState(false);
+  const done = typed.length >= PROMPT.length;
 
   useEffect(() => {
-    if (count >= PROMPT.length) {
+    if (typed.length >= PROMPT.length) {
       return;
     }
-    const char = PROMPT[count] ?? "";
+    const next = PROMPT[typed.length] ?? "";
     const id = window.setTimeout(() => {
-      setCount((value) => value + 1);
-    }, scale(charInterval("slow", char)));
+      setTyped((value) => value + next);
+    }, scale(promptDelay(next)));
     return () => window.clearTimeout(id);
-  }, [count, scale]);
+  }, [scale, typed]);
+
+  useEffect(() => {
+    if (!done) {
+      return;
+    }
+    setCaret("blink");
+    const hide = window.setTimeout(() => {
+      setCaret("off");
+      setChoices(true);
+    }, scale(1200));
+    return () => window.clearTimeout(hide);
+  }, [done, scale]);
 
   return (
     <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black">
       <div className="px-6 text-center">
         <p className="font-mono text-[13px] tracking-[0.06em] text-ink">
-          {PROMPT.slice(0, count)}
-          {!ready ? <Cursor /> : null}
+          {typed}
+          {caret !== "off" ? (
+            <span className={caret === "blink" ? "term-caret is-blink" : "term-caret"} />
+          ) : null}
         </p>
-        {ready ? (
+        {choices ? (
           <div className="mt-10 flex justify-center gap-10">
             <button
               type="button"
@@ -87,7 +111,7 @@ function StillThere({
                 audio.click();
                 onYes();
               }}
-              className="act sense-enter px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-green"
+              className="act px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-green"
             >
               [ YES ]
             </button>
@@ -97,8 +121,7 @@ function StillThere({
                 audio.click();
                 onNo();
               }}
-              className="act sense-enter px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-green"
-              style={{ animationDelay: "100ms" }}
+              className="act px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-green"
             >
               [ NO ]
             </button>

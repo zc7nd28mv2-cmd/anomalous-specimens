@@ -146,6 +146,20 @@ body {
   animation: cursor-blink 1.15s step-end infinite;
 }
 
+.term-caret {
+  display: inline-block;
+  width: 1px;
+  height: 0.95em;
+  margin-left: 1px;
+  background: currentColor;
+  transform: translateY(0.12em);
+  vertical-align: baseline;
+}
+
+.term-caret.is-blink {
+  animation: cursor-blink 400ms step-end 3 both;
+}
+
 .cursor-glyph.is-still {
   opacity: 1;
   animation: none;
@@ -857,6 +871,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .cursor-glyph.is-blink,
+  .term-caret.is-blink,
   .micro-flicker,
   .rise,
   .fade,
