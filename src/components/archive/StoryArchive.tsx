@@ -7,6 +7,7 @@ import { BackLink } from "@/components/system/BackLink";
 import { PulseNode } from "@/components/dialogue/PulseNode";
 import { FieldRecord } from "@/components/dialogue/FieldRecord";
 import { WarningOverlay } from "@/components/dialogue/WarningOverlay";
+import { AnalysisOverlay } from "@/components/dialogue/AnalysisOverlay";
 import { InfectionOverlay } from "@/components/finale/InfectionOverlay";
 import { STORY } from "@/lib/story";
 import { DOSSIER, ENDING } from "@/lib/content";
@@ -21,6 +22,8 @@ export function StoryArchive() {
     startFinale ? "run" : pd001Done ? "done" : "off",
   );
   const [fail, setFail] = useState<"off" | "run" | "done">("off");
+  const [scan, setScan] = useState<"off" | "run" | "done">("off");
+  const [scanLines, setScanLines] = useState<string[] | null>(null);
 
   useEffect(() => {
     if (autoOpenPd001 || startFinale) {
@@ -149,6 +152,8 @@ export function StoryArchive() {
               <PulseNode
                 onOpen={() => {
                   setFail("off");
+                  setScan("off");
+                  setScanLines(null);
                   setOpen(true);
                 }}
               />
@@ -198,6 +203,11 @@ export function StoryArchive() {
             <FieldRecord
               onWarning={() => setFail("run")}
               warningCleared={fail === "done"}
+              onAnalysis={(lines) => {
+                setScanLines(lines);
+                setScan("run");
+              }}
+              analysisCleared={scan === "done"}
               onComplete={() => {
                 if (finale === "off") {
                   setFinale("run");
@@ -206,6 +216,10 @@ export function StoryArchive() {
             />
           </div>
         </div>
+      ) : null}
+
+      {scan === "run" && scanLines ? (
+        <AnalysisOverlay result={scanLines} onDone={() => setScan("done")} />
       ) : null}
 
       {fail === "run" ? (

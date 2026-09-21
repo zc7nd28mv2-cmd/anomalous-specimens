@@ -580,6 +580,59 @@ body {
   filter: brightness(0.58);
 }
 
+@keyframes scan-in {
+  from {
+    opacity: 0;
+    transform: translate(18px, -8px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes scan-out {
+  from {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(10px, -6px) scale(0.96);
+  }
+}
+
+.scan-root {
+  pointer-events: none;
+  position: fixed;
+  top: 32px;
+  right: 32px;
+  z-index: 200;
+  width: 340px;
+  max-width: calc(100vw - 48px);
+}
+
+.scan-panel {
+  padding: 16px 18px;
+  border: 1px solid #2d6638;
+  border-radius: 1px;
+  background: #080807;
+  box-shadow: none;
+  animation: scan-in 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.scan-panel::before {
+  display: block;
+  height: 1px;
+  margin: -16px -18px 14px;
+  background: #2d6638;
+  content: "";
+}
+
+.scan-panel.is-out {
+  animation: scan-out 280ms ease-in forwards;
+}
+
 @keyframes fail-in {
   from {
     opacity: 0;
@@ -747,6 +800,14 @@ body {
     width: calc(100vw - 32px);
     max-width: calc(100vw - 32px);
   }
+
+  .scan-root {
+    top: 16px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-width: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -761,7 +822,9 @@ body {
   .pd-modal,
   .pd-modal.is-out,
   .fail-panel.is-in,
-  .fail-panel.is-out {
+  .fail-panel.is-out,
+  .scan-panel,
+  .scan-panel.is-out {
     animation: none;
   }
 

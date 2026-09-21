@@ -64,10 +64,14 @@ export function FieldRecord({
   onComplete,
   onWarning,
   warningCleared = false,
+  onAnalysis,
+  analysisCleared = false,
 }: {
   onComplete: () => void;
   onWarning?: () => void;
   warningCleared?: boolean;
+  onAnalysis?: (lines: string[]) => void;
+  analysisCleared?: boolean;
 }) {
   const scale = useScaledMs();
   const audio = useAudio();
@@ -78,7 +82,6 @@ export function FieldRecord({
   const [typing, setTyping] = useState(false);
   const [indicator, setIndicator] = useState("");
   const [choice, setChoice] = useState<SensoryId | null>(null);
-  const [pending, setPending] = useState<string[] | null>(null);
   const force = useRef(false);
   const keys = useRef(0);
   const end = useRef<HTMLDivElement>(null);
@@ -99,7 +102,7 @@ export function FieldRecord({
       return;
     }
     end.current?.scrollIntoView({ block: "end" });
-  }, [log, draft, indicator, choice, pending]);
+  }, [log, draft, indicator, choice]);
 
   const advance = useCallback(() => {
     setIndex((value) => value + 1);
@@ -247,6 +250,14 @@ export function FieldRecord({
     advance();
   }, [advance, status, warningCleared]);
 
+  useEffect(() => {
+    if (status !== "analysis" || !analysisCleared) {
+      return;
+    }
+    setStatus("play");
+    advance();
+  }, [advance, analysisCleared, status]);
+
   function onPick(optionId: string) {
     if (!choice) {
       return;
@@ -255,23 +266,16 @@ export function FieldRecord({
     if (!option) {
       return;
     }
-    setPending(option.lines);
     setChoice(null);
     setStatus("analysis");
-  }
-
-  function onAnalysisDone() {
-    if (pending) {
-      push({
-        key: nextKey(),
-        kind: "analysis",
-        steps: [],
-        result: pending,
-      });
+    if (onAnalysis) {
+      onAnalysis(option.lines);
+      return;
     }
-    setPending(null);
-    setStatus("play");
-    advance();
+    window.setTimeout(() => {
+      setStatus("play");
+      advance();
+    }, 800);
   }
 
   function onBoxClick() {
@@ -328,79 +332,8 @@ export function FieldRecord({
 
         {choice ? <SensoryChoice id={choice} onPick={onPick} /> : null}
 
-        {status === "analysis" && pending ? (
-          <AnalysisSequence result={pending} onDone={onAnalysisDone} />
-        ) : null}
-
         <div ref={end} />
       </div>
-    </div>
-  );
-}
-
-function AnalysisSequence({
-  result,
-  onDone,
-}: {
-  result: string[];
-  onDone: () => void;
-}) {
-  const scale = useScaledMs();
-  const [step, setStep] = useState(0);
-  const [shown, setShown] = useState(0);
-
-  const stages = [
-    ANALYSIS.title,
-    ANALYSIS.analyzing,
-    `${ANALYSIS.input}\n${ANALYSIS.recognized}`,
-    `${ANALYSIS.signature}\n${ANALYSIS.matching}`,
-    ANALYSIS.complete,
-  ];
-
-  const done = useRef(onDone);
-
-  useEffect(() => {
-    done.current = onDone;
-  }, [onDone]);
-
-  useEffect(() => {
-    if (step < stages.length) {
-      const wait = step === 3 ? 600 + Math.random() * 400 : 500 + Math.random() * 300;
-      const id = window.setTimeout(() => setStep((value) => value + 1), scale(wait));
-      return () => window.clearTimeout(id);
-    }
-    if (shown < result.length) {
-      const id = window.setTimeout(() => setShown((value) => value + 1), scale(280));
-      return () => window.clearTimeout(id);
-    }
-    const id = window.setTimeout(() => done.current(), scale(700));
-    return () => window.clearTimeout(id);
-  }, [result.length, scale, shown, step, stages.length]);
-
-  return (
-    <div className="analysis-panel space-y-3">
-      {stages.slice(0, step).map((line) => (
-        <p
-          key={line}
-          className="whitespace-pre-line font-mono text-[12px] tracking-[0.08em] text-green"
-        >
-          {line}
-        </p>
-      ))}
-      {step >= stages.length
-        ? result.slice(0, shown).map((line) => (
-            <p
-              key={line}
-              className={
-                line === "WARNING"
-                  ? "font-mono text-[12px] text-danger"
-                  : "font-mono text-[12px] text-green-dim"
-              }
-            >
-              {line}
-            </p>
-          ))
-        : null}
     </div>
   );
 }
