@@ -18,24 +18,15 @@ function irregularWait() {
 
 export function startNoteStreams(
   onFrame: (id: NoteStreamId, text: string) => void,
-  onSettled?: (id: NoteStreamId) => void,
+  onAllSettled?: () => void,
 ) {
   const run = ++streamRun;
   const timers: number[] = [];
-
-  const settle = (id: NoteStreamId) => {
-    if (run !== streamRun) {
-      return;
-    }
-    onFrame(id, SETTLE[id]);
-    onSettled?.(id);
-  };
+  const limit = 1500 + Math.random() * 1000;
 
   (["top", "heart", "base"] as const).forEach((id) => {
     const frames = CONSTITUTION.streams[id];
-    const limit = 1500 + Math.random() * 1000;
     let index = 0;
-    let elapsed = 0;
 
     const step = () => {
       if (run !== streamRun) {
@@ -46,17 +37,23 @@ export function startNoteStreams(
         onFrame(id, next);
       }
       index += 1;
-      const wait = irregularWait();
-      elapsed += wait;
-      if (elapsed >= limit) {
-        timers.push(window.setTimeout(() => settle(id), wait));
-        return;
-      }
-      timers.push(window.setTimeout(step, wait));
+      timers.push(window.setTimeout(step, irregularWait()));
     };
 
     timers.push(window.setTimeout(step, irregularWait()));
   });
+
+  timers.push(
+    window.setTimeout(() => {
+      if (run !== streamRun) {
+        return;
+      }
+      (["top", "heart", "base"] as const).forEach((id) => {
+        onFrame(id, SETTLE[id]);
+      });
+      onAllSettled?.();
+    }, limit),
+  );
 
   return () => {
     if (streamRun === run) {

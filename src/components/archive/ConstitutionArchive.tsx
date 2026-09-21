@@ -12,11 +12,8 @@ export function ConstitutionArchive() {
   const [topStream, setTopStream] = useState<string>(CONSTITUTION.traces["01"]);
   const [heartStream, setHeartStream] = useState<string>(CONSTITUTION.traces["02"]);
   const [baseStream, setBaseStream] = useState<string>(CONSTITUTION.traces["03"]);
-  const [running, setRunning] = useState({
-    top: true,
-    heart: true,
-    base: true,
-  });
+  const [isAnalysisComplete, setIsAnalysisComplete] = useState(false);
+
   useEffect(() => {
     const setters = {
       top: setTopStream,
@@ -27,9 +24,7 @@ export function ConstitutionArchive() {
       (id: NoteStreamId, text: string) => {
         setters[id](text);
       },
-      (id) => {
-        setRunning((current) => ({ ...current, [id]: false }));
-      },
+      () => setIsAnalysisComplete(true),
     );
   }, []);
 
@@ -46,19 +41,22 @@ export function ConstitutionArchive() {
           <NoteBlock
             title={`【${CONSTITUTION.groups[0].zh}】`}
             trace={topStream}
-            running={running.top}
+            running={!isAnalysisComplete}
+            revealed={isAnalysisComplete}
             items={CONSTITUTION.groups[0].items.join(" / ")}
           />
           <NoteBlock
             title={`【${CONSTITUTION.groups[1].zh}】`}
             trace={heartStream}
-            running={running.heart}
+            running={!isAnalysisComplete}
+            revealed={isAnalysisComplete}
             items={CONSTITUTION.groups[1].items.join(" / ")}
           />
           <NoteBlock
             title={`【${CONSTITUTION.groups[2].zh}】`}
             trace={baseStream}
-            running={running.base}
+            running={!isAnalysisComplete}
+            revealed={isAnalysisComplete}
             items={CONSTITUTION.groups[2].items.join(" / ")}
           />
         </div>
@@ -73,11 +71,13 @@ function NoteBlock({
   title,
   trace,
   running,
+  revealed,
   items,
 }: {
   title: string;
   trace: string;
   running: boolean;
+  revealed: boolean;
   items: string;
 }) {
   return (
@@ -85,7 +85,11 @@ function NoteBlock({
       <p className="font-sans text-[14px] text-ink">{title}</p>
       <p className={cn("compose-code mt-3", running && "is-run")}>{trace}</p>
       <p className="compose-result mt-5">{CONSTITUTION.result}</p>
-      <p className="compose-items is-plate mt-4">{items}</p>
+      <p className="compose-items is-plate composition-materials mt-4">
+        <span className={revealed ? "materials-visible" : "materials-hidden"}>
+          {items}
+        </span>
+      </p>
     </section>
   );
 }

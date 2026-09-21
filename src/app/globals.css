@@ -389,6 +389,14 @@ body {
   color: #59e878;
 }
 
+.composition-materials .materials-hidden {
+  visibility: hidden;
+}
+
+.composition-materials .materials-visible {
+  visibility: visible;
+}
+
 @keyframes compose-run {
   0%,
   100% {
