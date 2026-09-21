@@ -1062,6 +1062,14 @@ body {
   scrollbar-color: #2d6638 transparent;
 }
 
+.chat-content:not(.is-scrolling) {
+  scrollbar-width: none;
+}
+
+.chat-content:not(.is-scrolling)::-webkit-scrollbar {
+  display: none;
+}
+
 .sys-meta {
   font-family: var(--font-sys), "IBM Plex Mono", ui-monospace, monospace;
   font-size: 11px;

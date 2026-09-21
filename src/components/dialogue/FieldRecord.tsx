@@ -18,6 +18,7 @@ import {
 } from "@/lib/dialogue";
 import { SENSORY, type SensoryId } from "@/lib/sensory";
 import { SOURCE_BIND, SOURCE_BOOT } from "@/lib/source";
+import { cn } from "@/lib/cn";
 import {
   beatKey,
   loadFieldSession,
@@ -26,6 +27,8 @@ import {
   type FieldStatus,
   type InvestGate,
 } from "@/lib/field-session";
+
+const SCROLLBAR_HIDE_MS = 850;
 
 const INJECT = [...SOURCE_BOOT, ...SOURCE_BIND] as const;
 
@@ -161,6 +164,9 @@ export function FieldRecord({
   const holdTimerRef = useRef<number | null>(null);
   const fadeTimerRef = useRef<number | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const scrollbarTimerRef = useRef<number | null>(null);
+  const scrollbarVisibleRef = useRef(false);
+  const [scrollbarVisible, setScrollbarVisible] = useState(false);
   const playRef = useRef<() => void>(() => undefined);
 
   function persistProgress() {
@@ -598,6 +604,14 @@ export function FieldRecord({
     if (!active) {
       clearAllAsync();
       persistProgress();
+      if (scrollbarTimerRef.current != null) {
+        window.clearTimeout(scrollbarTimerRef.current);
+        scrollbarTimerRef.current = null;
+      }
+      if (scrollbarVisibleRef.current) {
+        scrollbarVisibleRef.current = false;
+        setScrollbarVisible(false);
+      }
       return;
     }
     playRef.current();
@@ -623,6 +637,24 @@ export function FieldRecord({
     if (!node) {
       return;
     }
+
+    const hideBar = () => {
+      scrollbarTimerRef.current = null;
+      scrollbarVisibleRef.current = false;
+      setScrollbarVisible(false);
+    };
+
+    const showBar = () => {
+      if (!scrollbarVisibleRef.current) {
+        scrollbarVisibleRef.current = true;
+        setScrollbarVisible(true);
+      }
+      if (scrollbarTimerRef.current != null) {
+        window.clearTimeout(scrollbarTimerRef.current);
+      }
+      scrollbarTimerRef.current = window.setTimeout(hideBar, SCROLLBAR_HIDE_MS);
+    };
+
     const handleScroll = () => {
       if (restoring.current) {
         return;
@@ -634,9 +666,27 @@ export function FieldRecord({
         scroll: node.scrollTop,
         pinBottom: pinBottom.current,
       });
+      if (scrollbarVisibleRef.current) {
+        showBar();
+      }
     };
+
+    const handleUserScroll = () => {
+      showBar();
+    };
+
     node.addEventListener("scroll", handleScroll, { passive: true });
-    return () => node.removeEventListener("scroll", handleScroll);
+    node.addEventListener("wheel", handleUserScroll, { passive: true });
+    node.addEventListener("touchmove", handleUserScroll, { passive: true });
+    return () => {
+      node.removeEventListener("scroll", handleScroll);
+      node.removeEventListener("wheel", handleUserScroll);
+      node.removeEventListener("touchmove", handleUserScroll);
+      if (scrollbarTimerRef.current != null) {
+        window.clearTimeout(scrollbarTimerRef.current);
+        scrollbarTimerRef.current = null;
+      }
+    };
   }, []);
 
   useLayoutEffect(() => {
@@ -723,7 +773,11 @@ export function FieldRecord({
   }
 
   return (
-    <div ref={scroller} onClick={onBoxClick} className="chat-content px-5 py-4">
+    <div
+      ref={scroller}
+      onClick={onBoxClick}
+      className={cn("chat-content px-5 py-4", scrollbarVisible && "is-scrolling")}
+    >
       <div className="sys-meta space-y-1 text-green-dim">
         <p>ARCHIVE LOG</p>
         <p>ID: PD-001</p>
