@@ -436,6 +436,28 @@ body {
   padding: 20px;
 }
 
+@keyframes invest-frame {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes invest-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .invest-panel {
   display: flex;
   min-height: 380px;
@@ -443,6 +465,18 @@ body {
   flex-direction: column;
   overflow: visible;
   padding: 0;
+}
+
+.invest-panel.is-enter {
+  animation: invest-frame 500ms ease-out both;
+}
+
+.invest-en {
+  animation: fade 420ms ease-out 600ms both;
+}
+
+.invest-zh {
+  animation: fade 420ms ease-out 680ms both;
 }
 
 .invest-head {
@@ -481,6 +515,10 @@ body {
   padding: 7px 14px;
   border-radius: 0;
   box-shadow: none;
+}
+
+.invest-open.is-enter {
+  animation: invest-rise 500ms ease-out 780ms both;
 }
 
 .invest-exit {
@@ -885,8 +923,14 @@ body {
   .fail-panel.is-out,
   .scan-panel,
   .scan-panel.is-out,
-  .sense-enter {
+  .sense-enter,
+  .invest-panel.is-enter,
+  .invest-en,
+  .invest-zh,
+  .invest-open.is-enter {
     animation: none;
+    opacity: 1;
+    transform: none;
   }
 
   .rise,

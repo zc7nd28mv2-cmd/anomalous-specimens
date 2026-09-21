@@ -379,12 +379,12 @@ function InvestigationRecord({
   }, [gate, scale]);
 
   return (
-    <div className="invest-panel">
+    <div className="invest-panel is-enter">
       <div className="invest-head">
-        <p className="font-mono text-[11px] tracking-[0.12em] text-sys">
+        <p className="invest-en font-mono text-[11px] tracking-[0.12em] text-sys">
           {INVESTIGATION.en}
         </p>
-        <p className="mt-2 font-sans text-[14px] text-ink">{INVESTIGATION.zh}</p>
+        <p className="invest-zh mt-2 font-sans text-[14px] text-ink">{INVESTIGATION.zh}</p>
       </div>
 
       <div className="invest-body">
@@ -397,7 +397,7 @@ function InvestigationRecord({
               onReadyToLeave?.();
               setGate("opening");
             }}
-            className="invest-open"
+            className="invest-open is-enter"
           >
             [ {INVESTIGATION.prompt} ]
           </button>
