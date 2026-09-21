@@ -165,6 +165,62 @@ body {
   animation: none;
 }
 
+.still-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: #000;
+}
+
+.still-prompt {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.still-fault {
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 1;
+  display: flex;
+  width: min(34vw, 260px);
+  flex-direction: column;
+  overflow: hidden;
+  padding: 18px 14px 24px;
+  pointer-events: none;
+  user-select: none;
+  mask-image: linear-gradient(90deg, #000 62%, transparent);
+}
+
+.still-fault-line {
+  font-family: var(--font-sys), "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  line-height: 1.65;
+  color: #4a4a47;
+  animation: still-fault-in 170ms ease-out both;
+}
+
+@keyframes still-fault-in {
+  0% {
+    opacity: 0;
+  }
+  48% {
+    opacity: 0.48;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 .micro-flicker {
   animation: micro-flicker 8s step-end infinite;
 }
@@ -927,7 +983,8 @@ body {
   .invest-panel.is-enter,
   .invest-en,
   .invest-zh,
-  .invest-open.is-enter {
+  .invest-open.is-enter,
+  .still-fault-line {
     animation: none;
     opacity: 1;
     transform: none;
