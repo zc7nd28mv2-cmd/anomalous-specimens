@@ -3,16 +3,29 @@
 import { useEffect, useState } from "react";
 import { useArchive } from "@/context/ArchiveContext";
 import { BackLink } from "@/components/system/BackLink";
-import { startNoteStreams, type NoteStreamId } from "@/lib/code-stream";
+import {
+  startMaterialReveal,
+  startNoteStreams,
+  type NoteStreamId,
+} from "@/lib/code-stream";
 import { CONSTITUTION } from "@/lib/constitution";
 import { cn } from "@/lib/cn";
+
+type Phase = "analyzing" | "complete" | "reveal" | "stable";
+
+const MATERIAL_LINES = [
+  CONSTITUTION.groups[0].items.join(" / "),
+  CONSTITUTION.groups[1].items.join(" / "),
+  CONSTITUTION.groups[2].items.join(" / "),
+] as const;
 
 export function ConstitutionArchive() {
   const { go } = useArchive();
   const [topStream, setTopStream] = useState<string>(CONSTITUTION.traces["01"]);
   const [heartStream, setHeartStream] = useState<string>(CONSTITUTION.traces["02"]);
   const [baseStream, setBaseStream] = useState<string>(CONSTITUTION.traces["03"]);
-  const [isAnalysisComplete, setIsAnalysisComplete] = useState(false);
+  const [phase, setPhase] = useState<Phase>("analyzing");
+  const [typed, setTyped] = useState<[string, string, string]>(["", "", ""]);
 
   useEffect(() => {
     const setters = {
@@ -20,13 +33,31 @@ export function ConstitutionArchive() {
       heart: setHeartStream,
       base: setBaseStream,
     };
-    return startNoteStreams(
+    let stopReveal: (() => void) | null = null;
+    const stopStreams = startNoteStreams(
       (id: NoteStreamId, text: string) => {
         setters[id](text);
       },
-      () => setIsAnalysisComplete(true),
+      () => {
+        setPhase("complete");
+        stopReveal = startMaterialReveal(
+          MATERIAL_LINES,
+          (parts) => {
+            setPhase((current) => (current === "analyzing" ? current : "reveal"));
+            setTyped(parts);
+          },
+          () => setPhase("stable"),
+        );
+      },
     );
+    return () => {
+      stopStreams();
+      stopReveal?.();
+    };
   }, []);
+
+  const analyzing = phase === "analyzing";
+  const showPlate = phase !== "analyzing";
 
   return (
     <div className="relative min-h-dvh overflow-x-hidden bg-bg px-5 py-16 sm:px-10 sm:py-20 md:px-16">
@@ -41,23 +72,23 @@ export function ConstitutionArchive() {
           <NoteBlock
             title={`【${CONSTITUTION.groups[0].zh}】`}
             trace={topStream}
-            running={!isAnalysisComplete}
-            revealed={isAnalysisComplete}
-            items={CONSTITUTION.groups[0].items.join(" / ")}
+            running={analyzing}
+            showPlate={showPlate}
+            typed={phase === "stable" ? MATERIAL_LINES[0] : typed[0]}
           />
           <NoteBlock
             title={`【${CONSTITUTION.groups[1].zh}】`}
             trace={heartStream}
-            running={!isAnalysisComplete}
-            revealed={isAnalysisComplete}
-            items={CONSTITUTION.groups[1].items.join(" / ")}
+            running={analyzing}
+            showPlate={showPlate}
+            typed={phase === "stable" ? MATERIAL_LINES[1] : typed[1]}
           />
           <NoteBlock
             title={`【${CONSTITUTION.groups[2].zh}】`}
             trace={baseStream}
-            running={!isAnalysisComplete}
-            revealed={isAnalysisComplete}
-            items={CONSTITUTION.groups[2].items.join(" / ")}
+            running={analyzing}
+            showPlate={showPlate}
+            typed={phase === "stable" ? MATERIAL_LINES[2] : typed[2]}
           />
         </div>
 
@@ -71,25 +102,27 @@ function NoteBlock({
   title,
   trace,
   running,
-  revealed,
-  items,
+  showPlate,
+  typed,
 }: {
   title: string;
   trace: string;
   running: boolean;
-  revealed: boolean;
-  items: string;
+  showPlate: boolean;
+  typed: string;
 }) {
   return (
     <section>
       <p className="font-sans text-[14px] text-ink">{title}</p>
       <p className={cn("compose-code mt-3", running && "is-run")}>{trace}</p>
       <p className="compose-result mt-5">{CONSTITUTION.result}</p>
-      <p className="compose-items is-plate composition-materials mt-4">
-        <span className={revealed ? "materials-visible" : "materials-hidden"}>
-          {items}
-        </span>
-      </p>
+      <div className="composition-slot">
+        {showPlate ? (
+          <p className="compose-items is-plate composition-materials">
+            {typed}
+          </p>
+        ) : null}
+      </div>
     </section>
   );
 }
