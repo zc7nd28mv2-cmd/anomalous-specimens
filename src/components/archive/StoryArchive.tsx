@@ -24,6 +24,7 @@ export function StoryArchive() {
   const [fail, setFail] = useState<"off" | "run" | "done">("off");
   const [scan, setScan] = useState<"off" | "run" | "resume" | "done">("off");
   const [scanLines, setScanLines] = useState<string[] | null>(null);
+  const [canLeave, setCanLeave] = useState(false);
 
   useEffect(() => {
     if (autoOpenPd001 || startFinale) {
@@ -45,6 +46,14 @@ export function StoryArchive() {
       setOpen(false);
       setClosing(false);
     }, 240);
+  }
+
+  function leaveArchive() {
+    if (finale !== "off") {
+      return;
+    }
+    audio.click();
+    setFinale("run");
   }
 
   return (
@@ -154,6 +163,7 @@ export function StoryArchive() {
                   setFail("off");
                   setScan("off");
                   setScanLines(null);
+                  setCanLeave(false);
                   setOpen(true);
                 }}
               />
@@ -192,6 +202,10 @@ export function StoryArchive() {
                   if (fail === "run") {
                     return;
                   }
+                  if (canLeave) {
+                    leaveArchive();
+                    return;
+                  }
                   audio.click();
                   closeModal();
                 }}
@@ -208,11 +222,8 @@ export function StoryArchive() {
                 setScan("run");
               }}
               analysisCleared={scan === "resume" || scan === "done"}
-              onComplete={() => {
-                if (finale === "off") {
-                  setFinale("run");
-                }
-              }}
+              onReadyToLeave={() => setCanLeave(true)}
+              onComplete={leaveArchive}
             />
           </div>
         </div>

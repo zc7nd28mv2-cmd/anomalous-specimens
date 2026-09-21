@@ -30,7 +30,7 @@ export function InfectionOverlay({ onDone }: { onDone: () => void }) {
   useAfter(700, () => setGate("ask"), gate === "black");
 
   if (gate === "black") {
-    return <div className="fixed inset-0 z-50 bg-black" />;
+    return <div className="fixed inset-0 z-[500] bg-black" />;
   }
 
   if (gate === "ask") {
@@ -73,7 +73,7 @@ function StillThere({
   }, [count, scale]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
+    <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black">
       <div className="px-6 text-center">
         <p className="font-mono text-[13px] tracking-[0.06em] text-ink">
           {PROMPT.slice(0, count)}
@@ -115,7 +115,7 @@ function DenyBurst({ onDone }: { onDone: () => void }) {
 
   return (
     <div
-      className={`fixed inset-0 z-50 px-6 py-20 ${
+      className={`fixed inset-0 z-[500] px-6 py-20 ${
         step === 8 ? "bg-danger-dim" : "bg-black"
       }`}
     >
@@ -151,7 +151,7 @@ function FailPath({ onDone }: { onDone: () => void }) {
 
   if (step >= 10) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black px-6">
+      <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black px-6">
         <div className="max-w-[360px]">
           <p className="font-sans text-[18px] leading-[2] text-ink/90">{ENDING.line}</p>
           <p className="mt-6 font-sans text-[14px] text-mute">{ENDING.attr}</p>
@@ -161,7 +161,7 @@ function FailPath({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <div className={`fixed inset-0 z-50 px-6 py-20 ${step === 1 ? "bg-danger-dim" : "bg-black"}`}>
+    <div className={`fixed inset-0 z-[500] px-6 py-20 ${step === 1 ? "bg-danger-dim" : "bg-black"}`}>
       <div className="mx-auto max-w-[480px] space-y-4 font-mono text-[13px] tracking-[0.14em]">
         {step >= 0 ? <p className="text-danger">WARNING</p> : null}
         {step >= 2 ? <p className="text-danger">ERROR</p> : null}

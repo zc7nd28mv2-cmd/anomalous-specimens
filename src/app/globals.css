@@ -424,10 +424,10 @@ body {
 
 .invest-panel {
   display: flex;
-  min-height: 420px;
+  min-height: 380px;
   max-height: none;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
   padding: 0;
 }
 

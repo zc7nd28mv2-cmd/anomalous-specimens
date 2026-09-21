@@ -66,12 +66,14 @@ export function FieldRecord({
   warningCleared = false,
   onAnalysis,
   analysisCleared = false,
+  onReadyToLeave,
 }: {
   onComplete: () => void;
   onWarning?: () => void;
   warningCleared?: boolean;
   onAnalysis?: (lines: string[]) => void;
   analysisCleared?: boolean;
+  onReadyToLeave?: () => void;
 }) {
   const scale = useScaledMs();
   const audio = useAudio();
@@ -314,7 +316,12 @@ export function FieldRecord({
 
       <div className="mt-6 space-y-5 pb-4">
         {log.map((item) => (
-          <LogLine key={item.key} item={item} onInvestDone={onComplete} />
+          <LogLine
+            key={item.key}
+            item={item}
+            onInvestDone={onComplete}
+            onReadyToLeave={onReadyToLeave}
+          />
         ))}
 
         {indicator ? <TypingIndicator name={indicator} /> : null}
@@ -338,7 +345,13 @@ export function FieldRecord({
   );
 }
 
-function InvestigationRecord({ onDone }: { onDone: () => void }) {
+function InvestigationRecord({
+  onDone,
+  onReadyToLeave,
+}: {
+  onDone: () => void;
+  onReadyToLeave?: () => void;
+}) {
   const scale = useScaledMs();
   const audio = useAudio();
   const [gate, setGate] = useState<"idle" | "opening" | "recovering" | "open">("idle");
@@ -381,6 +394,7 @@ function InvestigationRecord({ onDone }: { onDone: () => void }) {
             onClick={(event) => {
               event.stopPropagation();
               audio.click();
+              onReadyToLeave?.();
               setGate("opening");
             }}
             className="invest-open"
@@ -436,13 +450,13 @@ function InvestigationRecord({ onDone }: { onDone: () => void }) {
         ) : null}
       </div>
 
-      {step >= 5 ? (
+      {gate === "open" ? (
         <div className="invest-foot">
           <button
             type="button"
             onClick={(event) => {
+              event.preventDefault();
               event.stopPropagation();
-              audio.click();
               onDone();
             }}
             className="invest-exit"
@@ -488,9 +502,11 @@ function CorruptName() {
 function LogLine({
   item,
   onInvestDone,
+  onReadyToLeave,
 }: {
   item: LogItem;
   onInvestDone: () => void;
+  onReadyToLeave?: () => void;
 }) {
   if (item.kind === "time") {
     return (
@@ -542,7 +558,7 @@ function LogLine({
     );
   }
   if (item.kind === "invest") {
-    return <InvestigationRecord onDone={onInvestDone} />;
+    return <InvestigationRecord onDone={onInvestDone} onReadyToLeave={onReadyToLeave} />;
   }
   if (item.kind === "lost") {
     return (
