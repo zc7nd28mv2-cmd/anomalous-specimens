@@ -22,20 +22,39 @@ const INIT_LINES = [
 
 const DETECTED_LINES = [SYSTEM.detected] as const;
 
-function charWait() {
-  return 25 + Math.random() * 20;
+const LINE_PACE = [18, 16, 20, 17, 19] as const;
+
+function nextGap(base: number) {
+  return Math.min(25, Math.max(12, base + (Math.random() - 0.5) * 8));
 }
 
-function lineWait() {
-  return 100 + Math.random() * 80;
+function planStamps(lines: readonly string[], scale: (ms: number) => number) {
+  return lines.map((line, index) => {
+    const base = LINE_PACE[index] ?? 17;
+    const stamps = [0];
+    let t = 0;
+    for (let i = 1; i < line.length; i += 1) {
+      t += scale(nextGap(base));
+      stamps.push(t);
+    }
+    return stamps;
+  });
 }
 
-function useFastType(lines: readonly string[], enabled: boolean) {
+function countVisible(stamps: number[], elapsed: number) {
+  let count = 0;
+  while (count < stamps.length && stamps[count] <= elapsed) {
+    count += 1;
+  }
+  return count;
+}
+
+function useParallelType(lines: readonly string[], enabled: boolean) {
   const scale = useScaledMs();
   const reduced = usePrefersReducedMotion();
   const [parts, setParts] = useState<string[]>(() => lines.map(() => ""));
   const [finished, setFinished] = useState(false);
-  const timer = useRef<number | null>(null);
+  const frame = useRef<number | null>(null);
 
   useEffect(() => {
     if (!enabled) {
@@ -48,56 +67,39 @@ function useFastType(lines: readonly string[], enabled: boolean) {
       return;
     }
 
+    const stamps = planStamps(lines, scale);
+    const start = performance.now();
     let cancelled = false;
-    let line = 0;
-    let count = 0;
+    let last = "";
 
-    const clear = () => {
-      if (timer.current != null) {
-        window.clearTimeout(timer.current);
-        timer.current = null;
-      }
-    };
-
-    const schedule = (fn: () => void, ms: number) => {
-      clear();
-      timer.current = window.setTimeout(fn, ms);
-    };
-
-    const step = () => {
+    const tick = (now: number) => {
       if (cancelled) {
         return;
       }
-      const current = lines[line];
-      if (current == null) {
+      const elapsed = now - start;
+      const next = lines.map((line, index) =>
+        line.slice(0, countVisible(stamps[index], elapsed)),
+      );
+      const key = next.join("\n");
+      if (key !== last) {
+        last = key;
+        setParts(next);
+      }
+      if (next.every((part, index) => part.length >= lines[index].length)) {
         setFinished(true);
         return;
       }
-      count += 1;
-      const slice = current.slice(0, count);
-      setParts((prev) => {
-        const next = prev.slice();
-        next[line] = slice;
-        return next;
-      });
-      if (count >= current.length) {
-        line += 1;
-        count = 0;
-        if (line >= lines.length) {
-          setFinished(true);
-          return;
-        }
-        schedule(step, scale(lineWait()));
-        return;
-      }
-      schedule(step, scale(charWait()));
+      frame.current = window.requestAnimationFrame(tick);
     };
 
-    schedule(step, scale(charWait()));
+    frame.current = window.requestAnimationFrame(tick);
 
     return () => {
       cancelled = true;
-      clear();
+      if (frame.current != null) {
+        window.cancelAnimationFrame(frame.current);
+        frame.current = null;
+      }
     };
   }, [enabled, lines, reduced, scale]);
 
@@ -107,9 +109,9 @@ function useFastType(lines: readonly string[], enabled: boolean) {
 export function BootScene({ onComplete }: { onComplete: () => void }) {
   const intro = useReveal(INTRO_DELAYS);
   const typing = intro >= 4;
-  const init = useFastType(INIT_LINES, typing);
+  const init = useParallelType(INIT_LINES, typing);
   const after = useReveal(init.finished ? AFTER_DELAYS : EMPTY_DELAYS);
-  const detect = useFastType(DETECTED_LINES, after >= 4);
+  const detect = useParallelType(DETECTED_LINES, after >= 4);
   const audio = useAudio();
 
   return (
