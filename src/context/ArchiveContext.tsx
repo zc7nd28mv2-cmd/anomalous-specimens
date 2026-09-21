@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { FOLDER_FILES, type FileId, type FolderId } from "@/lib/folders";
+import { emptyField, type FieldState } from "@/lib/field-state";
 
 export type Phase =
   | "boot"
@@ -30,11 +31,19 @@ type ArchiveContextValue = {
   pd001Done: boolean;
   autoOpenPd001: boolean;
   startFinale: boolean;
+  fieldOpen: boolean;
+  field: FieldState;
+  fieldEpoch: number;
   go: (phase: Phase) => void;
   openFolder: (id: FolderId) => void;
   openFile: (id: FileId) => void;
   closeReader: () => void;
   finishPd001: () => void;
+  openField: () => void;
+  closeField: () => void;
+  readField: () => FieldState;
+  persistField: (patch: Partial<FieldState>) => void;
+  patchField: (patch: Partial<FieldState>) => void;
   resetYumeMomoStory: () => void;
 };
 
@@ -104,13 +113,22 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
   const [folder, setFolder] = useState<FolderId | null>(null);
   const [file, setFile] = useState<FileId | null>(null);
   const [pd001Done, setPd001Done] = useState(false);
+  const [fieldOpen, setFieldOpen] = useState(autoOpenPd001);
+  const [field, setField] = useState<FieldState>(emptyField);
+  const [fieldEpoch, setFieldEpoch] = useState(0);
+  const fieldRef = useRef<FieldState>(field);
 
   const current = phase ?? urlPhase ?? "boot";
   const currentRef = useRef(current);
   currentRef.current = current;
 
   const resetYumeMomoStory = useCallback(() => {
+    const next = emptyField();
+    fieldRef.current = next;
+    setField(next);
+    setFieldOpen(false);
     setPd001Done(false);
+    setFieldEpoch((value) => value + 1);
   }, []);
 
   const go = useCallback(
@@ -148,6 +166,25 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
     setPd001Done(true);
   }, []);
 
+  const openField = useCallback(() => {
+    setFieldOpen(true);
+  }, []);
+
+  const closeField = useCallback(() => {
+    setFieldOpen(false);
+  }, []);
+
+  const readField = useCallback(() => fieldRef.current, []);
+
+  const persistField = useCallback((patch: Partial<FieldState>) => {
+    fieldRef.current = { ...fieldRef.current, ...patch };
+  }, []);
+
+  const patchField = useCallback((patch: Partial<FieldState>) => {
+    fieldRef.current = { ...fieldRef.current, ...patch };
+    setField({ ...fieldRef.current });
+  }, []);
+
   const value = useMemo(
     () => ({
       phase: current,
@@ -156,24 +193,40 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       pd001Done,
       autoOpenPd001,
       startFinale,
+      fieldOpen,
+      field,
+      fieldEpoch,
       go,
       openFolder,
       openFile,
       closeReader,
       finishPd001,
+      openField,
+      closeField,
+      readField,
+      persistField,
+      patchField,
       resetYumeMomoStory,
     }),
     [
       autoOpenPd001,
+      closeField,
       closeReader,
       current,
+      field,
+      fieldEpoch,
+      fieldOpen,
       file,
       finishPd001,
       folder,
       go,
+      openField,
       openFile,
       openFolder,
+      patchField,
+      persistField,
       pd001Done,
+      readField,
       resetYumeMomoStory,
       startFinale,
     ],
