@@ -694,16 +694,57 @@ body {
   }
 }
 
+.field-record-shell {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.invest-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 16;
+  display: flex;
+  max-height: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  background: #080807;
+}
+
+.invest-overlay.is-enter {
+  animation: invest-frame 500ms ease-out both;
+}
+
+.invest-overlay.is-out {
+  animation: panel-out 240ms ease-in both;
+}
+
 .invest-panel {
   display: flex;
-  min-height: 380px;
+  min-height: 0;
+  height: 100%;
   max-height: none;
+  flex: 1;
   flex-direction: column;
-  overflow: visible;
+  overflow: hidden;
   padding: 0;
 }
 
 .invest-panel.is-enter {
+  animation: none;
+}
+
+.invest-trigger {
+  background: #080807;
+  border: 1px solid #2d2d2a;
+  border-radius: 1px;
+  padding: 20px 24px 22px;
+}
+
+.invest-trigger.is-enter {
   animation: invest-frame 500ms ease-out both;
 }
 
@@ -720,9 +761,10 @@ body {
 }
 
 .invest-body {
-  min-height: 160px;
-  flex: 1;
-  overflow: hidden;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 8px 28px 20px;
   scrollbar-width: none;
 }
@@ -734,6 +776,7 @@ body {
 
 .invest-foot {
   display: flex;
+  flex-shrink: 0;
   justify-content: center;
   padding: 16px 28px 24px;
   border-top: 1px solid #2d2d2a;
@@ -1352,7 +1395,10 @@ body {
   .sense-leave,
   .still-ask.is-leave,
   .still-ask.is-enter,
+  .invest-overlay.is-enter,
+  .invest-overlay.is-out,
   .invest-panel.is-enter,
+  .invest-trigger.is-enter,
   .invest-en,
   .invest-zh,
   .invest-open.is-enter,

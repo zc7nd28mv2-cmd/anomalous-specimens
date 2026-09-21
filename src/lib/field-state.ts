@@ -45,6 +45,8 @@ export type FieldState = {
   pinBottom: boolean;
   investGate: InvestGate;
   investStep: number;
+  isInvestigationUnlocked: boolean;
+  isInvestigationOpen: boolean;
   canLeave: boolean;
   warning: "off" | "run" | "done";
   warningSequence: "off" | "run" | "done";
@@ -65,6 +67,8 @@ export const EMPTY_FIELD: FieldState = {
   pinBottom: true,
   investGate: "idle",
   investStep: 0,
+  isInvestigationUnlocked: false,
+  isInvestigationOpen: false,
   canLeave: false,
   warning: "off",
   warningSequence: "off",
