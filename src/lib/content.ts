@@ -238,6 +238,6 @@ export const FAILURE = {
 export const ENDING = {
   prompt: "> _",
   completed: "> process completed",
-  line: "贪食人间烟火，终成仙梦。",
-  attr: "——「仙桃梦」",
+  line: "我們被持續不斷的信息革命改造著，被日益增長的符號假象洪流裹挾。",
+  attr: "——「锈肺」",
 } as const;
