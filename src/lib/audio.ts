@@ -81,3 +81,10 @@ export function playAlert() {
     tone({ freq: 96, dur: 0.16, type: "triangle", gain: 0.02 });
   }, 90);
 }
+
+export function playResult() {
+  tone({ freq: 480, dur: 0.055, type: "triangle", gain: 0.028 });
+  window.setTimeout(() => {
+    tone({ freq: 640, dur: 0.12, type: "sine", gain: 0.032 });
+  }, 60);
+}

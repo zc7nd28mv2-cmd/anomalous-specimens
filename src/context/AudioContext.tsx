@@ -13,6 +13,7 @@ import {
   playAlert,
   playClick,
   playMessage,
+  playResult,
   playTick,
   setAudioEnabled,
   unlockAudio,
@@ -26,6 +27,7 @@ type AudioApi = {
   tick: () => void;
   message: () => void;
   alert: () => void;
+  result: () => void;
 };
 
 const AudioContext = createContext<AudioApi | null>(null);
@@ -56,6 +58,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       tick: playTick,
       message: playMessage,
       alert: playAlert,
+      result: playResult,
     }),
     [enabled, toggle, unlock],
   );

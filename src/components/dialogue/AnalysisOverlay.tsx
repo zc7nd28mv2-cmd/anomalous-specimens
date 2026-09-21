@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useScaledMs } from "@/hooks/useTiming";
+import { useAudio } from "@/context/AudioContext";
 import { ANALYSIS } from "@/lib/dialogue";
 import { cn } from "@/lib/cn";
 
@@ -25,14 +26,17 @@ export function AnalysisOverlay({
   onDone: () => void;
 }) {
   const scale = useScaledMs();
+  const audio = useAudio();
   const [phase, setPhase] = useState<Phase>("wait");
   const resume = useRef(onResume);
   const done = useRef(onDone);
+  const resultTone = useRef(audio.result);
 
   useEffect(() => {
     resume.current = onResume;
     done.current = onDone;
-  }, [onDone, onResume]);
+    resultTone.current = audio.result;
+  }, [audio.result, onDone, onResume]);
 
   useEffect(() => {
     const steps: Array<[Phase, number]> = [
@@ -45,7 +49,12 @@ export function AnalysisOverlay({
       ["out", 5500],
     ];
     const timers = steps.map(([next, at]) =>
-      window.setTimeout(() => setPhase(next), scale(at)),
+      window.setTimeout(() => {
+        if (next === "result") {
+          resultTone.current();
+        }
+        setPhase(next);
+      }, scale(at)),
     );
     const go = window.setTimeout(() => resume.current(), scale(3500));
     const end = window.setTimeout(() => done.current(), scale(5800));
