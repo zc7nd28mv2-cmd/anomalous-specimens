@@ -955,6 +955,35 @@ body {
   color: #62625f;
 }
 
+.boot-bar {
+  width: min(78%, 360px);
+  height: 4px;
+  margin-top: 28px;
+  overflow: hidden;
+  border: 1px solid #2d2d2a;
+  background: transparent;
+}
+
+.boot-bar-fill {
+  height: 100%;
+  background: #8a8a86;
+  transition: width 280ms ease-out;
+}
+
+.grant-breathe {
+  animation: grant-breathe 860ms ease-in-out 3 both;
+}
+
+@keyframes grant-breathe {
+  0%,
+  100% {
+    opacity: 0.42;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 .act {
   background: rgba(89, 232, 120, 0.08);
   color: #59e878;
@@ -1039,7 +1068,8 @@ body {
   .invest-panel.is-enter,
   .invest-en,
   .invest-zh,
-  .invest-open.is-enter {
+  .invest-open.is-enter,
+  .grant-breathe {
     animation: none;
     opacity: 1;
     transform: none;

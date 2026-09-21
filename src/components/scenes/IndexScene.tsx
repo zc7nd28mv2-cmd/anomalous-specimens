@@ -4,11 +4,9 @@ import { useState } from "react";
 import { Command } from "@/components/system/Command";
 import { Rule } from "@/components/system/Rule";
 import { SPECIMENS, SYSTEM } from "@/lib/content";
-import { useAudio } from "@/context/AudioContext";
 
 export function IndexScene({ onAccess }: { onAccess: () => void }) {
   const [denied, setDenied] = useState<string | null>(null);
-  const audio = useAudio();
 
   return (
     <div className="relative min-h-dvh bg-bg px-5 py-16 sm:px-10 sm:py-20 md:px-16">
@@ -24,24 +22,18 @@ export function IndexScene({ onAccess }: { onAccess: () => void }) {
             <section key={specimen.id} className="rise">
               <Rule className="mb-7" />
               <p className="sys-meta">{specimen.id}</p>
-              {specimen.locked ? (
-                <div>
-                  <h2 className="title-product mt-4 text-mute">{specimen.title}</h2>
-                  <p className="aux-en mt-2">{specimen.name}</p>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    audio.click();
-                    onAccess();
-                  }}
-                  className="block border-0 bg-transparent p-0 text-left shadow-none"
+              <div>
+                <h2
+                  className={
+                    specimen.locked
+                      ? "title-product mt-4 text-mute"
+                      : "title-product mt-4 text-ink"
+                  }
                 >
-                  <h2 className="title-product mt-4 text-ink">{specimen.title}</h2>
-                  <p className="aux-en mt-2">{specimen.name}</p>
-                </button>
-              )}
+                  {specimen.title}
+                </h2>
+                <p className="aux-en mt-2">{specimen.name}</p>
+              </div>
               {specimen.kind ? (
                 <p className="aux-en mt-5">MEDICAL NEURAL PROGRAM</p>
               ) : null}
@@ -64,16 +56,9 @@ export function IndexScene({ onAccess }: { onAccess: () => void }) {
                   ) : null}
                 </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    audio.click();
-                    onAccess();
-                  }}
-                  className="read-tag"
-                >
+                <Command className="mt-5" onClick={onAccess}>
                   读取档案
-                </button>
+                </Command>
               )}
             </section>
           ))}

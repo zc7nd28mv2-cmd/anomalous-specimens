@@ -1,34 +1,18 @@
 "use client";
 
-import { useAfter, useReveal } from "@/hooks/useReveal";
+import { useReveal } from "@/hooks/useReveal";
 import { Cursor } from "@/components/system/Cursor";
+import { Command } from "@/components/system/Command";
 import { Stage, SysLine } from "@/components/system/Stage";
 import { SYSTEM } from "@/lib/content";
 
-const DELAYS = [900, 800, 700, 900, 500, 420, 420, 500, 1400, 500, 700, 1600, 400] as const;
+const DELAYS = [900, 800, 700, 900, 500, 420, 420, 500, 1400, 500, 700, 800] as const;
 
 export function BootScene({ onComplete }: { onComplete: () => void }) {
   const step = useReveal(DELAYS);
-  const blackout = step >= 12 && step < 13;
-
-  useAfter(1500, onComplete, step >= 13);
-
-  if (step === 0 || blackout) {
-    return <div className="min-h-dvh bg-bg" />;
-  }
-
-  if (step >= 13) {
-    return (
-      <Stage>
-        <p className="rise font-mono text-[12px] tracking-[0.18em] text-mute">
-          {SYSTEM.detected}
-        </p>
-      </Stage>
-    );
-  }
 
   return (
-    <Stage>
+    <Stage className="overflow-hidden">
       {step >= 1 ? (
         <p className="title-system text-ink">{SYSTEM.titleZh}</p>
       ) : null}
@@ -64,6 +48,18 @@ export function BootScene({ onComplete }: { onComplete: () => void }) {
         <p className="mt-3 font-mono text-[12px] tracking-[0.08em] text-danger">
           {SYSTEM.corrupted}
         </p>
+      ) : null}
+
+      {step >= 12 ? (
+        <p className="mt-3 font-mono text-[12px] tracking-[0.08em] text-mute">
+          {SYSTEM.detected}
+        </p>
+      ) : null}
+
+      {step >= 12 ? (
+        <Command className="mt-10" onClick={onComplete}>
+          {SYSTEM.enter}
+        </Command>
       ) : null}
     </Stage>
   );
