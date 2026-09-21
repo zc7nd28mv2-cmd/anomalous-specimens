@@ -117,7 +117,7 @@ export function buildWarningTimeline(): WarningBeat[] {
   const flashB = randomRange(50, 120);
   const cutB = randomRange(40, 80);
   const flashC = randomRange(50, 100);
-  const black = randomRange(80, 150);
+  const black = randomRange(80, 120);
 
   const beats: WarningBeat[] = [
     { at: 0, phase: "warning_01", burst: "off" },
