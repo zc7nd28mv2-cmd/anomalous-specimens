@@ -1,75 +1,75 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useArchive } from "@/context/ArchiveContext";
-import { useReveal } from "@/hooks/useReveal";
+import { useAfter, useReveal } from "@/hooks/useReveal";
+import { useScaledMs } from "@/hooks/useTiming";
 import { BackLink } from "@/components/system/BackLink";
 import { Cursor } from "@/components/system/Cursor";
 import { CONSTITUTION } from "@/lib/constitution";
 
-const DELAYS = [
-  360, 300, 300, 500, 2000, 420, 360, 1600, 420, 500, 720, 360, 1600, 420, 500,
-  720, 360, 1600, 420, 500,
-] as const;
+const INTRO = [180, 140, 140, 200] as const;
+const SCAN_MS = 2200;
 
 export function ConstitutionArchive() {
   const { go } = useArchive();
-  const step = useReveal(DELAYS);
+  const intro = useReveal(INTRO);
+  const analyzing = intro >= 4;
+  const [settled, setSettled] = useState(false);
+  const [results, setResults] = useState(false);
+
+  useAfter(SCAN_MS, () => setSettled(true), analyzing);
+  useAfter(320, () => setResults(true), settled);
 
   return (
     <div className="relative min-h-dvh overflow-x-hidden bg-bg px-5 py-16 sm:px-10 sm:py-20 md:px-16">
       <div className="story-content mx-auto md:ml-[6vw]">
-        {step >= 1 ? (
+        {intro >= 1 ? (
           <h1 className="compose-fade title-module text-ink">{CONSTITUTION.title}</h1>
         ) : null}
-        {step >= 2 ? (
+        {intro >= 2 ? (
           <p className="compose-fade aux-en mt-2">{CONSTITUTION.en}</p>
         ) : null}
-        {step >= 3 ? (
+        {intro >= 3 ? (
           <p className="compose-fade sys-meta mt-6">{CONSTITUTION.record}</p>
         ) : null}
 
-        {step >= 4 ? (
-          <ScanLine
-            text={CONSTITUTION.scan}
-            running={step === 4}
-            className="mt-12"
-          />
+        {analyzing ? (
+          <p className={`compose-fade compose-code mt-12 ${settled ? "" : "is-run"}`}>
+            {CONSTITUTION.scan}
+            {settled ? null : <Cursor />}
+          </p>
         ) : null}
 
-        {step >= 6 ? (
-          <NoteBlock
-            title={`【${CONSTITUTION.groups[0].zh}】`}
-            code={CONSTITUTION.traces["01"]}
-            items={CONSTITUTION.groups[0].items.join(" / ")}
-            showCode={step >= 7}
-            running={step === 7}
-            showResult={step >= 9}
-            showItems={step >= 10}
-          />
-        ) : null}
-
-        {step >= 11 ? (
-          <NoteBlock
-            title={`【${CONSTITUTION.groups[1].zh}】`}
-            code={CONSTITUTION.traces["02"]}
-            items={CONSTITUTION.groups[1].items.join(" / ")}
-            showCode={step >= 12}
-            running={step === 12}
-            showResult={step >= 14}
-            showItems={step >= 15}
-          />
-        ) : null}
-
-        {step >= 16 ? (
-          <NoteBlock
-            title={`【${CONSTITUTION.groups[2].zh}】`}
-            code={CONSTITUTION.traces["03"]}
-            items={CONSTITUTION.groups[2].items.join(" / ")}
-            showCode={step >= 17}
-            running={step === 17}
-            showResult={step >= 19}
-            showItems={step >= 20}
-          />
+        {analyzing ? (
+          <div className="mt-10 space-y-10">
+            <NoteStream
+              title={`【${CONSTITUTION.groups[0].zh}】`}
+              frames={CONSTITUTION.streams.top}
+              settle={CONSTITUTION.traces["01"]}
+              items={CONSTITUTION.groups[0].items.join(" / ")}
+              running={!settled}
+              showResult={results}
+            />
+            <NoteStream
+              title={`【${CONSTITUTION.groups[1].zh}】`}
+              frames={CONSTITUTION.streams.heart}
+              settle={CONSTITUTION.traces["02"]}
+              items={CONSTITUTION.groups[1].items.join(" / ")}
+              running={!settled}
+              showResult={results}
+              offset={4}
+            />
+            <NoteStream
+              title={`【${CONSTITUTION.groups[2].zh}】`}
+              frames={CONSTITUTION.streams.base}
+              settle={CONSTITUTION.traces["03"]}
+              items={CONSTITUTION.groups[2].items.join(" / ")}
+              running={!settled}
+              showResult={results}
+              offset={7}
+            />
+          </div>
         ) : null}
 
         <BackLink label="返回 仙桃夢" onClick={() => go("specimen")} />
@@ -78,48 +78,75 @@ export function ConstitutionArchive() {
   );
 }
 
-function ScanLine({
-  text,
-  running,
-  className,
-}: {
-  text: string;
-  running: boolean;
-  className?: string;
-}) {
-  return (
-    <p className={`compose-fade compose-code ${running ? "is-run" : ""} ${className ?? ""}`}>
-      {text}
-      {running ? <Cursor /> : null}
-    </p>
-  );
-}
-
-function NoteBlock({
+function NoteStream({
   title,
-  code,
+  frames,
+  settle,
   items,
-  showCode,
   running,
   showResult,
-  showItems,
+  offset = 0,
 }: {
   title: string;
-  code: string;
+  frames: readonly string[];
+  settle: string;
   items: string;
-  showCode: boolean;
   running: boolean;
   showResult: boolean;
-  showItems: boolean;
+  offset?: number;
 }) {
+  const code = useScanStream(frames, running, settle, offset);
+
   return (
-    <section className="mt-14">
+    <section>
       <p className="compose-fade font-sans text-[14px] text-ink">{title}</p>
-      {showCode ? <ScanLine text={code} running={running} className="mt-4" /> : null}
+      <p className={`compose-code mt-3 ${running ? "is-run" : ""}`}>
+        {code}
+        {running ? <Cursor /> : null}
+      </p>
       {showResult ? (
         <p className="compose-fade compose-result mt-5">{CONSTITUTION.result}</p>
       ) : null}
-      {showItems ? <p className="compose-fade compose-items mt-4">{items}</p> : null}
+      {showResult ? (
+        <p className="compose-fade compose-items mt-4">{items}</p>
+      ) : null}
     </section>
   );
+}
+
+function useScanStream(
+  frames: readonly string[],
+  running: boolean,
+  settle: string,
+  offset: number,
+) {
+  const scale = useScaledMs();
+  const [index, setIndex] = useState(offset);
+
+  useEffect(() => {
+    if (!running) {
+      return;
+    }
+    let cancelled = false;
+    let id = 0;
+    const tick = () => {
+      id = window.setTimeout(() => {
+        if (cancelled) {
+          return;
+        }
+        setIndex((value) => value + 1);
+        tick();
+      }, scale(22 + Math.random() * 48));
+    };
+    tick();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(id);
+    };
+  }, [running, scale]);
+
+  if (!running) {
+    return settle;
+  }
+  return frames[index % frames.length] ?? settle;
 }
