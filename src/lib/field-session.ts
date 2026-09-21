@@ -11,7 +11,7 @@ export type FieldLogItem =
   | { key: string; kind: "invest" }
   | { key: string; kind: "lost" };
 
-export type FieldStatus = "play" | "choice" | "analysis" | "warn" | "after";
+export type FieldStatus = "play" | "choice" | "hold" | "analysis" | "warn" | "after";
 
 export type InvestGate = "idle" | "opening" | "recovering" | "open";
 

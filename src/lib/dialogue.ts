@@ -114,6 +114,7 @@ export const ANALYSIS = {
 const PUNCT = new Set(["，", "。", "……", "…", "？", "！", "：", ",", ".", "?", "!", ":"]);
 
 export const TYPING_INDICATOR_DELAY = 700;
+export const KAI_HOLD_MS = 3000;
 
 export function charInterval(_pace: Pace, char: string) {
   const base = 65 + Math.random() * 35;

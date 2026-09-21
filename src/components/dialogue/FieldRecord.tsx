@@ -12,6 +12,7 @@ import {
   charInterval,
   DIALOGUE,
   TYPING_INDICATOR_DELAY,
+  KAI_HOLD_MS,
   messagePause,
   type DialogueBeat,
 } from "@/lib/dialogue";
@@ -77,16 +78,27 @@ export function FieldRecord({
   const audio = useAudio();
   const { patchField } = useArchive();
   const saved = useRef(loadFieldSession());
+  const resumeHold =
+    saved.current.status === "hold" ||
+    (saved.current.picked && saved.current.status === "choice");
   const [index, setIndex] = useState(saved.current.index);
-  const [status, setStatus] = useState<Status>(saved.current.status);
+  const [status, setStatus] = useState<Status>(
+    resumeHold ? "hold" : saved.current.status,
+  );
   const [log, setLog] = useState<LogItem[]>(saved.current.log);
   const [draft, setDraft] = useState("");
   const [typing, setTyping] = useState(false);
-  const [indicator, setIndicator] = useState("");
-  const [choice, setChoice] = useState<SensoryId | null>(saved.current.choice);
+  const [indicator, setIndicator] = useState(resumeHold ? "Kai" : "");
+  const [choice, setChoice] = useState<SensoryId | null>(
+    resumeHold ? null : saved.current.choice,
+  );
   const [choiceLeaving, setChoiceLeaving] = useState(false);
+  const [kaiHold, setKaiHold] = useState(resumeHold);
   const force = useRef(false);
   const picked = useRef(saved.current.picked);
+  const skipIndicator = useRef(false);
+  const pickTimers = useRef<number[]>([]);
+  const holdFrom = useRef(resumeHold ? saved.current.index : null);
   const keys = useRef(saved.current.keyCount);
   const end = useRef<HTMLDivElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
@@ -191,7 +203,28 @@ export function FieldRecord({
   }, []);
 
   useEffect(() => {
-    if (status !== "play") {
+    return () => {
+      pickTimers.current.forEach((id) => window.clearTimeout(id));
+    };
+  }, []);
+
+  useEffect(() => {
+    if (status !== "hold") {
+      return;
+    }
+    setKaiHold(true);
+    setIndicator("Kai");
+    const from = holdFrom.current ?? index;
+    const id = window.setTimeout(() => {
+      setKaiHold(false);
+      skipIndicator.current = true;
+      enterNextBeat(from);
+    }, KAI_HOLD_MS);
+    return () => window.clearTimeout(id);
+  }, [index, status]);
+
+  useEffect(() => {
+    if (status !== "play" || kaiHold) {
       return;
     }
     const beat = DIALOGUE[index] as DialogueBeat | undefined;
@@ -217,12 +250,8 @@ export function FieldRecord({
     };
 
     if (beat.kind === "choice") {
-      if (picked.current) {
-        later(() => setIndex((value) => value + 1), 0);
-        return () => {
-          cancelled = true;
-          timers.forEach((id) => window.clearTimeout(id));
-        };
+      if (picked.current || kaiHold) {
+        return;
       }
       later(() => {
         setChoice(beat.id);
@@ -275,8 +304,7 @@ export function FieldRecord({
         }, 700);
       }, 200);
     } else if (beat.kind === "line") {
-      later(() => setIndicator(nameOf(beat.speaker)), 0);
-      later(() => {
+      const beginLine = () => {
         setIndicator("");
         setTyping(true);
         let i = 0;
@@ -318,14 +346,21 @@ export function FieldRecord({
           later(tick, charInterval(beat.pace, beat.text[i] ?? ""));
         };
         later(tick, charInterval(beat.pace, beat.text[0] ?? ""));
-      }, TYPING_INDICATOR_DELAY);
+      };
+      if (skipIndicator.current) {
+        skipIndicator.current = false;
+        beginLine();
+      } else {
+        later(() => setIndicator(nameOf(beat.speaker)), 0);
+        later(beginLine, TYPING_INDICATOR_DELAY);
+      }
     }
 
     return () => {
       cancelled = true;
       timers.forEach((id) => window.clearTimeout(id));
     };
-  }, [advance, audio, index, onWarning, push, scale, status]);
+  }, [advance, audio, index, kaiHold, onWarning, push, scale, status]);
 
   useEffect(() => {
     if (status !== "warn" || !warningCleared) {
@@ -357,21 +392,21 @@ export function FieldRecord({
       }
       break;
     }
-    const beat = DIALOGUE[next] as DialogueBeat | undefined;
     setIndex(next);
     setDraft("");
     setTyping(false);
     force.current = false;
-    if (beat?.kind === "line") {
-      setIndicator(nameOf(beat.speaker));
-    } else {
+    if (skipIndicator.current) {
       setIndicator("");
+    } else {
+      const beat = DIALOGUE[next] as DialogueBeat | undefined;
+      setIndicator(beat?.kind === "line" ? nameOf(beat.speaker) : "");
     }
     setStatus("play");
   }
 
   function onPick(optionId: string) {
-    if (!choice || picked.current || choiceLeaving) {
+    if (!choice || picked.current || choiceLeaving || kaiHold || status === "hold") {
       return;
     }
     const option = SENSORY[choice].options.find((item) => item.id === optionId);
@@ -379,13 +414,16 @@ export function FieldRecord({
       return;
     }
     picked.current = true;
+    holdFrom.current = index;
     setChoiceLeaving(true);
+    patchField({ picked: true });
     onAnalysis?.(option.lines);
-    enterNextBeat(index);
-    window.setTimeout(() => {
+    const fade = window.setTimeout(() => {
       setChoice(null);
       setChoiceLeaving(false);
+      setStatus("hold");
     }, scale(260));
+    pickTimers.current.push(fade);
   }
 
   function onBoxClick() {
