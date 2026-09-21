@@ -1,8 +1,8 @@
 "use client";
 
 import { useReveal } from "@/hooks/useReveal";
+import { useAudio } from "@/context/AudioContext";
 import { Cursor } from "@/components/system/Cursor";
-import { Command } from "@/components/system/Command";
 import { Stage, SysLine } from "@/components/system/Stage";
 import { SYSTEM } from "@/lib/content";
 
@@ -10,6 +10,7 @@ const DELAYS = [900, 800, 700, 900, 500, 420, 420, 500, 1400, 500, 700, 800] as 
 
 export function BootScene({ onComplete }: { onComplete: () => void }) {
   const step = useReveal(DELAYS);
+  const audio = useAudio();
 
   return (
     <Stage className="overflow-hidden">
@@ -57,9 +58,16 @@ export function BootScene({ onComplete }: { onComplete: () => void }) {
       ) : null}
 
       {step >= 12 ? (
-        <Command className="mt-10" onClick={onComplete}>
+        <button
+          type="button"
+          onClick={() => {
+            audio.click();
+            onComplete();
+          }}
+          className="read-tag"
+        >
           {SYSTEM.enter}
-        </Command>
+        </button>
       ) : null}
     </Stage>
   );
