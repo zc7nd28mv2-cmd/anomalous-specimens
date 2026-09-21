@@ -603,10 +603,6 @@ body {
   min-height: 1.5em;
 }
 
-.read-status .grant-mark {
-  margin-top: 0;
-}
-
 .field-module {
   overflow: hidden;
   background: #080807;

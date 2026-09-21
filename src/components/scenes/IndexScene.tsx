@@ -19,7 +19,7 @@ const INTEGRITY = [
 ] as const;
 
 const INTEGRITY_WAIT = [
-  200, 220, 180, 240, 200, 260, 220, 280, 240, 300, 260, 320, 380, 420, 480,
+  80, 90, 70, 100, 85, 110, 90, 120, 95, 110, 100, 120, 130, 140, 150,
 ] as const;
 
 function irregular(min: number, max: number) {
@@ -66,7 +66,7 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
         later(() => setRead({ kind: "granted" }), 360);
       }
     } else if (read.kind === "granted") {
-      later(() => finish.current(), 2580);
+      later(() => finish.current(), 520);
     }
 
     return () => {
@@ -164,22 +164,25 @@ function ReadLine({ phase }: { phase: ReadPhase }) {
   if (phase.kind === "off") {
     return null;
   }
-  if (phase.kind === "granted") {
-    return (
-      <div className="read-status">
-        <p className="grant-mark is-breathe">{ACCESS.granted}</p>
-      </div>
-    );
-  }
   const text =
     phase.kind === "accessing"
       ? ACCESS.accessing
       : phase.kind === "verifying"
         ? ACCESS.verifying
-        : integrityLine(phase.pct);
+        : phase.kind === "granted"
+          ? ACCESS.granted
+          : integrityLine(phase.pct);
   return (
     <div className="read-status">
-      <p className="font-sans text-[13px] text-green-dim">{text}</p>
+      <p
+        className={
+          phase.kind === "granted"
+            ? "font-sans text-[13px] text-danger"
+            : "font-sans text-[13px] text-green-dim"
+        }
+      >
+        {text}
+      </p>
     </div>
   );
 }
