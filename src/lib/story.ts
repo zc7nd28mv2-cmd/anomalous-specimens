@@ -47,7 +47,8 @@ export const STORY = {
     close2: "它只是让现实更难忍受。",
   },
   city: {
-    l1: "Nobody becomes addicted to a hallucination.",
-    l2: "People become addicted to a dream worth waking up for.",
+    lead: "这个城市流传着一句话：",
+    l1: "没有人会沉迷一场幻觉。",
+    l2: "| 人们沉迷的，只是一个比现实更值得醒来的梦。",
   },
 } as const;

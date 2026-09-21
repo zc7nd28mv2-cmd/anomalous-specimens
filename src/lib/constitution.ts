@@ -1,24 +1,25 @@
 export const CONSTITUTION = {
-  title: "构成代码",
+  title: "構成代碼",
   en: "CONSTITUTION CODE",
+  record: "MATERIAL COMPOSITION RECORD",
   groups: [
     {
       id: "01",
-      zh: "前调",
+      zh: "前調",
       en: "TOP",
-      items: ["光脉导管", "工业橡胶", "载气"],
+      items: ["光脈導管", "工業橡膠", "載氣"],
     },
     {
       id: "02",
-      zh: "中调",
+      zh: "中調",
       en: "HEART",
-      items: ["弥散病毒", "软质硅胶", "电子桃浆", "冷却剂"],
+      items: ["彌散病毒", "軟質矽膠", "電子桃漿", "冷卻劑"],
     },
     {
       id: "03",
-      zh: "后调",
+      zh: "後調",
       en: "BASE",
-      items: ["重质硅油", "老化橡胶", "碳化残渣", "2-DDG"],
+      items: ["重質矽油", "老化橡膠", "碳化殘渣", "2-DDG"],
     },
   ],
 } as const;

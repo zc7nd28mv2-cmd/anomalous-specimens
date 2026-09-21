@@ -18,20 +18,25 @@ export function SensoryChoice({
       <p className="font-mono text-[11px] tracking-[0.16em] text-green-dim">
         {pack.label}
       </p>
-      <p className="mt-3 font-sans text-[16px] text-green">{pack.prompt}</p>
-      <div className="mt-5 space-y-2">
+      <p className="mt-3 font-sans text-[14px] text-ink">{pack.prompt}</p>
+      <div className="mt-5 space-y-1">
         {pack.options.map((option) => (
           <button
             key={option.id}
             type="button"
-            onClick={() => {
+            onClick={(event) => {
+              event.stopPropagation();
               audio.click();
               onPick(option.id);
             }}
-            className="act block w-full px-3 py-3 text-left"
+            className="sense-opt"
           >
-            <span className="font-mono text-[11px] text-green-dim">{option.id}</span>
-            <span className="ml-3 font-sans text-[14px] text-green">{option.label}</span>
+            <span className="block font-mono text-[11px] text-green-dim">
+              {option.id}
+            </span>
+            <span className="sense-opt-label mt-1 block font-sans text-[14px] text-ink">
+              {option.label}
+            </span>
           </button>
         ))}
       </div>

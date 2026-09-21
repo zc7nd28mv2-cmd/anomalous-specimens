@@ -9,11 +9,13 @@ import { FieldRecord } from "@/components/dialogue/FieldRecord";
 import { InfectionOverlay } from "@/components/finale/InfectionOverlay";
 import { STORY } from "@/lib/story";
 import { DOSSIER, ENDING } from "@/lib/content";
+import { cn } from "@/lib/cn";
 
 export function StoryArchive() {
   const { go, autoOpenPd001, startFinale, pd001Done, finishPd001 } = useArchive();
   const audio = useAudio();
   const [open, setOpen] = useState(autoOpenPd001);
+  const [closing, setClosing] = useState(false);
   const [finale, setFinale] = useState<"off" | "run" | "done">(
     startFinale ? "run" : pd001Done ? "done" : "off",
   );
@@ -29,12 +31,23 @@ export function StoryArchive() {
     }
   }, [autoOpenPd001, startFinale]);
 
+  function closeModal() {
+    if (finale !== "off") {
+      return;
+    }
+    setClosing(true);
+    window.setTimeout(() => {
+      setOpen(false);
+      setClosing(false);
+    }, 240);
+  }
+
   return (
     <div className="relative min-h-dvh bg-bg px-5 py-16 sm:px-10 sm:py-20 md:px-16">
       <div className="story-content mx-auto md:ml-[6vw]">
         <p className="sys-meta">ARCHIVE / 001</p>
-        <p className="aux-en mt-2">01 / STORY ARCHIVE</p>
-        <h1 className="title-specimen mt-5 text-ink">仙桃梦</h1>
+        <p className="aux-en mt-2">01 / ORIGINAL FILES</p>
+        <h1 className="title-product mt-5 text-ink">仙桃夢</h1>
         <p className="aux-en mt-2">PEACH DREAM</p>
 
         <dl className="mt-12 space-y-4">
@@ -66,7 +79,7 @@ export function StoryArchive() {
           <p className="story-body">{STORY.reconstruction.lover}</p>
           <p className="story-body">{STORY.reconstruction.self}</p>
           <p className="story-body">{STORY.reconstruction.unique}</p>
-          <p className="aux-en mt-6 text-ink">{STORY.lastPlace.en}</p>
+          <p className="story-key mt-6">{STORY.lastPlace.en}</p>
           <p className="story-body">{STORY.lastPlace.zh}</p>
         </div>
 
@@ -81,9 +94,9 @@ export function StoryArchive() {
           <p className="story-body">{STORY.termination.p6}</p>
           <p className="story-body">{STORY.termination.p7}</p>
           <p className="story-body">{STORY.abandonment.lead}</p>
-          <p className="aux-en text-ink">{STORY.abandonment.death}</p>
+          <p className="story-key">{STORY.abandonment.death}</p>
           <p className="story-body">{STORY.abandonment.instead}</p>
-          <p className="aux-en text-ink">{STORY.abandonment.term}</p>
+          <p className="story-key">{STORY.abandonment.term}</p>
         </div>
 
         <div className="story-divider" />
@@ -107,9 +120,9 @@ export function StoryArchive() {
             ))}
           </ul>
           <p className="story-body">{STORY.leak.pack}</p>
-          <p className="aux-en text-ink">{STORY.leak.opium}</p>
+          <p className="story-key">{STORY.leak.opium}</p>
           <p className="story-body">{STORY.leak.became}</p>
-          <p className="aux-en text-ink">{STORY.leak.fragment}</p>
+          <p className="story-key">{STORY.leak.fragment}</p>
           <p className="story-body">{STORY.leak.close1}</p>
           <p className="story-body">{STORY.leak.close2}</p>
         </div>
@@ -117,15 +130,20 @@ export function StoryArchive() {
         <div className="story-divider" />
 
         <div className="space-y-6">
-          <p className="story-body text-mute">{STORY.city.l1}</p>
-          <p className="story-body">{STORY.city.l2}</p>
+          <p className="story-body">{STORY.city.lead}</p>
+          <p className="story-body">{STORY.city.l1}</p>
+          <p className="story-rumor">{STORY.city.l2}</p>
         </div>
 
-        <section id="sec-pd001" className="mt-16 border-t border-line pt-12">
-          <p className="aux-en text-green-dim">ARCHIVE LOG / PD-001</p>
-          <p className="mt-3 font-sans text-[14px] text-ink">现场数据记录</p>
-          <div className="mt-14 flex flex-col items-center">
-            <PulseNode onOpen={() => setOpen(true)} />
+        <section id="sec-pd001" className="mt-16">
+          <div className="field-module">
+            <p className="sys-meta text-green-dim">ARCHIVE LOG / PD-001</p>
+            <p className="mt-5 font-sans text-[14px] text-ink">現場數據記錄</p>
+            <p className="sys-meta mt-6">STATUS: ACTIVE</p>
+            <p className="sys-meta mt-1">SOURCE: UNKNOWN NEURAL RELAY</p>
+            <div className="mt-8 flex justify-end">
+              <PulseNode onOpen={() => setOpen(true)} />
+            </div>
           </div>
         </section>
 
@@ -137,24 +155,22 @@ export function StoryArchive() {
           </section>
         ) : null}
 
-        <BackLink label="返回 仙桃梦" onClick={() => go("specimen")} />
+        <BackLink label="返回 仙桃夢" onClick={() => go("specimen")} />
       </div>
 
       {open && finale !== "run" ? (
         <div className="record-veil fixed inset-0 z-40 flex items-center justify-center bg-black/72 px-6 py-10">
-          <div className="pd-modal">
+          <div className={cn("pd-modal", closing && "is-out")}>
             <div className="flex shrink-0 items-center justify-between border-b border-green-border/50 px-5 py-3">
               <div>
                 <p className="aux-en text-green-dim">ARCHIVE LOG / PD-001</p>
-                <p className="mt-1 font-sans text-[13px] text-mute">现场数据记录</p>
+                <p className="mt-1 font-sans text-[13px] text-mute">現場數據記錄</p>
               </div>
               <button
                 type="button"
                 onClick={() => {
                   audio.click();
-                  if (finale === "off") {
-                    setOpen(false);
-                  }
+                  closeModal();
                 }}
                 className="font-mono text-[14px] text-mute hover:text-ink"
               >

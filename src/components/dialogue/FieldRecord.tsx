@@ -6,15 +6,15 @@ import { useAudio } from "@/context/AudioContext";
 import { TypingIndicator } from "@/components/dialogue/TypingIndicator";
 import { SensoryChoice } from "@/components/dialogue/SensoryChoice";
 import {
+  ANALYSIS,
+  INVESTIGATION,
   charInterval,
   DIALOGUE,
-  LOG_AFTER,
   TYPING_INDICATOR_DELAY,
   messagePause,
   type DialogueBeat,
 } from "@/lib/dialogue";
 import { SENSORY, type SensoryId } from "@/lib/sensory";
-import { SOURCE_BIND, SOURCE_BOOT } from "@/lib/source";
 import { cn } from "@/lib/cn";
 
 type LogItem =
@@ -22,20 +22,13 @@ type LogItem =
   | { key: string; kind: "msg"; speaker: string; text: string }
   | { key: string; kind: "sys"; k: string; v: string }
   | { key: string; kind: "code"; text: string }
-  | { key: string; kind: "warn"; title: string; body?: string }
+  | { key: string; kind: "warn"; title: string; body?: string; faded?: boolean }
   | { key: string; kind: "note"; text: string; danger?: boolean }
-  | { key: string; kind: "sense"; lines: string[] }
+  | { key: string; kind: "analysis"; steps: string[]; result: string[] }
+  | { key: string; kind: "invest" }
   | { key: string; kind: "lost" };
 
-type Status = "play" | "choice" | "after";
-
-const INJECT = [...SOURCE_BOOT, ...SOURCE_BIND] as const;
-const EXIT = [
-  "> EXIT REQUEST",
-  "PROCESSING...",
-  "TERMINATION PROTOCOL",
-  "ERROR",
-] as const;
+type Status = "play" | "choice" | "analysis" | "after";
 
 function nameOf(speaker: "LIN" | "KAI" | null) {
   if (speaker === "LIN") {
@@ -49,13 +42,17 @@ function nameOf(speaker: "LIN" | "KAI" | null) {
 
 function pausePhase(index: number) {
   const seen = DIALOGUE.slice(0, index + 1);
-  if (seen.some((item) => item.kind === "lost")) {
+  const times = seen.filter(
+    (item): item is Extract<DialogueBeat, { kind: "time" }> => item.kind === "time",
+  );
+  const last = times[times.length - 1];
+  if (seen.some((item) => item.kind === "lost") || last?.text === "21:19:47") {
     return "lost" as const;
   }
-  if (seen.some((item) => item.kind === "warn")) {
+  if (seen.some((item) => item.kind === "warn") || last?.text === "21:18:02") {
     return "warn" as const;
   }
-  if (index >= 13) {
+  if (last?.text === "21:12:33") {
     return "mid" as const;
   }
   return "early" as const;
@@ -71,7 +68,8 @@ export function FieldRecord({ onComplete }: { onComplete: () => void }) {
   const [typing, setTyping] = useState(false);
   const [indicator, setIndicator] = useState("");
   const [choice, setChoice] = useState<SensoryId | null>(null);
-  const [unstable, setUnstable] = useState(false);
+  const [pending, setPending] = useState<string[] | null>(null);
+  const [warnFade, setWarnFade] = useState(false);
   const force = useRef(false);
   const keys = useRef(0);
   const end = useRef<HTMLDivElement>(null);
@@ -92,7 +90,7 @@ export function FieldRecord({ onComplete }: { onComplete: () => void }) {
       return;
     }
     end.current?.scrollIntoView({ block: "end" });
-  }, [log, draft, indicator, choice]);
+  }, [log, draft, indicator, choice, pending, warnFade]);
 
   const advance = useCallback(() => {
     setIndex((value) => value + 1);
@@ -112,6 +110,11 @@ export function FieldRecord({ onComplete }: { onComplete: () => void }) {
       return () => window.clearTimeout(id);
     }
 
+    if (beat.kind === "line" && beat.hidden) {
+      const skip = window.setTimeout(() => setIndex((value) => value + 1), 0);
+      return () => window.clearTimeout(skip);
+    }
+
     let cancelled = false;
     const timers: number[] = [];
     const later = (fn: () => void, ms: number) => {
@@ -127,7 +130,7 @@ export function FieldRecord({ onComplete }: { onComplete: () => void }) {
       later(() => {
         setChoice(beat.id);
         setStatus("choice");
-      }, 360);
+      }, 180);
       return () => {
         cancelled = true;
         timers.forEach((id) => window.clearTimeout(id));
@@ -152,27 +155,21 @@ export function FieldRecord({ onComplete }: { onComplete: () => void }) {
     } else if (beat.kind === "warn") {
       later(() => {
         audio.alert();
-        setUnstable(true);
         push({ key: nextKey(), kind: "warn", title: beat.title, body: beat.body });
+      }, 200);
+      later(() => setWarnFade(true), 2400);
+      later(() => {
         advance();
-      }, 240);
-    } else if (beat.kind === "inject") {
-      INJECT.forEach((line, i) => {
-        later(() => push({ key: nextKey(), kind: "code", text: line }), 220 * i);
-      });
-      later(advance, 220 * INJECT.length + 200);
-    } else if (beat.kind === "exitreq") {
-      EXIT.forEach((line, i) => {
-        later(
-          () => push({ key: nextKey(), kind: "note", text: line, danger: true }),
-          380 * i,
-        );
-      });
-      later(advance, 380 * EXIT.length + 200);
+      }, 2800);
+    } else if (beat.kind === "inject" || beat.kind === "exitreq") {
+      later(advance, 40);
     } else if (beat.kind === "lost") {
       later(() => {
         push({ key: nextKey(), kind: "lost" });
-        setStatus("after");
+        later(() => {
+          push({ key: nextKey(), kind: "invest" });
+          setStatus("after");
+        }, 700);
       }, 200);
     } else if (beat.kind === "line") {
       later(() => setIndicator(nameOf(beat.speaker)), 0);
@@ -227,41 +224,29 @@ export function FieldRecord({ onComplete }: { onComplete: () => void }) {
     };
   }, [advance, audio, index, push, scale, status]);
 
-  useEffect(() => {
-    if (status !== "after") {
-      return;
-    }
-    let cancelled = false;
-    const timers: number[] = [];
-    LOG_AFTER.forEach((line, i) => {
-      const id = window.setTimeout(() => {
-        if (!cancelled) {
-          push({ key: nextKey(), kind: "note", text: line });
-        }
-      }, scale(220 * (i + 1)));
-      timers.push(id);
-    });
-    const done = window.setTimeout(() => {
-      if (!cancelled) {
-        onComplete();
-      }
-    }, scale(220 * (LOG_AFTER.length + 4)));
-    timers.push(done);
-    return () => {
-      cancelled = true;
-      timers.forEach((id) => window.clearTimeout(id));
-    };
-  }, [onComplete, push, scale, status]);
-
   function onPick(optionId: string) {
     if (!choice) {
       return;
     }
     const option = SENSORY[choice].options.find((item) => item.id === optionId);
-    if (option) {
-      push({ key: nextKey(), kind: "sense", lines: option.lines });
+    if (!option) {
+      return;
     }
+    setPending(option.lines);
     setChoice(null);
+    setStatus("analysis");
+  }
+
+  function onAnalysisDone() {
+    if (pending) {
+      push({
+        key: nextKey(),
+        kind: "analysis",
+        steps: [],
+        result: pending,
+      });
+    }
+    setPending(null);
     setStatus("play");
     advance();
   }
@@ -290,55 +275,191 @@ export function FieldRecord({ onComplete }: { onComplete: () => void }) {
         pinBottom.current =
           node.scrollHeight - node.scrollTop - node.clientHeight < 56;
       }}
-      className={cn(
-        "chat-content px-5 py-4",
-        unstable && "bg-[rgba(104,26,23,0.08)]",
-      )}
+      onClick={onBoxClick}
+      className="chat-content px-5 py-4"
     >
       <div className="sys-meta space-y-1 text-green-dim">
-        <p className="phosphor-green">ARCHIVE LOG</p>
+        <p>ARCHIVE LOG</p>
         <p>ID: PD-001</p>
         <p>STATUS: Recovered 91%</p>
         <p>SOURCE: Unknown Neural Relay</p>
       </div>
-      <div className="mt-4 font-sans text-[13px] text-mute">
-        <p>现场数据记录</p>
-        <p>恢复度 91%</p>
-        <p>来源 / 未知神经中继</p>
+
+      <div className="mt-6 space-y-5 pb-4">
+        {log.map((item) => (
+          <LogLine key={item.key} item={item} warnFade={warnFade} onInvestDone={onComplete} />
+        ))}
+
+        {indicator ? <TypingIndicator name={indicator} /> : null}
+
+        {draft && !indicator ? (
+          <div className="font-sans text-[14px] leading-7 text-green">
+            {DIALOGUE[index]?.kind === "line" && DIALOGUE[index].speaker ? (
+              <p className="mb-1 font-mono text-[11px] tracking-[0.18em] text-green">
+                {nameOf(DIALOGUE[index].speaker)}
+              </p>
+            ) : null}
+            <p>{draft}</p>
+          </div>
+        ) : null}
+
+        {choice ? <SensoryChoice id={choice} onPick={onPick} /> : null}
+
+        {status === "analysis" && pending ? (
+          <AnalysisSequence result={pending} onDone={onAnalysisDone} />
+        ) : null}
+
+        <div ref={end} />
       </div>
-
-      <button
-        type="button"
-        onClick={onBoxClick}
-        className="mt-6 block w-full text-left"
-      >
-        <div className="space-y-5 pb-4">
-          {log.map((item) => (
-            <LogLine key={item.key} item={item} />
-          ))}
-
-          {indicator ? <TypingIndicator name={indicator} /> : null}
-
-          {draft && !indicator ? (
-            <div className="font-sans text-[15px] leading-7 text-green">
-              {DIALOGUE[index]?.kind === "line" && DIALOGUE[index].speaker ? (
-                <p className="phosphor-green mb-1 font-mono text-[11px] tracking-[0.18em]">
-                  {nameOf(DIALOGUE[index].speaker)}
-                </p>
-              ) : null}
-              <p>{draft}</p>
-            </div>
-          ) : null}
-
-          {choice ? <SensoryChoice id={choice} onPick={onPick} /> : null}
-          <div ref={end} />
-        </div>
-      </button>
     </div>
   );
 }
 
-function LogLine({ item }: { item: LogItem }) {
+function AnalysisSequence({
+  result,
+  onDone,
+}: {
+  result: string[];
+  onDone: () => void;
+}) {
+  const scale = useScaledMs();
+  const [step, setStep] = useState(0);
+  const [shown, setShown] = useState(0);
+
+  const stages = [
+    ANALYSIS.title,
+    ANALYSIS.analyzing,
+    `${ANALYSIS.input}\n${ANALYSIS.recognized}`,
+    `${ANALYSIS.signature}\n${ANALYSIS.matching}`,
+    ANALYSIS.complete,
+  ];
+
+  const done = useRef(onDone);
+
+  useEffect(() => {
+    done.current = onDone;
+  }, [onDone]);
+
+  useEffect(() => {
+    if (step < stages.length) {
+      const wait = step === 3 ? 600 + Math.random() * 400 : 500 + Math.random() * 300;
+      const id = window.setTimeout(() => setStep((value) => value + 1), scale(wait));
+      return () => window.clearTimeout(id);
+    }
+    if (shown < result.length) {
+      const id = window.setTimeout(() => setShown((value) => value + 1), scale(280));
+      return () => window.clearTimeout(id);
+    }
+    const id = window.setTimeout(() => done.current(), scale(700));
+    return () => window.clearTimeout(id);
+  }, [result.length, scale, shown, step, stages.length]);
+
+  return (
+    <div className="analysis-panel space-y-3">
+      {stages.slice(0, step).map((line) => (
+        <p
+          key={line}
+          className="whitespace-pre-line font-mono text-[12px] tracking-[0.08em] text-green"
+        >
+          {line}
+        </p>
+      ))}
+      {step >= stages.length
+        ? result.slice(0, shown).map((line) => (
+            <p
+              key={line}
+              className={
+                line === "WARNING"
+                  ? "font-mono text-[12px] text-danger"
+                  : "font-mono text-[12px] text-green-dim"
+              }
+            >
+              {line}
+            </p>
+          ))
+        : null}
+    </div>
+  );
+}
+
+function InvestigationRecord({ onDone }: { onDone: () => void }) {
+  const scale = useScaledMs();
+  const [phase, setPhase] = useState(0);
+
+  const done = useRef(onDone);
+  const once = useRef(false);
+
+  useEffect(() => {
+    done.current = onDone;
+  }, [onDone]);
+
+  useEffect(() => {
+    const waits = [0, 420, 480, 380, 420, 420, 450];
+    let total = 0;
+    const timers = waits.map((wait, i) => {
+      total += wait || 80;
+      return window.setTimeout(() => {
+        setPhase(i + 1);
+      }, scale(total));
+    });
+    const end = window.setTimeout(() => {
+      if (!once.current) {
+        once.current = true;
+        done.current();
+      }
+    }, scale(total + 900));
+    return () => {
+      timers.forEach((id) => window.clearTimeout(id));
+      window.clearTimeout(end);
+    };
+  }, [scale]);
+
+  return (
+    <div className="invest-panel space-y-4">
+      {phase >= 1 ? (
+        <p className="font-mono text-[12px] tracking-[0.1em] text-green-dim">
+          {INVESTIGATION.recovering}
+        </p>
+      ) : null}
+      {phase >= 2 ? (
+        <p className="font-mono text-[12px] tracking-[0.1em] text-green">
+          {INVESTIGATION.found}
+        </p>
+      ) : null}
+      {phase >= 3 ? (
+        <div>
+          <p className="font-mono text-[11px] tracking-[0.12em] text-sys">
+            {INVESTIGATION.en}
+          </p>
+          <p className="mt-2 font-sans text-[14px] text-ink">{INVESTIGATION.zh}</p>
+        </div>
+      ) : null}
+      {phase >= 4 ? (
+        <p className="font-sans text-[14px] leading-7 text-ink">
+          {INVESTIGATION.foundNote}
+        </p>
+      ) : null}
+      {INVESTIGATION.fields.map((field, i) =>
+        phase >= 5 + i ? (
+          <div key={field.k}>
+            <p className="font-mono text-[11px] tracking-[0.08em] text-sys">{field.k}</p>
+            <p className="mt-1 font-sans text-[14px] text-ink">{field.v}</p>
+          </div>
+        ) : null,
+      )}
+    </div>
+  );
+}
+
+function LogLine({
+  item,
+  warnFade,
+  onInvestDone,
+}: {
+  item: LogItem;
+  warnFade: boolean;
+  onInvestDone: () => void;
+}) {
   if (item.kind === "time") {
     return (
       <p className="font-mono text-[12px] tracking-[0.14em] text-green-dim">{item.text}</p>
@@ -346,9 +467,9 @@ function LogLine({ item }: { item: LogItem }) {
   }
   if (item.kind === "msg") {
     return (
-      <div className="font-sans text-[15px] leading-7 text-green">
+      <div className="font-sans text-[14px] leading-7 text-green">
         {item.speaker ? (
-          <p className="phosphor-green mb-1 font-mono text-[11px] tracking-[0.18em]">
+          <p className="mb-1 font-mono text-[11px] tracking-[0.18em] text-green">
             {item.speaker}
           </p>
         ) : null}
@@ -368,16 +489,21 @@ function LogLine({ item }: { item: LogItem }) {
   }
   if (item.kind === "warn") {
     return (
-      <div className="font-mono text-[13px] text-danger">
-        <p className="phosphor-red">{item.title}</p>
-        {item.body ? <p className="mt-1">{item.body}</p> : null}
+      <div className={cn("warn-panel space-y-4", warnFade && "opacity-35")}>
+        <p className="font-mono text-[12px] tracking-[0.12em]">{item.title}</p>
+        <div className="font-mono text-[13px] leading-6 tracking-[0.06em]">
+          <p>HOST VITAL SIGNS</p>
+          <p>ARE DECLINING</p>
+        </div>
+        <p className="font-mono text-[11px] tracking-[0.1em]">SYSTEM STATUS: CRITICAL</p>
       </div>
     );
   }
-  if (item.kind === "sense") {
+  if (item.kind === "analysis") {
     return (
-      <div className="space-y-1 border-l border-green-border pl-3">
-        {item.lines.map((line) => (
+      <div className="analysis-panel space-y-2">
+        <p className="font-mono text-[12px] text-green">{ANALYSIS.complete}</p>
+        {item.result.map((line) => (
           <p
             key={line}
             className={
@@ -392,9 +518,12 @@ function LogLine({ item }: { item: LogItem }) {
       </div>
     );
   }
+  if (item.kind === "invest") {
+    return <InvestigationRecord onDone={onInvestDone} />;
+  }
   if (item.kind === "lost") {
     return (
-      <p className="phosphor-red font-mono text-[14px] tracking-[0.1em] text-danger">
+      <p className="font-mono text-[14px] tracking-[0.1em] text-danger">
         Connection Lost.
       </p>
     );
@@ -404,9 +533,7 @@ function LogLine({ item }: { item: LogItem }) {
       className={
         item.danger
           ? "font-mono text-[12px] text-danger"
-          : item.text.endsWith("：") || item.text.startsWith("PEACH") || item.text.startsWith("0.91")
-            ? "font-mono text-[12px] text-mute"
-            : "font-sans text-[15px] leading-8 text-ink/90"
+          : "font-sans text-[14px] leading-8 text-ink/90"
       }
     >
       {item.text}

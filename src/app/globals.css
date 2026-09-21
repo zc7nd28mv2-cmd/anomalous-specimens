@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-bg: #050505;
-  --color-bg-2: #0a0a0a;
-  --color-term: #050705;
+  --color-bg: #080807;
+  --color-bg-2: #080807;
+  --color-term: #080807;
   --color-ink: #e8e8e5;
   --color-mute: #8a8a86;
   --color-dim: #4a4a47;
@@ -21,8 +21,27 @@
 html,
 body {
   min-height: 100%;
-  background: #050505;
+  background: #080807;
   color: #e8e8e5;
+  scrollbar-width: thin;
+  scrollbar-color: #2d6638 transparent;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2d6638;
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #59e878;
 }
 
 body {
@@ -200,11 +219,21 @@ body {
 
 .folder-plate {
   border: 1px solid #202020;
-  background: #050505;
+  background: #080807;
 }
 
 .folder-plate:hover {
   border-color: #2d6638;
+}
+
+@keyframes node-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.32;
+  }
 }
 
 .signal-dot {
@@ -212,7 +241,8 @@ body {
   height: 8px;
   border-radius: 999px;
   background: #59e878;
-  box-shadow: 0 0 8px rgba(89, 232, 120, 0.28);
+  box-shadow: none;
+  animation: node-breathe 3.8s ease-in-out infinite;
 }
 
 .signal-ring {
@@ -241,6 +271,22 @@ body {
   color: #e8e8e5;
 }
 
+.story-key {
+  font-family: var(--font-sys), "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 2;
+  color: #e8e8e5;
+}
+
+.story-rumor {
+  font-family: var(--font-zh), "Noto Sans SC", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 2;
+  color: #e8e8e5;
+}
+
 .story-divider {
   width: 100%;
   height: 1px;
@@ -250,16 +296,33 @@ body {
 
 .title-system {
   font-family: var(--font-zh), "Noto Sans SC", sans-serif;
-  font-size: 28px;
-  font-weight: 500;
-  line-height: 1.3;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.title-product {
+  font-family: var(--font-zh), "Noto Sans SC", sans-serif;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.4;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.title-module {
+  font-family: var(--font-zh), "Noto Sans SC", sans-serif;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.4;
 }
 
 .title-specimen {
   font-family: var(--font-zh), "Noto Sans SC", sans-serif;
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 400;
-  line-height: 1.3;
+  line-height: 1.4;
 }
 
 .title-archive {
@@ -267,6 +330,70 @@ body {
   font-size: 24px;
   font-weight: 400;
   line-height: 1.4;
+}
+
+.read-tag {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 20px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 0;
+  background: #dff5e3;
+  color: #173b24;
+  font-family: var(--font-zh), "Noto Sans SC", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+  box-shadow: none;
+}
+
+.read-tag:hover,
+.read-tag:focus-visible {
+  background: #dff5e3;
+  color: #173b24;
+  outline: none;
+}
+
+.field-module {
+  background: #080807;
+  border: 1px solid #2d6638;
+  border-radius: 1px;
+  padding: 20px;
+}
+
+.warn-panel {
+  background: #080807;
+  border: 1px solid #681a17;
+  border-radius: 1px;
+  padding: 20px;
+  color: #ff3b30;
+}
+
+.invest-panel,
+.analysis-panel {
+  background: #080807;
+  border: 1px solid #2d2d2a;
+  border-radius: 1px;
+  padding: 20px;
+}
+
+.analysis-panel {
+  border-color: #2d6638;
+}
+
+.sense-opt {
+  display: block;
+  width: 100%;
+  padding: 10px 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+  box-shadow: none;
+}
+
+.sense-opt:hover .sense-opt-label {
+  color: #59e878;
 }
 
 .aux-en {
@@ -288,13 +415,35 @@ body {
 }
 
 @keyframes panel-in {
-  from {
+  0% {
     opacity: 0;
     transform: translateY(12px) scale(0.98);
   }
-  to {
+  42% {
+    opacity: 0.88;
+    transform: translateY(2px) scale(0.995);
+  }
+  50% {
+    opacity: 0.62;
+  }
+  58% {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes panel-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
   }
 }
 
@@ -310,15 +459,21 @@ body {
   max-height: calc(100vh - 80px);
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid #1e4d29;
-  background: #050705;
+  border: 1px solid #2d6638;
+  background: #080807;
   animation: panel-in 420ms ease-out both;
+}
+
+.pd-modal.is-out {
+  animation: panel-out 240ms ease-in both;
 }
 
 .chat-content {
   min-height: 0;
   flex: 1;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #2d6638 transparent;
 }
 
 .sys-meta {
@@ -339,6 +494,29 @@ body {
   background: rgba(89, 232, 120, 0.14);
 }
 
+@media (max-width: 640px) {
+  .title-product,
+  .title-specimen,
+  .title-system,
+  .title-archive {
+    font-size: 22px;
+  }
+
+  .story-body,
+  .story-key,
+  .story-rumor {
+    font-size: 14px;
+    line-height: 1.9;
+  }
+
+  .pd-modal {
+    width: calc(100vw - 24px);
+    height: 88vh;
+    max-width: calc(100vw - 24px);
+    max-height: 88vh;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cursor-glyph.is-blink,
   .micro-flicker,
@@ -346,8 +524,10 @@ body {
   .fade,
   .signal-ring,
   .signal-ring.is-burst,
+  .signal-dot,
   .record-veil,
-  .pd-modal {
+  .pd-modal,
+  .pd-modal.is-out {
     animation: none;
   }
 

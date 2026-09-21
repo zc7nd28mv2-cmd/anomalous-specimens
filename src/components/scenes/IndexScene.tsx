@@ -26,7 +26,7 @@ export function IndexScene({ onAccess }: { onAccess: () => void }) {
               <p className="sys-meta">{specimen.id}</p>
               {specimen.locked ? (
                 <div>
-                  <h2 className="title-specimen mt-4 text-mute">{specimen.title}</h2>
+                  <h2 className="title-product mt-4 text-mute">{specimen.title}</h2>
                   <p className="aux-en mt-2">{specimen.name}</p>
                 </div>
               ) : (
@@ -36,9 +36,9 @@ export function IndexScene({ onAccess }: { onAccess: () => void }) {
                     audio.click();
                     onAccess();
                   }}
-                  className="block text-left"
+                  className="block border-0 bg-transparent p-0 text-left shadow-none"
                 >
-                  <h2 className="title-specimen mt-4 text-ink">{specimen.title}</h2>
+                  <h2 className="title-product mt-4 text-ink">{specimen.title}</h2>
                   <p className="aux-en mt-2">{specimen.name}</p>
                 </button>
               )}
@@ -64,9 +64,16 @@ export function IndexScene({ onAccess }: { onAccess: () => void }) {
                   ) : null}
                 </div>
               ) : (
-                <Command className="mt-5" onClick={onAccess}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    audio.click();
+                    onAccess();
+                  }}
+                  className="read-tag"
+                >
                   读取档案
-                </Command>
+                </button>
               )}
             </section>
           ))}

@@ -20,7 +20,7 @@ export function SpecimenHome() {
         <h1 className="phosphor mt-8 font-mono text-[16px] tracking-[0.16em] text-ink sm:text-[18px]">
           PEACH DREAM
         </h1>
-        <p className="mt-2 font-sans text-[15px] text-mute">「仙桃梦」</p>
+        <p className="mt-2 font-sans text-[15px] text-mute">「仙桃夢」</p>
 
         {pd001Done ? (
           <p className="mt-8 font-mono text-[10px] tracking-[0.16em] text-danger">

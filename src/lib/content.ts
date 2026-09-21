@@ -17,27 +17,27 @@ export const SYSTEM = {
 export const SPECIMENS = [
   {
     id: "001",
-    title: "仙桃梦",
+    title: "仙桃夢",
     name: "PEACH DREAM",
-    alias: "「仙桃梦」",
+    alias: "「仙桃夢」",
     kind: "医疗神经程序",
     status: "已泄露",
     locked: false,
   },
   {
     id: "002",
-    title: "晶蕊体",
+    title: "晶蕊體",
     name: "CRYSTAL BLOOM",
-    alias: "「晶蕊体」",
+    alias: "「晶蕊體」",
     kind: null,
     status: "受限访问",
     locked: true,
   },
   {
     id: "003",
-    title: "复方咖啡",
+    title: "複方咖啡",
     name: "COMPOUND COFFEE",
-    alias: "「复方咖啡」",
+    alias: "「複方咖啡」",
     kind: null,
     status: "受限访问",
     locked: true,
@@ -120,8 +120,9 @@ export const LEAK = {
 } as const;
 
 export const CITY = {
-  l1: "Nobody becomes addicted to a hallucination.",
-  l2: "People become addicted to a dream worth waking up for.",
+  lead: "这个城市流传着一句话：",
+  l1: "没有人会沉迷一场幻觉。",
+  l2: "| 人们沉迷的，只是一个比现实更值得醒来的梦。",
 } as const;
 
 export const LOG = {

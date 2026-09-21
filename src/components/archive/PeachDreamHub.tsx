@@ -13,7 +13,7 @@ export function PeachDreamHub() {
     <div className="relative min-h-dvh bg-bg px-5 py-16 sm:px-10 sm:py-20 md:px-16">
       <div className="story-content mx-auto md:ml-[6vw]">
         <p className="sys-meta">ARCHIVE / 001</p>
-        <h1 className="title-specimen mt-4 text-ink">仙桃梦</h1>
+        <h1 className="title-product mt-4 text-ink">仙桃夢</h1>
         <p className="aux-en mt-2">PEACH DREAM</p>
         <p className="aux-en mt-6">MEDICAL NEURAL PROGRAM</p>
         <p className="aux-en mt-1">RECOVERED 91%</p>
@@ -21,8 +21,8 @@ export function PeachDreamHub() {
         <div className="mt-16 space-y-4">
           <Entry
             index="01"
-            title="仙桃梦的故事"
-            en="STORY ARCHIVE"
+            title="原始资料"
+            en="ORIGINAL FILES"
             action="阅读完整档案"
             onClick={() => {
               audio.click();
@@ -32,7 +32,7 @@ export function PeachDreamHub() {
           <Rule className="my-8" />
           <Entry
             index="02"
-            title="构成代码"
+            title="構成代碼"
             en="CONSTITUTION CODE"
             action="查看样本构成"
             onClick={() => {
@@ -62,11 +62,11 @@ function Entry({
   onClick: () => void;
 }) {
   return (
-    <button type="button" onClick={onClick} className="block w-full text-left">
+    <button type="button" onClick={onClick} className="block w-full bg-transparent text-left shadow-none">
       <p className="sys-meta">{index}</p>
-      <p className="title-archive mt-3 text-ink">{title}</p>
+      <p className="title-module mt-3 text-ink">{title}</p>
       <p className="aux-en mt-2">{en}</p>
-      <p className="mt-4 font-sans text-[13px] text-green">
+      <p className="mt-4 font-sans text-[13px] text-mute">
         {action}
         <span className="ml-2">→</span>
       </p>
