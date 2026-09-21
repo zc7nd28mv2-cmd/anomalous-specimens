@@ -31,6 +31,7 @@ type ArchiveContextValue = {
   pd001Done: boolean;
   autoOpenPd001: boolean;
   startFinale: boolean;
+  archiveEnterTop: boolean;
   fieldOpen: boolean;
   field: FieldState;
   fieldEpoch: number;
@@ -116,6 +117,7 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
   const [fieldOpen, setFieldOpen] = useState(autoOpenPd001);
   const [field, setField] = useState<FieldState>(emptyField);
   const [fieldEpoch, setFieldEpoch] = useState(0);
+  const [archiveEnterTop, setArchiveEnterTop] = useState(false);
   const fieldRef = useRef<FieldState>(field);
 
   const current = phase ?? urlPhase ?? "boot";
@@ -139,10 +141,13 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       if (isYumeStoryPhase(from) && !isYumeStoryPhase(dest)) {
         resetYumeMomoStory();
       }
+      setArchiveEnterTop(from === "specimen" && dest === "story");
       setPhase(dest);
       setFolder(null);
       setFile(null);
       window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
     },
     [resetYumeMomoStory],
   );
@@ -193,6 +198,7 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       pd001Done,
       autoOpenPd001,
       startFinale,
+      archiveEnterTop,
       fieldOpen,
       field,
       fieldEpoch,
@@ -209,6 +215,7 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       resetYumeMomoStory,
     }),
     [
+      archiveEnterTop,
       autoOpenPd001,
       closeField,
       closeReader,

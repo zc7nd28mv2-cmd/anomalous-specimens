@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useArchive } from "@/context/ArchiveContext";
 import { useAudio } from "@/context/AudioContext";
 import { BackLink } from "@/components/system/BackLink";
@@ -18,6 +18,7 @@ export function StoryArchive() {
     go,
     autoOpenPd001,
     startFinale,
+    archiveEnterTop,
     pd001Done,
     fieldOpen,
     field,
@@ -45,7 +46,24 @@ export function StoryArchive() {
     }
   }, [fieldOpen]);
 
+  useLayoutEffect(() => {
+    if (!archiveEnterTop) {
+      return;
+    }
+    const toTop = () => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+    toTop();
+    const frame = window.requestAnimationFrame(toTop);
+    return () => window.cancelAnimationFrame(frame);
+  }, [archiveEnterTop]);
+
   useEffect(() => {
+    if (archiveEnterTop) {
+      return;
+    }
     if (autoOpenPd001 || startFinale) {
       scrollTimer.current = window.setTimeout(() => {
         document.getElementById("sec-pd001")?.scrollIntoView({
@@ -60,7 +78,7 @@ export function StoryArchive() {
         scrollTimer.current = null;
       }
     };
-  }, [autoOpenPd001, startFinale]);
+  }, [archiveEnterTop, autoOpenPd001, startFinale]);
 
   useEffect(() => {
     return () => {
