@@ -187,12 +187,21 @@ body {
 }
 
 .still-ask {
-  display: inline-block;
-  border: 1px solid #59e878;
+  display: inline-flex;
+  min-width: min(420px, calc(100vw - 48px));
+  flex-direction: column;
+  align-items: stretch;
+  border: 1px solid rgba(124, 255, 138, 0.45);
   border-radius: 0;
-  padding: 11px 16px 10px;
-  box-shadow: 0 0 10px rgba(89, 232, 120, 0.08);
+  padding: 28px 32px 24px;
   text-align: left;
+}
+
+.still-ask-actions {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-top: 36px;
 }
 
 .still-fault {

@@ -113,31 +113,31 @@ function StillThere({ onYes }: { onYes: () => void }) {
             {typed}
             <Cursor />
           </p>
+          {choices ? (
+            <div className="still-ask-actions">
+              <button
+                type="button"
+                onClick={() => {
+                  audio.click();
+                  onYes();
+                }}
+                className="act px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-green"
+              >
+                [ YES ]
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  audio.click();
+                  setDenyPlay((value) => value + 1);
+                }}
+                className="act px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-green"
+              >
+                [ NO ]
+              </button>
+            </div>
+          ) : null}
         </div>
-        {choices ? (
-          <div className="mt-10 flex justify-center gap-10">
-            <button
-              type="button"
-              onClick={() => {
-                audio.click();
-                onYes();
-              }}
-              className="act px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-green"
-            >
-              [ YES ]
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                audio.click();
-                setDenyPlay((value) => value + 1);
-              }}
-              className="act px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-green"
-            >
-              [ NO ]
-            </button>
-          </div>
-        ) : null}
       </div>
     </div>
   );
