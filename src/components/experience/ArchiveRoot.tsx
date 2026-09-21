@@ -9,7 +9,6 @@ import { SystemChrome } from "@/components/system/SystemChrome";
 import { AudioToggle } from "@/components/system/AudioToggle";
 import { BootScene } from "@/components/scenes/BootScene";
 import { IndexScene } from "@/components/scenes/IndexScene";
-import { AccessScene } from "@/components/scenes/AccessScene";
 import { PeachDreamHub } from "@/components/archive/PeachDreamHub";
 import { StoryArchive } from "@/components/archive/StoryArchive";
 import { ConstitutionArchive } from "@/components/archive/ConstitutionArchive";
@@ -35,15 +34,14 @@ function ArchiveInner() {
       <UnlockAudio />
       <AudioToggle />
       {phase !== "boot" ? (
-        <SystemChrome surface={phase === "access" ? "archive" : "archive"} />
+        <SystemChrome surface="archive" />
       ) : (
         <SystemChrome surface="void" />
       )}
 
       {phase === "boot" ? <BootScene onComplete={() => go("index")} /> : null}
-      {phase === "index" ? <IndexScene onAccess={() => go("access")} /> : null}
-      {phase === "access" ? (
-        <AccessScene onComplete={() => go("specimen")} />
+      {phase === "index" || phase === "access" ? (
+        <IndexScene onComplete={() => go("specimen")} />
       ) : null}
       {phase === "specimen" ? <PeachDreamHub /> : null}
       {phase === "story" ||

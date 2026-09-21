@@ -1,15 +1,79 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Command } from "@/components/system/Command";
 import { Rule } from "@/components/system/Rule";
-import { SPECIMENS, SYSTEM } from "@/lib/content";
+import { ACCESS, SPECIMENS, SYSTEM, integrityLine } from "@/lib/content";
 import { useAudio } from "@/context/AudioContext";
+import { useScaledMs } from "@/hooks/useTiming";
 
-export function IndexScene({ onAccess }: { onAccess: () => void }) {
+type ReadPhase =
+  | { kind: "off" }
+  | { kind: "accessing" }
+  | { kind: "verifying" }
+  | { kind: "integrity"; pct: number }
+  | { kind: "granted" };
+
+const INTEGRITY = [
+  0, 7, 13, 19, 27, 34, 41, 48, 53, 61, 68, 73, 77, 80, 81, 82,
+] as const;
+
+const INTEGRITY_WAIT = [
+  200, 220, 180, 240, 200, 260, 220, 280, 240, 300, 260, 320, 380, 420, 480,
+] as const;
+
+function irregular(min: number, max: number) {
+  return min + Math.random() * (max - min);
+}
+
+export function IndexScene({ onComplete }: { onComplete: () => void }) {
   const [denied, setDenied] = useState<string | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
+  const [read, setRead] = useState<ReadPhase>({ kind: "off" });
   const audio = useAudio();
+  const scale = useScaledMs();
+  const reading = read.kind !== "off";
+  const finish = useRef(onComplete);
+  finish.current = onComplete;
+
+  useEffect(() => {
+    if (read.kind === "off") {
+      return;
+    }
+    let cancelled = false;
+    const timers: number[] = [];
+    const later = (fn: () => void, ms: number) => {
+      const id = window.setTimeout(() => {
+        if (!cancelled) {
+          fn();
+        }
+      }, scale(ms));
+      timers.push(id);
+    };
+
+    if (read.kind === "accessing") {
+      later(() => setRead({ kind: "verifying" }), irregular(400, 600));
+    } else if (read.kind === "verifying") {
+      later(() => setRead({ kind: "integrity", pct: 0 }), irregular(500, 800));
+    } else if (read.kind === "integrity") {
+      const step = INTEGRITY.indexOf(read.pct as (typeof INTEGRITY)[number]);
+      if (step >= 0 && step < INTEGRITY.length - 1) {
+        later(
+          () => setRead({ kind: "integrity", pct: INTEGRITY[step + 1] }),
+          INTEGRITY_WAIT[step] ?? 240,
+        );
+      } else {
+        later(() => setRead({ kind: "granted" }), 360);
+      }
+    } else if (read.kind === "granted") {
+      later(() => finish.current(), 2580);
+    }
+
+    return () => {
+      cancelled = true;
+      timers.forEach((id) => window.clearTimeout(id));
+    };
+  }, [read, scale]);
 
   return (
     <div className="relative min-h-dvh bg-bg px-5 py-16 sm:px-10 sm:py-20 md:px-16">
@@ -67,16 +131,23 @@ export function IndexScene({ onAccess }: { onAccess: () => void }) {
                   ) : null}
                 </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    audio.click();
-                    onAccess();
-                  }}
-                  className="read-tag"
-                >
-                  读取档案
-                </button>
+                <div>
+                  <button
+                    type="button"
+                    disabled={reading}
+                    onClick={() => {
+                      if (reading) {
+                        return;
+                      }
+                      audio.click();
+                      setRead({ kind: "accessing" });
+                    }}
+                    className="read-tag"
+                  >
+                    读取档案
+                  </button>
+                  <ReadLine phase={read} />
+                </div>
               )}
             </section>
           ))}
@@ -85,6 +156,30 @@ export function IndexScene({ onAccess }: { onAccess: () => void }) {
         <Rule className="mt-12" />
         <p className="mt-5 sys-meta">{SYSTEM.count}</p>
       </div>
+    </div>
+  );
+}
+
+function ReadLine({ phase }: { phase: ReadPhase }) {
+  if (phase.kind === "off") {
+    return null;
+  }
+  if (phase.kind === "granted") {
+    return (
+      <div className="read-status">
+        <p className="grant-mark is-breathe">{ACCESS.granted}</p>
+      </div>
+    );
+  }
+  const text =
+    phase.kind === "accessing"
+      ? ACCESS.accessing
+      : phase.kind === "verifying"
+        ? ACCESS.verifying
+        : integrityLine(phase.pct);
+  return (
+    <div className="read-status">
+      <p className="font-sans text-[13px] text-green-dim">{text}</p>
     </div>
   );
 }

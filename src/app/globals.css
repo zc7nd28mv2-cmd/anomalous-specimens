@@ -593,6 +593,20 @@ body {
   outline: none;
 }
 
+.read-tag:disabled {
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+.read-status {
+  margin-top: 12px;
+  min-height: 1.5em;
+}
+
+.read-status .grant-mark {
+  margin-top: 0;
+}
+
 .field-module {
   overflow: hidden;
   background: #080807;

@@ -48,9 +48,13 @@ export const SPECIMENS = [
 export const ACCESS = {
   accessing: "正在读取样本 001",
   verifying: "正在核验档案……",
-  integrity: "源完整性 82%",
+  integrity: "源完整性",
   granted: "访问已批准",
 } as const;
+
+export function integrityLine(pct: number) {
+  return `${ACCESS.integrity} ${pct}%`;
+}
 
 export const DOSSIER = {
   heading: "项目档案",
