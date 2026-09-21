@@ -255,6 +255,7 @@ export function PeachDreamDossier() {
             setFinale("done");
             setOpen(false);
             finishPd001();
+            go("index");
           }}
         />
       ) : null}

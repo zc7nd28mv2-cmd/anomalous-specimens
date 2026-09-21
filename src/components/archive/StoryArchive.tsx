@@ -247,6 +247,7 @@ export function StoryArchive() {
             setFinale("done");
             setOpen(false);
             finishPd001();
+            go("index");
           }}
         />
       ) : null}
