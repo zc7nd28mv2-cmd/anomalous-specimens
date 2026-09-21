@@ -2,19 +2,27 @@
 
 import { SENSORY, type SensoryId } from "@/lib/sensory";
 import { useAudio } from "@/context/AudioContext";
+import { cn } from "@/lib/cn";
 
 export function SensoryChoice({
   id,
   onPick,
+  leaving = false,
 }: {
   id: SensoryId;
   onPick: (optionId: string) => void;
+  leaving?: boolean;
 }) {
   const pack = SENSORY[id];
   const audio = useAudio();
 
   return (
-    <div className="mt-6 border-t border-green-border/50 pt-5">
+    <div
+      className={cn(
+        "mt-6 border-t border-green-border/50 pt-5",
+        leaving && "sense-leave",
+      )}
+    >
       <p className="font-mono text-[11px] tracking-[0.16em] text-green-dim">
         {pack.label}
       </p>
@@ -24,13 +32,17 @@ export function SensoryChoice({
           <button
             key={option.id}
             type="button"
+            disabled={leaving}
             onClick={(event) => {
               event.stopPropagation();
+              if (leaving) {
+                return;
+              }
               audio.click();
               onPick(option.id);
             }}
             className="act sense-enter block w-full px-3 py-3 text-left"
-            style={{ animationDelay: `${index * 100}ms` }}
+            style={{ animationDelay: leaving ? "0ms" : `${index * 100}ms` }}
           >
             <span className="block font-mono text-[11px] text-green-dim">
               {option.id}

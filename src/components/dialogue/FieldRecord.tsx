@@ -84,7 +84,9 @@ export function FieldRecord({
   const [typing, setTyping] = useState(false);
   const [indicator, setIndicator] = useState("");
   const [choice, setChoice] = useState<SensoryId | null>(null);
+  const [choiceLeaving, setChoiceLeaving] = useState(false);
   const force = useRef(false);
+  const picked = useRef(false);
   const keys = useRef(0);
   const end = useRef<HTMLDivElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
@@ -141,6 +143,13 @@ export function FieldRecord({
     };
 
     if (beat.kind === "choice") {
+      if (picked.current) {
+        later(() => setIndex((value) => value + 1), 0);
+        return () => {
+          cancelled = true;
+          timers.forEach((id) => window.clearTimeout(id));
+        };
+      }
       later(() => {
         setChoice(beat.id);
         setStatus("choice");
@@ -257,27 +266,52 @@ export function FieldRecord({
       return;
     }
     setStatus("play");
-    advance();
-  }, [advance, analysisCleared, status]);
+  }, [analysisCleared, status]);
+
+  function enterNextBeat(from: number) {
+    let next = from + 1;
+    while (next < DIALOGUE.length) {
+      const beat = DIALOGUE[next];
+      if (beat.kind === "time") {
+        push({ key: nextKey(), kind: "time", text: beat.text });
+        next += 1;
+        continue;
+      }
+      if (beat.kind === "line" && beat.hidden) {
+        next += 1;
+        continue;
+      }
+      break;
+    }
+    const beat = DIALOGUE[next] as DialogueBeat | undefined;
+    setIndex(next);
+    setDraft("");
+    setTyping(false);
+    force.current = false;
+    if (beat?.kind === "line") {
+      setIndicator(nameOf(beat.speaker));
+    } else {
+      setIndicator("");
+    }
+    setStatus("play");
+  }
 
   function onPick(optionId: string) {
-    if (!choice) {
+    if (!choice || picked.current || choiceLeaving) {
       return;
     }
     const option = SENSORY[choice].options.find((item) => item.id === optionId);
     if (!option) {
       return;
     }
-    setChoice(null);
-    setStatus("analysis");
-    if (onAnalysis) {
-      onAnalysis(option.lines);
-      return;
-    }
+    picked.current = true;
+    setChoiceLeaving(true);
+    onAnalysis?.(option.lines);
+    enterNextBeat(index);
     window.setTimeout(() => {
-      setStatus("play");
-      advance();
-    }, 800);
+      setChoice(null);
+      setChoiceLeaving(false);
+    }, scale(260));
   }
 
   function onBoxClick() {
@@ -337,7 +371,9 @@ export function FieldRecord({
           </div>
         ) : null}
 
-        {choice ? <SensoryChoice id={choice} onPick={onPick} /> : null}
+        {choice ? (
+          <SensoryChoice id={choice} leaving={choiceLeaving} onPick={onPick} />
+        ) : null}
 
         <div ref={end} />
       </div>

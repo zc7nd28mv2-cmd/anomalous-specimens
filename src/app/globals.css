@@ -1081,6 +1081,20 @@ body {
   animation: sense-enter 450ms ease-out both;
 }
 
+@keyframes sense-leave {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.sense-leave {
+  animation: sense-leave 260ms ease-out forwards;
+  pointer-events: none;
+}
+
 @media (max-width: 640px) {
   .title-product,
   .title-specimen,
@@ -1134,6 +1148,7 @@ body {
   .scan-panel,
   .scan-panel.is-out,
   .sense-enter,
+  .sense-leave,
   .invest-panel.is-enter,
   .invest-en,
   .invest-zh,
