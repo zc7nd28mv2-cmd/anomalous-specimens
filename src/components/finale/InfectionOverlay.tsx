@@ -5,7 +5,6 @@ import { useAfter } from "@/hooks/useReveal";
 import { useScaledMs } from "@/hooks/useTiming";
 import { useAudio } from "@/context/AudioContext";
 import { Cursor } from "@/components/system/Cursor";
-import { Command } from "@/components/system/Command";
 import { YumeProtocol } from "@/components/finale/YumeProtocol";
 import {
   SOURCE_BIND,
@@ -117,8 +116,26 @@ function StillThere({ onYes }: { onYes: () => void }) {
         </div>
         {choices ? (
           <div className="mt-10 flex justify-center gap-10">
-            <Command onClick={onYes}>YES</Command>
-            <Command onClick={() => setDenyPlay((value) => value + 1)}>NO</Command>
+            <button
+              type="button"
+              onClick={() => {
+                audio.click();
+                onYes();
+              }}
+              className="act px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-green"
+            >
+              [ YES ]
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                audio.click();
+                setDenyPlay((value) => value + 1);
+              }}
+              className="act px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-green"
+            >
+              [ NO ]
+            </button>
           </div>
         ) : null}
       </div>

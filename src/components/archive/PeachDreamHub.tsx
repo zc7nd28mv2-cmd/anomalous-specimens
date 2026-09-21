@@ -1,12 +1,13 @@
 "use client";
 
 import { useArchive } from "@/context/ArchiveContext";
+import { useAudio } from "@/context/AudioContext";
 import { BackLink } from "@/components/system/BackLink";
-import { Command } from "@/components/system/Command";
 import { Rule } from "@/components/system/Rule";
 
 export function PeachDreamHub() {
   const { go } = useArchive();
+  const audio = useAudio();
 
   return (
     <div className="relative min-h-dvh bg-bg px-5 py-16 sm:px-10 sm:py-20 md:px-16">
@@ -23,7 +24,10 @@ export function PeachDreamHub() {
             title="原始资料"
             en="ORIGINAL FILES"
             action="阅读完整档案"
-            onClick={() => go("story")}
+            onClick={() => {
+              audio.click();
+              go("story");
+            }}
           />
           <Rule className="my-8" />
           <Entry
@@ -31,7 +35,10 @@ export function PeachDreamHub() {
             title="構成代碼"
             en="CONSTITUTION CODE"
             action="查看样本构成"
-            onClick={() => go("constitution")}
+            onClick={() => {
+              audio.click();
+              go("constitution");
+            }}
           />
         </div>
 
@@ -55,13 +62,14 @@ function Entry({
   onClick: () => void;
 }) {
   return (
-    <div>
+    <button type="button" onClick={onClick} className="block w-full bg-transparent text-left shadow-none">
       <p className="sys-meta">{index}</p>
       <p className="title-module mt-3 text-ink">{title}</p>
       <p className="aux-en mt-2">{en}</p>
-      <Command className="mt-4" onClick={onClick}>
+      <p className="mt-4 font-sans text-[13px] text-green">
         {action}
-      </Command>
-    </div>
+        <span className="ml-2">→</span>
+      </p>
+    </button>
   );
 }

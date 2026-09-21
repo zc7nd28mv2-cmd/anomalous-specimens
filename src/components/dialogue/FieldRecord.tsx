@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useScaledMs } from "@/hooks/useTiming";
 import { useAudio } from "@/context/AudioContext";
 import { TypingIndicator } from "@/components/dialogue/TypingIndicator";
-import { Command } from "@/components/system/Command";
 import { SensoryChoice } from "@/components/dialogue/SensoryChoice";
 import {
   ANALYSIS,
@@ -354,6 +353,7 @@ function InvestigationRecord({
   onReadyToLeave?: () => void;
 }) {
   const scale = useScaledMs();
+  const audio = useAudio();
   const [gate, setGate] = useState<"idle" | "opening" | "recovering" | "open">("idle");
   const [step, setStep] = useState(0);
 
@@ -389,15 +389,18 @@ function InvestigationRecord({
 
       <div className="invest-body">
         {gate === "idle" ? (
-          <Command
-            className="is-enter"
-            onClick={() => {
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              audio.click();
               onReadyToLeave?.();
               setGate("opening");
             }}
+            className="invest-open is-enter"
           >
-            {INVESTIGATION.prompt}
-          </Command>
+            [ {INVESTIGATION.prompt} ]
+          </button>
         ) : null}
 
         {gate === "opening" ? (
@@ -449,7 +452,17 @@ function InvestigationRecord({
 
       {gate === "open" ? (
         <div className="invest-foot">
-          <Command onClick={onDone}>EXIT</Command>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onDone();
+            }}
+            className="invest-exit"
+          >
+            [ EXIT ]
+          </button>
         </div>
       ) : null}
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { SENSORY, type SensoryId } from "@/lib/sensory";
-import { Command } from "@/components/system/Command";
+import { useAudio } from "@/context/AudioContext";
 
 export function SensoryChoice({
   id,
@@ -11,6 +11,7 @@ export function SensoryChoice({
   onPick: (optionId: string) => void;
 }) {
   const pack = SENSORY[id];
+  const audio = useAudio();
 
   return (
     <div className="mt-6 border-t border-green-border/50 pt-5">
@@ -20,20 +21,24 @@ export function SensoryChoice({
       <p className="mt-3 font-sans text-[14px] text-green">{pack.prompt}</p>
       <div className="mt-5 space-y-2">
         {pack.options.map((option, index) => (
-          <Command
+          <button
             key={option.id}
-            bracket={false}
-            onClick={() => onPick(option.id)}
-            className="sense-enter w-full flex-col items-start justify-start px-3 py-3"
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              audio.click();
+              onPick(option.id);
+            }}
+            className="act sense-enter block w-full px-3 py-3 text-left"
             style={{ animationDelay: `${index * 100}ms` }}
           >
-            <span className="block font-mono text-[11px] text-sys">
+            <span className="block font-mono text-[11px] text-green-dim">
               {option.id}
             </span>
-            <span className="mt-1 block font-sans text-[14px] text-ink">
+            <span className="mt-1 block font-sans text-[14px] text-green">
               {option.label}
             </span>
-          </Command>
+          </button>
         ))}
       </div>
     </div>

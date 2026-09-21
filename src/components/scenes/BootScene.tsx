@@ -1,46 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useAfter, useReveal } from "@/hooks/useReveal";
-import { useScaledMs } from "@/hooks/useTiming";
 import { Cursor } from "@/components/system/Cursor";
-import { Command } from "@/components/system/Command";
 import { Stage, SysLine } from "@/components/system/Stage";
-import { ACCESS, SYSTEM } from "@/lib/content";
+import { SYSTEM } from "@/lib/content";
 
-const BOOT_DELAYS = [900, 800, 700, 900, 500, 420, 420, 500, 1400, 500, 700, 800] as const;
-
-const BAR_STEPS = [
-  { pct: 18, wait: 180 },
-  { pct: 31, wait: 200 },
-  { pct: 47, wait: 220 },
-  { pct: 58, wait: 260 },
-  { pct: 73, wait: 300 },
-  { pct: 82, wait: 520 },
-  { pct: 86, wait: 380 },
-  { pct: 96, wait: 240 },
-  { pct: 100, wait: 200 },
-] as const;
-
-type Gate = "boot" | "load" | "granted";
+const DELAYS = [900, 800, 700, 900, 500, 420, 420, 500, 1400, 500, 700, 1600, 400] as const;
 
 export function BootScene({ onComplete }: { onComplete: () => void }) {
-  const [gate, setGate] = useState<Gate>("boot");
+  const step = useReveal(DELAYS);
+  const blackout = step >= 12 && step < 13;
+
+  useAfter(1500, onComplete, step >= 13);
+
+  if (step === 0 || blackout) {
+    return <div className="min-h-dvh bg-bg" />;
+  }
+
+  if (step >= 13) {
+    return (
+      <Stage>
+        <p className="rise font-mono text-[12px] tracking-[0.18em] text-mute">
+          {SYSTEM.detected}
+        </p>
+      </Stage>
+    );
+  }
 
   return (
-    <Stage className="overflow-hidden">
-      {gate === "boot" ? <BootLog onEnter={() => setGate("load")} /> : null}
-      {gate === "load" ? <SampleLoad onReady={() => setGate("granted")} /> : null}
-      {gate === "granted" ? <AccessGranted onDone={onComplete} /> : null}
-    </Stage>
-  );
-}
-
-function BootLog({ onEnter }: { onEnter: () => void }) {
-  const step = useReveal(BOOT_DELAYS);
-
-  return (
-    <>
+    <Stage>
       {step >= 1 ? (
         <p className="title-system text-ink">{SYSTEM.titleZh}</p>
       ) : null}
@@ -77,80 +65,6 @@ function BootLog({ onEnter }: { onEnter: () => void }) {
           {SYSTEM.corrupted}
         </p>
       ) : null}
-
-      {step >= 12 ? (
-        <p className="mt-3 font-mono text-[12px] tracking-[0.08em] text-mute">
-          {SYSTEM.detected}
-        </p>
-      ) : null}
-
-      {step >= 12 ? (
-        <Command className="mt-10" onClick={onEnter}>
-          {SYSTEM.enter}
-        </Command>
-      ) : null}
-    </>
-  );
-}
-
-function SampleLoad({ onReady }: { onReady: () => void }) {
-  const scale = useScaledMs();
-  const [pct, setPct] = useState(0);
-  const done = pct >= 100;
-
-  useEffect(() => {
-    let index = 0;
-    let id = 0;
-    let cancelled = false;
-    const run = () => {
-      const step = BAR_STEPS[index];
-      if (!step || cancelled) {
-        return;
-      }
-      id = window.setTimeout(() => {
-        if (cancelled) {
-          return;
-        }
-        setPct(step.pct);
-        index += 1;
-        run();
-      }, scale(step.wait));
-    };
-    run();
-    return () => {
-      cancelled = true;
-      window.clearTimeout(id);
-    };
-  }, [scale]);
-
-  useAfter(360, onReady, done);
-
-  return (
-    <>
-      <SysLine>{ACCESS.accessing}</SysLine>
-      <SysLine className="mt-2">{ACCESS.verifying}</SysLine>
-      <SysLine className="mt-2">{ACCESS.integrity}</SysLine>
-      <div className="boot-bar" aria-hidden>
-        <div className="boot-bar-fill" style={{ width: `${pct}%` }} />
-      </div>
-    </>
-  );
-}
-
-function AccessGranted({ onDone }: { onDone: () => void }) {
-  useAfter(2780, onDone, true);
-
-  return (
-    <>
-      <SysLine>{ACCESS.accessing}</SysLine>
-      <SysLine className="mt-2">{ACCESS.verifying}</SysLine>
-      <SysLine className="mt-2">{ACCESS.integrity}</SysLine>
-      <div className="boot-bar" aria-hidden>
-        <div className="boot-bar-fill" style={{ width: "100%" }} />
-      </div>
-      <p className="grant-breathe mt-10 font-mono text-[13px] tracking-[0.12em] text-ink">
-        {ACCESS.granted}
-      </p>
-    </>
+    </Stage>
   );
 }
