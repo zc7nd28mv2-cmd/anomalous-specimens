@@ -79,12 +79,14 @@ function clearTimer(ref: { current: number | null }) {
 
 export function FieldRecord({
   active = true,
+  onComplete,
   onWarning,
   warningCleared = false,
   onWarningSequence,
   warningSequenceCleared = false,
   onAnalysis,
   analysisCleared = false,
+  onReadyToLeave,
 }: {
   active?: boolean;
   onComplete: () => void;
@@ -130,7 +132,6 @@ export function FieldRecord({
   const [investigationOpen, setInvestigationOpen] = useState(
     saved.current.isInvestigationOpen ?? false,
   );
-  const [investigationClosing, setInvestigationClosing] = useState(false);
   const [investigationFirstReveal, setInvestigationFirstReveal] = useState(
     !(
       saved.current.isInvestigationUnlocked ||
@@ -200,7 +201,11 @@ export function FieldRecord({
   const typingTimerRef = useRef<number | null>(null);
   const holdTimerRef = useRef<number | null>(null);
   const fadeTimerRef = useRef<number | null>(null);
-  const investigationCloseTimerRef = useRef<number | null>(null);
+  const leaveOnceRef = useRef(false);
+  const readyToLeaveRef = useRef(onReadyToLeave);
+  const completeRef = useRef(onComplete);
+  readyToLeaveRef.current = onReadyToLeave;
+  completeRef.current = onComplete;
   const animationFrameRef = useRef<number | null>(null);
   const scrollbarTimerRef = useRef<number | null>(null);
   const scrollbarVisibleRef = useRef(false);
@@ -870,12 +875,10 @@ export function FieldRecord({
   playRef.current = playCurrentBeat;
 
   useEffect(() => {
-    return () => {
-      if (investigationCloseTimerRef.current != null) {
-        window.clearTimeout(investigationCloseTimerRef.current);
-      }
-    };
-  }, []);
+    if (status === "after" || investigationUnlocked || investigationOpen) {
+      readyToLeaveRef.current?.();
+    }
+  }, [investigationOpen, investigationUnlocked, status]);
 
   useEffect(() => {
     activeRef.current = active;
@@ -1088,40 +1091,35 @@ export function FieldRecord({
     });
   }
 
+  function markReadyToLeave() {
+    readyToLeaveRef.current?.();
+  }
+
+  function requestLeave() {
+    if (leaveOnceRef.current) {
+      return;
+    }
+    leaveOnceRef.current = true;
+    markReadyToLeave();
+    completeRef.current();
+  }
+
   function openInvestigation() {
     const first = !investigationUnlocked;
     audio.click();
     setInvestigationFirstReveal(first);
     setInvestigationUnlocked(true);
-    setInvestigationClosing(false);
     setInvestigationOpen(true);
+    markReadyToLeave();
     persistInvestigation({
       isInvestigationUnlocked: true,
       isInvestigationOpen: true,
       investGate: "open",
       investStep: 4,
     });
-  }
-
-  function closeInvestigation() {
-    if (investigationClosing) {
-      return;
-    }
-    setInvestigationClosing(true);
-    if (investigationCloseTimerRef.current != null) {
-      window.clearTimeout(investigationCloseTimerRef.current);
-    }
-    investigationCloseTimerRef.current = window.setTimeout(() => {
-      investigationCloseTimerRef.current = null;
-      setInvestigationOpen(false);
-      setInvestigationClosing(false);
-      persistInvestigation({
-        isInvestigationUnlocked: true,
-        isInvestigationOpen: false,
-        investGate: "open",
-        investStep: 4,
-      });
-    }, 240);
+    window.requestAnimationFrame(() => {
+      end.current?.scrollIntoView({ block: "nearest" });
+    });
   }
 
   return (
@@ -1143,7 +1141,11 @@ export function FieldRecord({
             <LogLine
               key={item.id}
               item={item}
+              active={active}
+              investigationOpen={investigationOpen}
+              firstReveal={investigationFirstReveal}
               onOpenInvestigation={openInvestigation}
+              onLeave={requestLeave}
             />
           ))}
 
@@ -1167,15 +1169,6 @@ export function FieldRecord({
           <div ref={end} />
         </div>
       </div>
-
-      {investigationOpen || investigationClosing ? (
-        <InvestigationOverlay
-          active={active}
-          closing={investigationClosing}
-          firstReveal={investigationFirstReveal}
-          onClose={closeInvestigation}
-        />
-      ) : null}
     </div>
   );
 }
@@ -1201,75 +1194,63 @@ function InvestigationTrigger({ onOpen }: { onOpen: () => void }) {
   );
 }
 
-function InvestigationOverlay({
+function InvestigationPanel({
   active,
-  closing,
   firstReveal,
-  onClose,
+  onLeave,
 }: {
   active: boolean;
-  closing: boolean;
   firstReveal: boolean;
-  onClose: () => void;
+  onLeave: () => void;
 }) {
   return (
-    <div
-      className={cn("invest-overlay", closing ? "is-out" : "is-enter")}
-      role="dialog"
-      aria-label={INVESTIGATION.title}
-    >
-      <div className="invest-panel">
-        <div className="invest-head">
-          <p className="invest-en font-mono text-[11px] tracking-[0.12em] text-sys">
-            {INVESTIGATION.en}
-          </p>
-          <p className="invest-zh mt-2 font-sans text-[14px] text-ink">
-            {INVESTIGATION.zh}
-          </p>
-        </div>
+    <div className="invest-panel is-enter">
+      <div className="invest-head">
+        <p className="invest-en font-mono text-[11px] tracking-[0.12em] text-sys">
+          {INVESTIGATION.en}
+        </p>
+        <p className="invest-zh mt-2 font-sans text-[14px] text-ink">{INVESTIGATION.zh}</p>
+      </div>
 
-        <div className="invest-body">
-          <div className="space-y-5">
-            <p className="font-sans text-[14px] leading-7 text-ink">
-              {INVESTIGATION.title}
+      <div className="invest-body">
+        <div className="space-y-5">
+          <p className="font-sans text-[14px] leading-7 text-ink">{INVESTIGATION.title}</p>
+          <p className="font-sans text-[14px] leading-7 text-ink">
+            {INVESTIGATION.foundNote}
+          </p>
+          <div>
+            <p className="font-mono text-[11px] tracking-[0.08em] text-sys">
+              {INVESTIGATION.nameLabel}
             </p>
-            <p className="font-sans text-[14px] leading-7 text-ink">
-              {INVESTIGATION.foundNote}
+            <CorruptName active={active} settled={!firstReveal} />
+          </div>
+          <div>
+            <p className="font-mono text-[11px] tracking-[0.08em] text-sys">
+              {INVESTIGATION.versionLabel}
             </p>
-            <div>
-              <p className="font-mono text-[11px] tracking-[0.08em] text-sys">
-                {INVESTIGATION.nameLabel}
-              </p>
-              <CorruptName active={active} settled={!firstReveal} />
-            </div>
-            <div>
-              <p className="font-mono text-[11px] tracking-[0.08em] text-sys">
-                {INVESTIGATION.versionLabel}
-              </p>
-              <p className="mt-1 font-sans text-[14px] text-ink">{INVESTIGATION.version}</p>
-            </div>
-            <div>
-              <p className="font-mono text-[11px] tracking-[0.08em] text-sys">
-                {INVESTIGATION.noteLabel}
-              </p>
-              <p className="mt-1 font-sans text-[14px] text-ink">{INVESTIGATION.note}</p>
-            </div>
+            <p className="mt-1 font-sans text-[14px] text-ink">{INVESTIGATION.version}</p>
+          </div>
+          <div>
+            <p className="font-mono text-[11px] tracking-[0.08em] text-sys">
+              {INVESTIGATION.noteLabel}
+            </p>
+            <p className="mt-1 font-sans text-[14px] text-ink">{INVESTIGATION.note}</p>
           </div>
         </div>
+      </div>
 
-        <div className="invest-foot">
-          <button
-            type="button"
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              onClose();
-            }}
-            className="invest-exit"
-          >
-            [ {INVESTIGATION.close} ]
-          </button>
-        </div>
+      <div className="invest-foot">
+        <button
+          type="button"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onLeave();
+          }}
+          className="invest-exit"
+        >
+          [ {INVESTIGATION.close} ]
+        </button>
       </div>
     </div>
   );
@@ -1320,10 +1301,18 @@ function CorruptName({
 
 function LogLine({
   item,
+  active,
+  investigationOpen,
+  firstReveal,
   onOpenInvestigation,
+  onLeave,
 }: {
   item: LogItem;
+  active: boolean;
+  investigationOpen: boolean;
+  firstReveal: boolean;
   onOpenInvestigation: () => void;
+  onLeave: () => void;
 }) {
   if (item.kind === "time") {
     return (
@@ -1375,6 +1364,15 @@ function LogLine({
     );
   }
   if (item.kind === "invest") {
+    if (investigationOpen) {
+      return (
+        <InvestigationPanel
+          active={active}
+          firstReveal={firstReveal}
+          onLeave={onLeave}
+        />
+      );
+    }
     return <InvestigationTrigger onOpen={onOpenInvestigation} />;
   }
   if (item.kind === "lost") {

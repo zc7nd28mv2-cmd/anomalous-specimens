@@ -703,38 +703,19 @@ body {
   overflow: hidden;
 }
 
-.invest-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 16;
-  display: flex;
-  max-height: 100%;
-  flex-direction: column;
-  overflow: hidden;
-  background: #080807;
-}
-
-.invest-overlay.is-enter {
-  animation: invest-frame 500ms ease-out both;
-}
-
-.invest-overlay.is-out {
-  animation: panel-out 240ms ease-in both;
-}
-
 .invest-panel {
   display: flex;
+  height: auto;
   min-height: 0;
-  height: 100%;
   max-height: none;
-  flex: 1;
+  flex: none;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
   padding: 0;
 }
 
 .invest-panel.is-enter {
-  animation: none;
+  animation: invest-frame 500ms ease-out both;
 }
 
 .invest-trigger {
@@ -762,11 +743,9 @@ body {
 
 .invest-body {
   min-height: 0;
-  flex: 1 1 auto;
-  overflow-x: hidden;
-  overflow-y: auto;
+  flex: none;
+  overflow: visible;
   padding: 8px 28px 20px;
-  scrollbar-width: none;
 }
 
 .invest-body::-webkit-scrollbar {
@@ -1441,8 +1420,6 @@ body {
   .sense-leave,
   .still-ask.is-leave,
   .still-ask.is-enter,
-  .invest-overlay.is-enter,
-  .invest-overlay.is-out,
   .invest-panel.is-enter,
   .invest-trigger.is-enter,
   .invest-en,

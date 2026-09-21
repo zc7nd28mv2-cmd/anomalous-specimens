@@ -43,6 +43,7 @@ export function StoryArchive() {
   const [scan, setScan] = useState<"off" | "run" | "resume" | "done">(field.scan);
   const [scanLines, setScanLines] = useState<string[] | null>(field.scanLines);
   const [canLeave, setCanLeave] = useState(field.canLeave);
+  const canLeaveRef = useRef(field.canLeave);
   const closeTimer = useRef<number | null>(null);
   const scrollTimer = useRef<number | null>(null);
 
@@ -125,6 +126,18 @@ export function StoryArchive() {
     setFinale("run");
   }, [audio, finale]);
 
+  const handleRecordClose = useCallback(() => {
+    if (fail === "run" || intrusion === "run") {
+      return;
+    }
+    if (canLeaveRef.current || canLeave) {
+      leaveArchive();
+      return;
+    }
+    audio.click();
+    closeModal();
+  }, [audio, canLeave, closeModal, fail, intrusion, leaveArchive]);
+
   const handleWarning = useCallback(() => {
     setFail("run");
     patchField({ warning: "run" });
@@ -147,6 +160,7 @@ export function StoryArchive() {
   }, [patchField]);
 
   const handleReadyToLeave = useCallback(() => {
+    canLeaveRef.current = true;
     setCanLeave(true);
     patchField({ canLeave: true });
   }, [patchField]);
@@ -295,17 +309,7 @@ export function StoryArchive() {
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  if (fail === "run" || intrusion === "run") {
-                    return;
-                  }
-                  if (canLeave) {
-                    leaveArchive();
-                    return;
-                  }
-                  audio.click();
-                  closeModal();
-                }}
+                onClick={handleRecordClose}
                 className="font-mono text-[14px] text-mute hover:text-ink"
               >
                 ×
@@ -321,7 +325,7 @@ export function StoryArchive() {
               onAnalysis={handleAnalysis}
               analysisCleared={scan === "done"}
               onReadyToLeave={handleReadyToLeave}
-              onComplete={leaveArchive}
+              onComplete={handleRecordClose}
             />
           </div>
         </div>
