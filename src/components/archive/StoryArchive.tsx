@@ -275,13 +275,15 @@ export function StoryArchive() {
           </div>
         </section>
 
-        {finale === "done" || pd001Done ? (
-          <section className="mt-16 space-y-4">
+        <div className="story-divider" />
+
+        <section className="space-y-4">
+          {finale === "done" || pd001Done ? (
             <p className="sys-meta text-danger">STATUS: CORRUPTED</p>
-            <p className="story-body">{ENDING.line}</p>
-            <p className="font-sans text-[13px] text-mute">{ENDING.attr}</p>
-          </section>
-        ) : null}
+          ) : null}
+          <p className="story-body">{ENDING.line}</p>
+          <p className="font-sans text-[13px] text-mute">{ENDING.attr}</p>
+        </section>
 
         <BackLink label="返回 仙桃夢" onClick={() => go("specimen")} />
       </div>

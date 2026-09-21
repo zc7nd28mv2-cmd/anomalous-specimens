@@ -243,6 +243,6 @@ export const FAILURE = {
 export const ENDING = {
   prompt: "> _",
   completed: "> process completed",
-  line: "我們被持續不斷的信息革命改造著，被日益增長的符號假象洪流裹挾。",
+  line: "我們被持續不斷的信息革命改造著●被日益增長的符號假象洪流裹挾",
   attr: "——「锈肺」",
 } as const;
