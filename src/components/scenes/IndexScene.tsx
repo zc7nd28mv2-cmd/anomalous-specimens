@@ -4,9 +4,11 @@ import { useState } from "react";
 import { Command } from "@/components/system/Command";
 import { Rule } from "@/components/system/Rule";
 import { SPECIMENS, SYSTEM } from "@/lib/content";
+import { useAudio } from "@/context/AudioContext";
 
 export function IndexScene({ onAccess }: { onAccess: () => void }) {
   const [denied, setDenied] = useState<string | null>(null);
+  const audio = useAudio();
 
   return (
     <div className="relative min-h-dvh bg-bg px-5 py-16 sm:px-10 sm:py-20 md:px-16">
@@ -56,9 +58,16 @@ export function IndexScene({ onAccess }: { onAccess: () => void }) {
                   ) : null}
                 </div>
               ) : (
-                <Command className="mt-5" onClick={onAccess}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    audio.click();
+                    onAccess();
+                  }}
+                  className="read-tag"
+                >
                   读取档案
-                </Command>
+                </button>
               )}
             </section>
           ))}
