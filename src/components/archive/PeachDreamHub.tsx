@@ -66,7 +66,7 @@ function Entry({
       <p className="sys-meta">{index}</p>
       <p className="title-module mt-3 text-ink">{title}</p>
       <p className="aux-en mt-2">{en}</p>
-      <p className="mt-4 font-sans text-[13px] text-mute">
+      <p className="mt-4 font-sans text-[13px] text-green">
         {action}
         <span className="ml-2">→</span>
       </p>
