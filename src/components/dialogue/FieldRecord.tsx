@@ -407,70 +407,148 @@ function AnalysisSequence({
 
 function InvestigationRecord({ onDone }: { onDone: () => void }) {
   const scale = useScaledMs();
-  const [phase, setPhase] = useState(0);
-
-  const done = useRef(onDone);
-  const once = useRef(false);
-
-  useEffect(() => {
-    done.current = onDone;
-  }, [onDone]);
+  const audio = useAudio();
+  const [gate, setGate] = useState<"idle" | "opening" | "recovering" | "open">("idle");
+  const [step, setStep] = useState(0);
 
   useEffect(() => {
-    const waits = [0, 420, 480, 380, 420, 420, 450];
+    if (gate === "opening") {
+      const id = window.setTimeout(() => setGate("recovering"), scale(400));
+      return () => window.clearTimeout(id);
+    }
+    if (gate === "recovering") {
+      const id = window.setTimeout(() => setGate("open"), scale(500));
+      return () => window.clearTimeout(id);
+    }
+    if (gate !== "open") {
+      return;
+    }
+    const waits = [80, 420, 1400, 420, 420];
     let total = 0;
     const timers = waits.map((wait, i) => {
-      total += wait || 80;
-      return window.setTimeout(() => {
-        setPhase(i + 1);
-      }, scale(total));
+      total += wait;
+      return window.setTimeout(() => setStep(i + 1), scale(total));
     });
-    const end = window.setTimeout(() => {
-      if (!once.current) {
-        once.current = true;
-        done.current();
-      }
-    }, scale(total + 900));
-    return () => {
-      timers.forEach((id) => window.clearTimeout(id));
-      window.clearTimeout(end);
-    };
-  }, [scale]);
+    return () => timers.forEach((id) => window.clearTimeout(id));
+  }, [gate, scale]);
 
   return (
-    <div className="invest-panel space-y-4">
-      {phase >= 1 ? (
-        <p className="font-mono text-[12px] tracking-[0.1em] text-green-dim">
-          {INVESTIGATION.recovering}
+    <div className="invest-panel">
+      <div className="invest-head">
+        <p className="font-mono text-[11px] tracking-[0.12em] text-sys">
+          {INVESTIGATION.en}
         </p>
-      ) : null}
-      {phase >= 2 ? (
-        <p className="font-mono text-[12px] tracking-[0.1em] text-green">
-          {INVESTIGATION.found}
-        </p>
-      ) : null}
-      {phase >= 3 ? (
-        <div>
-          <p className="font-mono text-[11px] tracking-[0.12em] text-sys">
-            {INVESTIGATION.en}
+        <p className="mt-2 font-sans text-[14px] text-ink">{INVESTIGATION.zh}</p>
+      </div>
+
+      <div className="invest-body">
+        {gate === "idle" ? (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              audio.click();
+              setGate("opening");
+            }}
+            className="invest-open"
+          >
+            [ {INVESTIGATION.prompt} ]
+          </button>
+        ) : null}
+
+        {gate === "opening" ? (
+          <p className="font-mono text-[12px] tracking-[0.1em] text-green-dim">
+            {INVESTIGATION.opening}
           </p>
-          <p className="mt-2 font-sans text-[14px] text-ink">{INVESTIGATION.zh}</p>
+        ) : null}
+
+        {gate === "recovering" ? (
+          <p className="font-mono text-[12px] tracking-[0.1em] text-green-dim">
+            {INVESTIGATION.recovering}
+          </p>
+        ) : null}
+
+        {gate === "open" ? (
+          <div className="space-y-5">
+            {step >= 1 ? (
+              <p className="font-sans text-[14px] leading-7 text-ink">
+                {INVESTIGATION.foundNote}
+              </p>
+            ) : null}
+            {step >= 2 ? (
+              <div>
+                <p className="font-mono text-[11px] tracking-[0.08em] text-sys">
+                  {INVESTIGATION.nameLabel}
+                </p>
+                <CorruptName />
+              </div>
+            ) : null}
+            {step >= 3 ? (
+              <div>
+                <p className="font-mono text-[11px] tracking-[0.08em] text-sys">
+                  {INVESTIGATION.versionLabel}
+                </p>
+                <p className="mt-1 font-sans text-[14px] text-ink">{INVESTIGATION.version}</p>
+              </div>
+            ) : null}
+            {step >= 4 ? (
+              <div>
+                <p className="font-mono text-[11px] tracking-[0.08em] text-sys">
+                  {INVESTIGATION.noteLabel}
+                </p>
+                <p className="mt-1 font-sans text-[14px] text-ink">{INVESTIGATION.note}</p>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+
+      {step >= 5 ? (
+        <div className="invest-foot">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              audio.click();
+              onDone();
+            }}
+            className="invest-exit"
+          >
+            [ EXIT ]
+          </button>
         </div>
       ) : null}
-      {phase >= 4 ? (
-        <p className="font-sans text-[14px] leading-7 text-ink">
-          {INVESTIGATION.foundNote}
-        </p>
-      ) : null}
-      {INVESTIGATION.fields.map((field, i) =>
-        phase >= 5 + i ? (
-          <div key={field.k}>
-            <p className="font-mono text-[11px] tracking-[0.08em] text-sys">{field.k}</p>
-            <p className="mt-1 font-sans text-[14px] text-ink">{field.v}</p>
-          </div>
-        ) : null,
-      )}
     </div>
+  );
+}
+
+function CorruptName() {
+  const scale = useScaledMs();
+  const [index, setIndex] = useState(-1);
+  const clear = index >= INVESTIGATION.garbles.length;
+
+  useEffect(() => {
+    const start = window.setTimeout(() => setIndex(0), scale(340));
+    return () => window.clearTimeout(start);
+  }, [scale]);
+
+  useEffect(() => {
+    if (index < 0 || index >= INVESTIGATION.garbles.length) {
+      return;
+    }
+    const wait = index === INVESTIGATION.garbles.length - 1 ? 280 : 150;
+    const id = window.setTimeout(() => setIndex((value) => value + 1), scale(wait));
+    return () => window.clearTimeout(id);
+  }, [index, scale]);
+
+  if (index < 0) {
+    return null;
+  }
+
+  return (
+    <p className={clear ? "recover-name is-clear" : "recover-name"}>
+      {clear ? INVESTIGATION.name : INVESTIGATION.garbles[index]}
+    </p>
   );
 }
 

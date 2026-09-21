@@ -79,15 +79,25 @@ export const LOG_AFTER = [
 ] as const;
 
 export const INVESTIGATION = {
+  opening: "OPENING FILE...",
   recovering: "RECOVERING DATA...",
-  found: "INVESTIGATION RECORD FOUND",
   en: "FOLLOW-UP INVESTIGATION",
   zh: "後續調查",
+  prompt: "點擊查看調查資料",
   foundNote: "现场发现非法神经模组一枚。",
-  fields: [
-    { k: "程序名称：", v: "PEACH DREAM（仙桃梦）" },
-    { k: "版本：", v: "0.91（删减版）" },
-    { k: "备注：", v: "终止协议已被人为移除。" },
+  nameLabel: "程序名称：",
+  name: "PEACH DREAM（仙桃梦）",
+  versionLabel: "版本：",
+  version: "0.91（删减版）",
+  noteLabel: "备注：",
+  note: "终止协议已被人为移除。",
+  garbles: [
+    "P€@CH_D█EAM",
+    "PEA▒H DR░AM",
+    "PΞACH_DREAM",
+    "▓EACH DR█AM",
+    "P3ACH_DRE4M",
+    "PEACH_▒▒▒M",
   ],
 } as const;
 
