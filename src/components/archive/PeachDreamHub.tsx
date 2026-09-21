@@ -11,33 +11,30 @@ export function PeachDreamHub() {
 
   return (
     <div className="relative min-h-dvh bg-bg px-5 py-16 sm:px-10 sm:py-20 md:px-16">
-      <div className="mx-auto w-full max-w-[620px] md:ml-[6vw]">
-        <p className="sys-meta">001</p>
-        <h1 className="mt-4 font-sans text-[30px] font-normal text-ink sm:text-[36px]">
-          仙桃梦
-        </h1>
-        <p className="mt-2 font-mono text-[12px] tracking-[0.08em] text-sys">
-          PEACH DREAM
-        </p>
-        <p className="mt-6 font-mono text-[11px] tracking-[0.08em] text-sys">
-          MEDICAL NEURAL PROGRAM
-        </p>
-        <p className="mt-2 sys-meta">RECOVERED 91%</p>
+      <div className="story-content mx-auto md:ml-[6vw]">
+        <p className="sys-meta">ARCHIVE / 001</p>
+        <h1 className="title-specimen mt-4 text-ink">仙桃梦</h1>
+        <p className="aux-en mt-2">PEACH DREAM</p>
+        <p className="aux-en mt-6">MEDICAL NEURAL PROGRAM</p>
+        <p className="aux-en mt-1">RECOVERED 91%</p>
 
-        <div className="mt-16 space-y-10">
+        <div className="mt-16 space-y-4">
           <Entry
             index="01"
             title="仙桃梦的故事"
             en="STORY ARCHIVE"
+            action="阅读完整档案"
             onClick={() => {
               audio.click();
               go("story");
             }}
           />
+          <Rule className="my-8" />
           <Entry
             index="02"
             title="构成代码"
             en="CONSTITUTION CODE"
+            action="查看样本构成"
             onClick={() => {
               audio.click();
               go("constitution");
@@ -55,21 +52,24 @@ function Entry({
   index,
   title,
   en,
+  action,
   onClick,
 }: {
   index: string;
   title: string;
   en: string;
+  action: string;
   onClick: () => void;
 }) {
   return (
     <button type="button" onClick={onClick} className="block w-full text-left">
-      <Rule className="mb-6" />
       <p className="sys-meta">{index}</p>
-      <p className="mt-3 font-sans text-[22px] font-normal text-ink sm:text-[26px]">
-        {title}
+      <p className="title-archive mt-3 text-ink">{title}</p>
+      <p className="aux-en mt-2">{en}</p>
+      <p className="mt-4 font-sans text-[13px] text-green">
+        {action}
+        <span className="ml-2">→</span>
       </p>
-      <p className="mt-2 font-mono text-[12px] tracking-[0.08em] text-sys">{en}</p>
     </button>
   );
 }

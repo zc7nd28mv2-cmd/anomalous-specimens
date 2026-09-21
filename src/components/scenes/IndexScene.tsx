@@ -12,14 +12,10 @@ export function IndexScene({ onAccess }: { onAccess: () => void }) {
 
   return (
     <div className="relative min-h-dvh bg-bg px-5 py-16 sm:px-10 sm:py-20 md:px-16">
-      <div className="mx-auto w-full max-w-[640px] md:ml-[6vw]">
+      <div className="story-content mx-auto md:ml-[6vw]">
         <div className="rise">
-          <h1 className="font-sans text-[28px] font-medium tracking-[0.04em] text-ink sm:text-[36px]">
-            {SYSTEM.titleZh}
-          </h1>
-          <p className="mt-3 font-mono text-[12px] tracking-[0.08em] text-sys">
-            {SYSTEM.title}
-          </p>
+          <h1 className="title-system text-ink">{SYSTEM.titleZh}</h1>
+          <p className="aux-en mt-3">{SYSTEM.title}</p>
           <p className="mt-8 font-sans text-[13px] text-mute">{SYSTEM.index}</p>
         </div>
 
@@ -30,12 +26,8 @@ export function IndexScene({ onAccess }: { onAccess: () => void }) {
               <p className="sys-meta">{specimen.id}</p>
               {specimen.locked ? (
                 <div>
-                  <h2 className="mt-4 font-sans text-[30px] font-normal text-mute sm:text-[36px]">
-                    {specimen.title}
-                  </h2>
-                  <p className="mt-2 font-mono text-[12px] tracking-[0.08em] text-sys">
-                    {specimen.name}
-                  </p>
+                  <h2 className="title-specimen mt-4 text-mute">{specimen.title}</h2>
+                  <p className="aux-en mt-2">{specimen.name}</p>
                 </div>
               ) : (
                 <button
@@ -46,20 +38,14 @@ export function IndexScene({ onAccess }: { onAccess: () => void }) {
                   }}
                   className="block text-left"
                 >
-                  <h2 className="mt-4 font-sans text-[30px] font-normal text-ink sm:text-[36px]">
-                    {specimen.title}
-                  </h2>
-                  <p className="mt-2 font-mono text-[12px] tracking-[0.08em] text-sys">
-                    {specimen.name}
-                  </p>
+                  <h2 className="title-specimen mt-4 text-ink">{specimen.title}</h2>
+                  <p className="aux-en mt-2">{specimen.name}</p>
                 </button>
               )}
               {specimen.kind ? (
-                <p className="mt-5 font-mono text-[11px] tracking-[0.08em] text-sys">
-                  MEDICAL NEURAL PROGRAM
-                </p>
+                <p className="aux-en mt-5">MEDICAL NEURAL PROGRAM</p>
               ) : null}
-              <p className="mt-2 sys-meta">
+              <p className="aux-en mt-2">
                 {specimen.locked ? "RESTRICTED" : "RECOVERED 91%"}
               </p>
               <p className="mt-2 font-sans text-[13px] text-mute">

@@ -9,8 +9,9 @@ import {
   charInterval,
   DIALOGUE,
   LOG_AFTER,
+  TYPING_INDICATOR_DELAY,
+  messagePause,
   type DialogueBeat,
-  type Pace,
 } from "@/lib/dialogue";
 import { SENSORY, type SensoryId } from "@/lib/sensory";
 import { SOURCE_BIND, SOURCE_BOOT } from "@/lib/source";
@@ -46,21 +47,18 @@ function nameOf(speaker: "LIN" | "KAI" | null) {
   return "";
 }
 
-function speakerWait(pace: Pace) {
-  switch (pace) {
-    case "faster":
-      return 260;
-    case "fast":
-      return 420;
-    case "normal":
-      return 640;
-    case "slow":
-      return 980;
-    case "crawl":
-      return 1400;
-    default:
-      return 640;
+function pausePhase(index: number) {
+  const seen = DIALOGUE.slice(0, index + 1);
+  if (seen.some((item) => item.kind === "lost")) {
+    return "lost" as const;
   }
+  if (seen.some((item) => item.kind === "warn")) {
+    return "warn" as const;
+  }
+  if (index >= 13) {
+    return "mid" as const;
+  }
+  return "early" as const;
 }
 
 export function FieldRecord({ onComplete }: { onComplete: () => void }) {
@@ -77,6 +75,8 @@ export function FieldRecord({ onComplete }: { onComplete: () => void }) {
   const force = useRef(false);
   const keys = useRef(0);
   const end = useRef<HTMLDivElement>(null);
+  const scroller = useRef<HTMLDivElement>(null);
+  const pinBottom = useRef(true);
 
   const nextKey = () => {
     keys.current += 1;
@@ -88,6 +88,9 @@ export function FieldRecord({ onComplete }: { onComplete: () => void }) {
   }, []);
 
   useEffect(() => {
+    if (!pinBottom.current) {
+      return;
+    }
     end.current?.scrollIntoView({ block: "end" });
   }, [log, draft, indicator, choice]);
 
@@ -177,6 +180,7 @@ export function FieldRecord({ onComplete }: { onComplete: () => void }) {
         setIndicator("");
         setTyping(true);
         let i = 0;
+        const hold = beat.freeze ?? messagePause(pausePhase(index));
         const tick = () => {
           if (force.current) {
             setDraft(beat.text);
@@ -189,7 +193,7 @@ export function FieldRecord({ onComplete }: { onComplete: () => void }) {
                 text: beat.text,
               });
               audio.message();
-              later(advance, beat.freeze ?? beat.hold ?? 420);
+              later(advance, hold);
             }, 40);
             return;
           }
@@ -207,14 +211,14 @@ export function FieldRecord({ onComplete }: { onComplete: () => void }) {
               });
               setDraft("");
               audio.message();
-              later(advance, beat.freeze ?? beat.hold ?? 420);
+              later(advance, hold);
             }, 50);
             return;
           }
           later(tick, charInterval(beat.pace, beat.text[i] ?? ""));
         };
         later(tick, charInterval(beat.pace, beat.text[0] ?? ""));
-      }, beat.speaker ? speakerWait(beat.pace) : 160);
+      }, TYPING_INDICATOR_DELAY);
     }
 
     return () => {
@@ -277,8 +281,17 @@ export function FieldRecord({ onComplete }: { onComplete: () => void }) {
 
   return (
     <div
+      ref={scroller}
+      onScroll={() => {
+        const node = scroller.current;
+        if (!node) {
+          return;
+        }
+        pinBottom.current =
+          node.scrollHeight - node.scrollTop - node.clientHeight < 56;
+      }}
       className={cn(
-        "px-4 py-5 sm:px-6",
+        "chat-content px-5 py-4",
         unstable && "bg-[rgba(104,26,23,0.08)]",
       )}
     >

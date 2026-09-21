@@ -84,22 +84,29 @@ export const LOG_AFTER = [
   "终止协议已被人为移除。",
 ] as const;
 
-export function charInterval(pace: Pace, char: string) {
-  if (char === "…" || char === "。") {
-    return pace === "crawl" ? 220 : 140;
+const PUNCT = new Set(["，", "。", "……", "…", "？", "！", "：", ",", ".", "?", "!", ":"]);
+
+export const TYPING_INDICATOR_DELAY = 700;
+
+export function charInterval(_pace: Pace, char: string) {
+  const base = 65 + Math.random() * 35;
+  if (PUNCT.has(char) || char === "…") {
+    return base + 150 + Math.random() * 150;
   }
-  switch (pace) {
-    case "faster":
-      return 22;
-    case "fast":
-      return 30;
-    case "normal":
-      return 42;
-    case "slow":
-      return 64;
-    case "crawl":
-      return 90;
+  return base;
+}
+
+export function messagePause(phase: "early" | "mid" | "warn" | "lost") {
+  switch (phase) {
+    case "early":
+      return 900 + Math.random() * 200;
+    case "mid":
+      return 1000 + Math.random() * 400;
+    case "warn":
+      return 700 + Math.random() * 300;
+    case "lost":
+      return 500 + Math.random() * 300;
     default:
-      return 42;
+      return 1000;
   }
 }

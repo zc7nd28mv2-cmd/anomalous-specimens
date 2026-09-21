@@ -6,9 +6,11 @@ import { cn } from "@/lib/cn";
 export function BackLink({
   onClick,
   className,
+  label = "返回",
 }: {
   onClick: () => void;
   className?: string;
+  label?: string;
 }) {
   const audio = useAudio();
 
@@ -25,7 +27,7 @@ export function BackLink({
         className,
       )}
     >
-      ← 返回
+      ← {label}
     </button>
   );
 }

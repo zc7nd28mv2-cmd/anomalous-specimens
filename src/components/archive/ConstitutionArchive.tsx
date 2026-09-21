@@ -9,34 +9,22 @@ export function ConstitutionArchive() {
 
   return (
     <div className="relative min-h-dvh bg-bg px-5 py-16 sm:px-10 sm:py-20 md:px-16">
-      <div className="mx-auto w-full max-w-[620px] md:ml-[6vw]">
-        <p className="sys-meta">02 / 构成代码</p>
-        <h1 className="mt-4 font-sans text-[26px] font-normal text-ink sm:text-[32px]">
-          {CONSTITUTION.title}
-        </h1>
-        <p className="mt-2 font-mono text-[12px] tracking-[0.08em] text-sys">
-          {CONSTITUTION.en}
-        </p>
+      <div className="story-content mx-auto md:ml-[6vw]">
+        <p className="sys-meta">ARCHIVE / 001</p>
+        <p className="aux-en mt-2">02 / CONSTITUTION CODE</p>
+        <h1 className="title-archive mt-5 text-ink">{CONSTITUTION.title}</h1>
+        <p className="aux-en mt-2">{CONSTITUTION.en}</p>
 
         <div className="mt-14 space-y-12">
           {CONSTITUTION.groups.map((group) => (
             <section key={group.id}>
-              <p className="font-mono text-[11px] tracking-[0.12em] text-sys">
-                {group.id} / {group.en}
-              </p>
-              <p className="mt-2 font-sans text-[14px] text-mute">【{group.zh}】</p>
-              <ul className="mt-5 space-y-2">
-                {group.items.map((item) => (
-                  <li key={item} className="story-body">
-                    {item}
-                  </li>
-                ))}
-              </ul>
+              <p className="font-sans text-[14px] text-ink">【{group.zh}】</p>
+              <p className="story-body mt-4">{group.items.join(" / ")}</p>
             </section>
           ))}
         </div>
 
-        <BackLink onClick={() => go("specimen")} />
+        <BackLink label="返回 仙桃梦" onClick={() => go("specimen")} />
       </div>
     </div>
   );
