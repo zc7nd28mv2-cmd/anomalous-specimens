@@ -381,6 +381,14 @@ body {
   overflow-wrap: break-word;
 }
 
+.compose-items.is-plate {
+  display: inline-block;
+  max-width: 100%;
+  padding: 0 12px;
+  background: #2d6638;
+  color: #59e878;
+}
+
 @keyframes compose-run {
   0%,
   100% {

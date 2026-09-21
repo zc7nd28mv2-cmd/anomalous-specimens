@@ -54,7 +54,7 @@ function NoteBlock({
       <p className="font-sans text-[14px] text-ink">{title}</p>
       <p className="compose-code mt-3">{trace}</p>
       <p className="compose-result mt-5">{CONSTITUTION.result}</p>
-      <p className="compose-items mt-4">{items}</p>
+      <p className="compose-items is-plate mt-4">{items}</p>
     </section>
   );
 }
