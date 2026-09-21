@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAfter } from "@/hooks/useReveal";
 import { useScaledMs } from "@/hooks/useTiming";
 import { useAudio } from "@/context/AudioContext";
@@ -182,6 +182,13 @@ function DenyLog() {
 }
 
 function FlashOut({ onDone }: { onDone: () => void }) {
-  useAfter(140, onDone, true);
+  const done = useRef(onDone);
+  useEffect(() => {
+    done.current = onDone;
+  }, [onDone]);
+  useEffect(() => {
+    const id = window.setTimeout(() => done.current(), 140);
+    return () => window.clearTimeout(id);
+  }, []);
   return <div className="still-overlay" />;
 }

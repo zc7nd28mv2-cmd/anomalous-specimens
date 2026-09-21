@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useAfter } from "@/hooks/useReveal";
-import { useScaledMs } from "@/hooks/useTiming";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   YUME_LINES,
   classifyYumeLines,
@@ -17,7 +15,7 @@ function irregular(min: number, max: number) {
 function nextStep(index: number, kinds: readonly YumeLineKind[]) {
   const kind = kinds[index] ?? "code";
   if (kind === "blank") {
-    return { add: 1, wait: 16 };
+    return { add: 1, wait: 20 };
   }
   if (kind === "comment") {
     return { add: 1, wait: irregular(90, 160) };
@@ -28,14 +26,18 @@ function nextStep(index: number, kinds: readonly YumeLineKind[]) {
       add += 1;
     }
   }
-  return { add, wait: irregular(32, 78) };
+  return { add, wait: irregular(36, 80) };
 }
 
 export function YumeProtocol({ onHoldDone }: { onHoldDone: () => void }) {
-  const scale = useScaledMs();
   const kinds = useMemo(() => classifyYumeLines(YUME_LINES), []);
-  const [shown, setShown] = useState(0);
+  const hold = useRef(onHoldDone);
+  const [shown, setShown] = useState(1);
   const finished = shown >= YUME_LINES.length;
+
+  useEffect(() => {
+    hold.current = onHoldDone;
+  }, [onHoldDone]);
   const tokens = useMemo(
     () => highlightYumeLines(YUME_LINES.slice(0, shown)),
     [shown],
@@ -48,11 +50,17 @@ export function YumeProtocol({ onHoldDone }: { onHoldDone: () => void }) {
     const step = nextStep(shown, kinds);
     const id = window.setTimeout(() => {
       setShown((value) => Math.min(YUME_LINES.length, value + step.add));
-    }, scale(step.wait));
+    }, step.wait);
     return () => window.clearTimeout(id);
-  }, [kinds, scale, shown]);
+  }, [kinds, shown]);
 
-  useAfter(4000, onHoldDone, finished);
+  useEffect(() => {
+    if (!finished) {
+      return;
+    }
+    const id = window.setTimeout(() => hold.current(), 4000);
+    return () => window.clearTimeout(id);
+  }, [finished]);
 
   return (
     <div className="yume-view">
