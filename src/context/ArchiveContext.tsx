@@ -11,14 +11,6 @@ import {
   type ReactNode,
 } from "react";
 import { FOLDER_FILES, type FileId, type FolderId } from "@/lib/folders";
-import {
-  EMPTY_FIELD,
-  clearFieldSession,
-  isYumeStoryPhase,
-  loadFieldSession,
-  writeFieldSession,
-  type FieldSession,
-} from "@/lib/field-session";
 
 export type Phase =
   | "boot"
@@ -38,17 +30,11 @@ type ArchiveContextValue = {
   pd001Done: boolean;
   autoOpenPd001: boolean;
   startFinale: boolean;
-  fieldOpen: boolean;
-  field: FieldSession;
   go: (phase: Phase) => void;
   openFolder: (id: FolderId) => void;
   openFile: (id: FileId) => void;
   closeReader: () => void;
   finishPd001: () => void;
-  openField: () => void;
-  closeField: () => void;
-  persistField: (patch: Partial<FieldSession>) => void;
-  patchField: (patch: Partial<FieldSession>) => void;
   resetYumeMomoStory: () => void;
 };
 
@@ -65,6 +51,17 @@ const PHASES: Phase[] = [
   "unknown",
   "ending",
 ];
+
+function isYumeStoryPhase(phase: string) {
+  return (
+    phase === "specimen" ||
+    phase === "story" ||
+    phase === "constitution" ||
+    phase === "pd001" ||
+    phase === "unknown" ||
+    phase === "ending"
+  );
+}
 
 function readSearch() {
   return new URLSearchParams(window.location.search);
@@ -107,22 +104,13 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
   const [folder, setFolder] = useState<FolderId | null>(null);
   const [file, setFile] = useState<FileId | null>(null);
   const [pd001Done, setPd001Done] = useState(false);
-  const [fieldOpen, setFieldOpen] = useState(autoOpenPd001);
-  const [field, setField] = useState<FieldSession>(loadFieldSession);
-  const fieldRef = useRef<FieldSession>(field);
-  const persistAllowed = useRef(true);
 
   const current = phase ?? urlPhase ?? "boot";
   const currentRef = useRef(current);
   currentRef.current = current;
 
   const resetYumeMomoStory = useCallback(() => {
-    persistAllowed.current = false;
-    setFieldOpen(false);
     setPd001Done(false);
-    fieldRef.current = EMPTY_FIELD;
-    setField(EMPTY_FIELD);
-    clearFieldSession();
   }, []);
 
   const go = useCallback(
@@ -132,8 +120,6 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       const from = currentRef.current;
       if (isYumeStoryPhase(from) && !isYumeStoryPhase(dest)) {
         resetYumeMomoStory();
-      } else if (isYumeStoryPhase(dest)) {
-        persistAllowed.current = true;
       }
       setPhase(dest);
       setFolder(null);
@@ -162,35 +148,6 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
     setPd001Done(true);
   }, []);
 
-  const openField = useCallback(() => {
-    setFieldOpen(true);
-  }, []);
-
-  const closeField = useCallback(() => {
-    setFieldOpen(false);
-  }, []);
-
-  const persistField = useCallback((patch: Partial<FieldSession>) => {
-    if (!persistAllowed.current) {
-      return;
-    }
-    const next = { ...fieldRef.current, ...patch };
-    fieldRef.current = next;
-    writeFieldSession(next);
-  }, []);
-
-  const patchField = useCallback((patch: Partial<FieldSession>) => {
-    if (!persistAllowed.current) {
-      return;
-    }
-    setField((prev) => {
-      const next = { ...prev, ...patch };
-      fieldRef.current = next;
-      writeFieldSession(next);
-      return next;
-    });
-  }, []);
-
   const value = useMemo(
     () => ({
       phase: current,
@@ -199,35 +156,23 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       pd001Done,
       autoOpenPd001,
       startFinale,
-      fieldOpen,
-      field,
       go,
       openFolder,
       openFile,
       closeReader,
       finishPd001,
-      openField,
-      closeField,
-      persistField,
-      patchField,
       resetYumeMomoStory,
     }),
     [
       autoOpenPd001,
-      closeField,
       closeReader,
       current,
-      field,
-      fieldOpen,
       file,
       finishPd001,
       folder,
       go,
-      openField,
       openFile,
       openFolder,
-      patchField,
-      persistField,
       pd001Done,
       resetYumeMomoStory,
       startFinale,
