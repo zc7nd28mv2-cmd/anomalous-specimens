@@ -1,11 +1,37 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useArchive } from "@/context/ArchiveContext";
 import { BackLink } from "@/components/system/BackLink";
+import { startNoteStreams, type NoteStreamId } from "@/lib/code-stream";
 import { CONSTITUTION } from "@/lib/constitution";
+import { cn } from "@/lib/cn";
 
 export function ConstitutionArchive() {
   const { go } = useArchive();
+  const [topStream, setTopStream] = useState<string>(CONSTITUTION.traces["01"]);
+  const [heartStream, setHeartStream] = useState<string>(CONSTITUTION.traces["02"]);
+  const [baseStream, setBaseStream] = useState<string>(CONSTITUTION.traces["03"]);
+  const [running, setRunning] = useState({
+    top: true,
+    heart: true,
+    base: true,
+  });
+  useEffect(() => {
+    const setters = {
+      top: setTopStream,
+      heart: setHeartStream,
+      base: setBaseStream,
+    };
+    return startNoteStreams(
+      (id: NoteStreamId, text: string) => {
+        setters[id](text);
+      },
+      (id) => {
+        setRunning((current) => ({ ...current, [id]: false }));
+      },
+    );
+  }, []);
 
   return (
     <div className="relative min-h-dvh overflow-x-hidden bg-bg px-5 py-16 sm:px-10 sm:py-20 md:px-16">
@@ -19,17 +45,20 @@ export function ConstitutionArchive() {
         <div className="mt-10 space-y-10">
           <NoteBlock
             title={`【${CONSTITUTION.groups[0].zh}】`}
-            trace={CONSTITUTION.traces["01"]}
+            trace={topStream}
+            running={running.top}
             items={CONSTITUTION.groups[0].items.join(" / ")}
           />
           <NoteBlock
             title={`【${CONSTITUTION.groups[1].zh}】`}
-            trace={CONSTITUTION.traces["02"]}
+            trace={heartStream}
+            running={running.heart}
             items={CONSTITUTION.groups[1].items.join(" / ")}
           />
           <NoteBlock
             title={`【${CONSTITUTION.groups[2].zh}】`}
-            trace={CONSTITUTION.traces["03"]}
+            trace={baseStream}
+            running={running.base}
             items={CONSTITUTION.groups[2].items.join(" / ")}
           />
         </div>
@@ -43,16 +72,18 @@ export function ConstitutionArchive() {
 function NoteBlock({
   title,
   trace,
+  running,
   items,
 }: {
   title: string;
   trace: string;
+  running: boolean;
   items: string;
 }) {
   return (
     <section>
       <p className="font-sans text-[14px] text-ink">{title}</p>
-      <p className="compose-code mt-3">{trace}</p>
+      <p className={cn("compose-code mt-3", running && "is-run")}>{trace}</p>
       <p className="compose-result mt-5">{CONSTITUTION.result}</p>
       <p className="compose-items is-plate mt-4">{items}</p>
     </section>
