@@ -991,6 +991,23 @@ body {
   }
 }
 
+@keyframes warn-cluster-in {
+  from {
+    opacity: 0;
+    transform: translate(
+      calc(-50% + var(--shift-x) * var(--cluster-scale) * 1px),
+      calc(-50% + var(--shift-y) * var(--cluster-scale) * 1px + 6px)
+    );
+  }
+  to {
+    opacity: 1;
+    transform: translate(
+      calc(-50% + var(--shift-x) * var(--cluster-scale) * 1px),
+      calc(-50% + var(--shift-y) * var(--cluster-scale) * 1px)
+    );
+  }
+}
+
 .fail-root {
   pointer-events: none;
   position: fixed;
@@ -1073,6 +1090,68 @@ body {
   max-width: min(500px, calc(100vw - 48px));
 }
 
+.fail-root {
+  --cluster-scale: 1;
+}
+
+.fail-panel.is-cluster {
+  top: 50%;
+  left: 50%;
+  right: auto;
+  bottom: auto;
+  width: 320px;
+  min-width: 280px;
+  max-width: min(420px, calc(100vw - 48px));
+  height: auto;
+  min-height: 148px;
+  padding: 26px 32px;
+  border: 1px solid #681a17;
+  box-shadow: none;
+  text-align: center;
+  transform: translate(
+    calc(-50% + var(--shift-x, 0) * var(--cluster-scale) * 1px),
+    calc(-50% + var(--shift-y, 0) * var(--cluster-scale) * 1px)
+  );
+}
+
+.fail-panel.is-cluster.is-size-medium {
+  width: 320px;
+  min-height: 156px;
+}
+
+.fail-panel.is-cluster.is-size-wide {
+  width: 380px;
+  min-height: 188px;
+  padding: 26px 34px;
+}
+
+.fail-panel.is-cluster.is-size-tall {
+  width: 300px;
+  min-height: 220px;
+  padding: 32px 28px;
+}
+
+.fail-panel.is-cluster.is-size-midwide {
+  width: 360px;
+  min-height: 176px;
+  padding: 26px 32px;
+}
+
+.fail-panel.is-cluster.is-size-large {
+  width: 400px;
+  min-height: 228px;
+  padding: 30px 34px;
+}
+
+.fail-panel.is-cluster.is-in {
+  animation: warn-cluster-in 90ms ease-out forwards;
+}
+
+.fail-panel-copy {
+  width: 100%;
+  text-align: center;
+}
+
 .fail-panel.is-in {
   animation: fail-in 180ms ease-out forwards;
 }
@@ -1114,6 +1193,27 @@ body {
   right: max(16px, 4vw);
   left: auto;
   transform: none;
+}
+
+.fail-panel.is-cluster.is-anchor-tl,
+.fail-panel.is-cluster.is-anchor-tr,
+.fail-panel.is-cluster.is-anchor-bl,
+.fail-panel.is-cluster.is-anchor-br {
+  top: 50%;
+  left: 50%;
+  right: auto;
+  bottom: auto;
+  transform: translate(
+    calc(-50% + var(--shift-x, 0) * var(--cluster-scale) * 1px),
+    calc(-50% + var(--shift-y, 0) * var(--cluster-scale) * 1px)
+  );
+}
+
+.fail-panel.is-cluster.is-anchor-tl.is-in,
+.fail-panel.is-cluster.is-anchor-tr.is-in,
+.fail-panel.is-cluster.is-anchor-bl.is-in,
+.fail-panel.is-cluster.is-anchor-br.is-in {
+  animation: warn-cluster-in 90ms ease-out forwards;
 }
 
 .fail-panel.is-anchor-tl.is-in,
@@ -1369,28 +1469,28 @@ body {
   .fail-panel.is-size-medium,
   .fail-panel.is-size-tall,
   .fail-panel.is-size-wide,
-  .fail-panel.is-size-large {
+  .fail-panel.is-size-large,
+  .fail-panel.is-cluster,
+  .fail-panel.is-cluster.is-size-medium,
+  .fail-panel.is-cluster.is-size-wide,
+  .fail-panel.is-cluster.is-size-tall,
+  .fail-panel.is-cluster.is-size-midwide,
+  .fail-panel.is-cluster.is-size-large {
     max-width: calc(100vw - 24px);
   }
 
-  .fail-panel.is-anchor-tl {
-    top: 12px;
-    left: 12px;
+  .fail-root {
+    --cluster-scale: 0.46;
   }
 
-  .fail-panel.is-anchor-tr {
-    top: 12px;
-    right: 12px;
-  }
-
-  .fail-panel.is-anchor-bl {
-    bottom: 12px;
-    left: 12px;
-  }
-
-  .fail-panel.is-anchor-br {
-    bottom: 12px;
-    right: 12px;
+  .fail-panel.is-cluster.is-anchor-tl,
+  .fail-panel.is-cluster.is-anchor-tr,
+  .fail-panel.is-cluster.is-anchor-bl,
+  .fail-panel.is-cluster.is-anchor-br {
+    top: 50%;
+    left: 50%;
+    right: auto;
+    bottom: auto;
   }
 
   .scan-root {
@@ -1452,6 +1552,23 @@ body {
   .fail-panel.is-anchor-bl.is-out,
   .fail-panel.is-anchor-br.is-out {
     transform: none;
+  }
+
+  .fail-panel.is-cluster.is-in,
+  .fail-panel.is-cluster.is-out,
+  .fail-panel.is-cluster.is-anchor-tl.is-in,
+  .fail-panel.is-cluster.is-anchor-tr.is-in,
+  .fail-panel.is-cluster.is-anchor-bl.is-in,
+  .fail-panel.is-cluster.is-anchor-br.is-in,
+  .fail-panel.is-cluster.is-anchor-tl.is-out,
+  .fail-panel.is-cluster.is-anchor-tr.is-out,
+  .fail-panel.is-cluster.is-anchor-bl.is-out,
+  .fail-panel.is-cluster.is-anchor-br.is-out {
+    animation: none;
+    transform: translate(
+      calc(-50% + var(--shift-x, 0) * var(--cluster-scale) * 1px),
+      calc(-50% + var(--shift-y, 0) * var(--cluster-scale) * 1px)
+    );
   }
 
   .rise,

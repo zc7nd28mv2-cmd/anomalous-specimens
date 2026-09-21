@@ -122,6 +122,21 @@ export function playAlert() {
   }, 90);
 }
 
+export function playWarningSound(level: 1 | 2 | 3 | 4 | 5) {
+  if (level === 1) {
+    playAlert();
+    return;
+  }
+  const table = {
+    2: { freq: 148, dur: 0.09, type: "sawtooth" as const, gain: 0.034 },
+    3: { freq: 118, dur: 0.11, type: "square" as const, gain: 0.03 },
+    4: { freq: 156, dur: 0.08, type: "sawtooth" as const, gain: 0.033 },
+    5: { freq: 108, dur: 0.13, type: "sawtooth" as const, gain: 0.036 },
+  } as const;
+  const spec = table[level];
+  tone(spec);
+}
+
 export function playResult() {
   tone({ freq: 480, dur: 0.055, type: "triangle", gain: 0.028 });
   window.setTimeout(() => {

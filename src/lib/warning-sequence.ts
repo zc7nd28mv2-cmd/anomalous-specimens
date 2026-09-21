@@ -16,7 +16,13 @@ export type WarningSequenceState =
 
 export type WarningAnchor = "center" | "tl" | "tr" | "bl" | "br";
 
-export type WarningSize = "compact" | "medium" | "tall" | "wide" | "large";
+export type WarningSize = "medium" | "wide" | "tall" | "midwide" | "large";
+
+export type WarningShift = {
+  x: number;
+  y: number;
+  z: number;
+};
 
 export type WarningBurst = "off" | "soft" | "mid" | "hard";
 
@@ -40,7 +46,7 @@ export const WARNING_SCREENS: readonly WarningScreen[] = [
   {
     id: "warning_01",
     anchor: "center",
-    size: "compact",
+    size: "medium",
     kicker: "⚠ WARNING!",
     title: "Host vital signs are declining.",
     lines: [],
@@ -49,7 +55,7 @@ export const WARNING_SCREENS: readonly WarningScreen[] = [
   {
     id: "warning_02",
     anchor: "tl",
-    size: "medium",
+    size: "wide",
     kicker: "⚠ SYSTEM WARNING",
     title: "CODE INTRUSION DETECTED",
     lines: ["UNAUTHORIZED CODE", "HAS ENTERED THE NEURAL ARCHIVE"],
@@ -67,7 +73,7 @@ export const WARNING_SCREENS: readonly WarningScreen[] = [
   {
     id: "warning_04",
     anchor: "bl",
-    size: "wide",
+    size: "midwide",
     kicker: "⚠ SYSTEM WARNING",
     title: "SYSTEM INTEGRITY FAILURE",
     lines: ["NEURAL ARCHIVE", "IS NO LONGER STABLE"],
@@ -100,7 +106,7 @@ export function buildWarningTimeline(): WarningBeat[] {
   const afterFirst = randomRange(700, 1200);
   const gap03 = randomRange(70, 180);
   const gap04 = randomRange(150, 300);
-  const gap05 = randomRange(100, 250);
+  const gap05 = randomRange(80, 220);
   const hold = randomRange(1800, 2200);
   const flicker02 = randomRange(40, 70);
   const flicker03 = randomRange(50, 85);
@@ -192,4 +198,49 @@ export function isCollapseFlash(phase: WarningSequenceState) {
 
 export function isCollapseCut(phase: WarningSequenceState) {
   return phase === "cut_a" || phase === "cut_b" || phase === "black";
+}
+
+export function warningLevel(phase: WarningSequenceState): 1 | 2 | 3 | 4 | 5 | 0 {
+  if (phase === "warning_01") {
+    return 1;
+  }
+  if (phase === "warning_02") {
+    return 2;
+  }
+  if (phase === "warning_03") {
+    return 3;
+  }
+  if (phase === "warning_04") {
+    return 4;
+  }
+  if (phase === "warning_05") {
+    return 5;
+  }
+  return 0;
+}
+
+export function buildWarningCluster(): Record<WarningAnchor, WarningShift> {
+  return {
+    center: { x: 0, y: 0, z: 310 },
+    tl: {
+      x: -142 + randomRange(-16, 18),
+      y: -78 + randomRange(-12, 14),
+      z: 314,
+    },
+    tr: {
+      x: 154 + randomRange(-14, 20),
+      y: -92 + randomRange(-10, 16),
+      z: 316,
+    },
+    bl: {
+      x: -128 + randomRange(-18, 12),
+      y: 86 + randomRange(-10, 14),
+      z: 313,
+    },
+    br: {
+      x: 162 + randomRange(-12, 16),
+      y: 98 + randomRange(-12, 14),
+      z: 317,
+    },
+  };
 }
