@@ -12,7 +12,6 @@ import {
   charInterval,
   DIALOGUE,
   TYPING_INDICATOR_DELAY,
-  KAI_HOLD_MS,
   messagePause,
   type DialogueBeat,
 } from "@/lib/dialogue";
@@ -333,6 +332,18 @@ export function FieldRecord({
   }
 
   function beginMatching() {
+    if (
+      statusRef.current === "matching_result" ||
+      statusRef.current === "post_matching_dialogue"
+    ) {
+      return;
+    }
+    if (analysisClearedRef.current) {
+      setStatusNow("post_matching_dialogue");
+      persistProgress();
+      playPostMatching();
+      return;
+    }
     const optionId = pickedOptionRef.current;
     const option = optionId
       ? SENSORY.see.options.find((item) => item.id === optionId)
@@ -343,22 +354,6 @@ export function FieldRecord({
     setStatusNow("matching_result");
     persistProgress();
     playing.current = false;
-  }
-
-  function startSelectedHold() {
-    if (holdTimerRef.current != null) {
-      return;
-    }
-    setIndicatorNow("");
-    setStatusNow("selected_sensory_result");
-    persistProgress();
-    holdTimerRef.current = window.setTimeout(() => {
-      holdTimerRef.current = null;
-      if (!activeRef.current) {
-        return;
-      }
-      beginMatching();
-    }, KAI_HOLD_MS);
   }
 
   function finishBranchesAndContinue() {
@@ -588,8 +583,7 @@ export function FieldRecord({
       if (picked.current) {
         playing.current = false;
         setChoiceNow(null);
-        setStatusNow("selected_sensory_result");
-        playCurrentBeat();
+        beginMatching();
         return;
       }
       scheduleDialogue(() => {
@@ -608,8 +602,7 @@ export function FieldRecord({
       if (picked.current) {
         setChoiceNow(null);
         setChoiceLeaving(false);
-        setStatusNow("selected_sensory_result");
-        playCurrentBeat();
+        beginMatching();
         return;
       }
       const beat = DIALOGUE[indexRef.current];
@@ -621,7 +614,7 @@ export function FieldRecord({
     }
 
     if (currentStatus === "selected_sensory_result") {
-      startSelectedHold();
+      beginMatching();
       return;
     }
 
@@ -684,9 +677,7 @@ export function FieldRecord({
           persistProgress();
           return;
         }
-        setStatusNow("selected_sensory_result");
-        persistProgress();
-        playCurrentBeat();
+        beginMatching();
         return;
       }
       playing.current = true;
@@ -951,9 +942,8 @@ export function FieldRecord({
     });
     audioRef.current.message();
     setChoiceLeaving(true);
-    setStatusNow("selected_sensory_result");
     persistProgress();
-    startSelectedHold();
+    beginMatching();
     clearTimer(fadeTimerRef);
     fadeTimerRef.current = window.setTimeout(() => {
       fadeTimerRef.current = null;
