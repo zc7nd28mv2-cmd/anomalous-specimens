@@ -10,7 +10,9 @@ import { AudioToggle } from "@/components/system/AudioToggle";
 import { BootScene } from "@/components/scenes/BootScene";
 import { IndexScene } from "@/components/scenes/IndexScene";
 import { AccessScene } from "@/components/scenes/AccessScene";
-import { PeachDreamDossier } from "@/components/archive/PeachDreamDossier";
+import { PeachDreamHub } from "@/components/archive/PeachDreamHub";
+import { StoryArchive } from "@/components/archive/StoryArchive";
+import { ConstitutionArchive } from "@/components/archive/ConstitutionArchive";
 
 function UnlockAudio() {
   const audio = useAudio();
@@ -43,12 +45,14 @@ function ArchiveInner() {
       {phase === "access" ? (
         <AccessScene onComplete={() => go("specimen")} />
       ) : null}
-      {phase === "specimen" ||
+      {phase === "specimen" ? <PeachDreamHub /> : null}
+      {phase === "story" ||
       phase === "pd001" ||
       phase === "unknown" ||
       phase === "ending" ? (
-        <PeachDreamDossier />
+        <StoryArchive />
       ) : null}
+      {phase === "constitution" ? <ConstitutionArchive /> : null}
     </div>
   );
 }

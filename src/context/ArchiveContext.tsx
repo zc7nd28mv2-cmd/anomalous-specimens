@@ -16,6 +16,8 @@ export type Phase =
   | "index"
   | "access"
   | "specimen"
+  | "story"
+  | "constitution"
   | "pd001"
   | "unknown"
   | "ending";
@@ -41,6 +43,8 @@ const PHASES: Phase[] = [
   "index",
   "access",
   "specimen",
+  "story",
+  "constitution",
   "pd001",
   "unknown",
   "ending",
@@ -53,7 +57,7 @@ function readSearch() {
 function readPhase(): Phase | null {
   const value = readSearch().get("scene");
   if (value === "pd001" || value === "unknown" || value === "ending") {
-    return "specimen";
+    return "story";
   }
   return PHASES.includes(value as Phase) ? (value as Phase) : null;
 }
@@ -91,7 +95,9 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
   const current = phase ?? urlPhase ?? "boot";
 
   const go = useCallback((next: Phase) => {
-    setPhase(next === "pd001" || next === "unknown" || next === "ending" ? "specimen" : next);
+    setPhase(
+      next === "pd001" || next === "unknown" || next === "ending" ? "story" : next,
+    );
     setFolder(null);
     setFile(null);
     window.scrollTo(0, 0);

@@ -30,7 +30,7 @@ export function BootScene({ onComplete }: { onComplete: () => void }) {
   return (
     <Stage>
       {step >= 1 ? (
-        <p className="font-sans text-[24px] font-medium tracking-[0.04em] text-ink sm:text-[32px]">
+        <p className="font-sans text-[28px] font-medium tracking-[0.04em] text-ink sm:text-[36px]">
           {SYSTEM.titleZh}
         </p>
       ) : null}

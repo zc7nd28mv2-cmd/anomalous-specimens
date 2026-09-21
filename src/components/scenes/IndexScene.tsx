@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Command } from "@/components/system/Command";
 import { Rule } from "@/components/system/Rule";
-import { SpecimenTag } from "@/components/system/SpecimenTag";
 import { SPECIMENS, SYSTEM } from "@/lib/content";
 import { useAudio } from "@/context/AudioContext";
 
@@ -15,10 +14,10 @@ export function IndexScene({ onAccess }: { onAccess: () => void }) {
     <div className="relative min-h-dvh bg-bg px-5 py-16 sm:px-10 sm:py-20 md:px-16">
       <div className="mx-auto w-full max-w-[640px] md:ml-[6vw]">
         <div className="rise">
-          <h1 className="font-sans text-[24px] font-medium tracking-[0.04em] text-ink sm:text-[32px]">
+          <h1 className="font-sans text-[28px] font-medium tracking-[0.04em] text-ink sm:text-[36px]">
             {SYSTEM.titleZh}
           </h1>
-          <p className="mt-3 font-mono text-[11px] tracking-[0.22em] text-sys">
+          <p className="mt-3 font-mono text-[12px] tracking-[0.08em] text-sys">
             {SYSTEM.title}
           </p>
           <p className="mt-8 font-sans text-[13px] text-mute">{SYSTEM.index}</p>
@@ -28,10 +27,13 @@ export function IndexScene({ onAccess }: { onAccess: () => void }) {
           {SPECIMENS.map((specimen) => (
             <section key={specimen.id} className="rise">
               <Rule className="mb-7" />
+              <p className="sys-meta">{specimen.id}</p>
               {specimen.locked ? (
                 <div>
-                  <SpecimenTag tone="dim">{specimen.title}</SpecimenTag>
-                  <p className="mt-3 font-mono text-[12px] tracking-[0.12em] text-sys">
+                  <h2 className="mt-4 font-sans text-[30px] font-normal text-mute sm:text-[36px]">
+                    {specimen.title}
+                  </h2>
+                  <p className="mt-2 font-mono text-[12px] tracking-[0.08em] text-sys">
                     {specimen.name}
                   </p>
                 </div>
@@ -44,17 +46,25 @@ export function IndexScene({ onAccess }: { onAccess: () => void }) {
                   }}
                   className="block text-left"
                 >
-                  <SpecimenTag>{specimen.title}</SpecimenTag>
-                  <p className="mt-3 font-mono text-[12px] tracking-[0.12em] text-sys">
+                  <h2 className="mt-4 font-sans text-[30px] font-normal text-ink sm:text-[36px]">
+                    {specimen.title}
+                  </h2>
+                  <p className="mt-2 font-mono text-[12px] tracking-[0.08em] text-sys">
                     {specimen.name}
                   </p>
                 </button>
               )}
-              <p className="mt-4 sys-meta">档案 / {specimen.id}</p>
               {specimen.kind ? (
-                <p className="mt-3 font-sans text-[13px] text-mute">{specimen.kind}</p>
+                <p className="mt-5 font-mono text-[11px] tracking-[0.08em] text-sys">
+                  MEDICAL NEURAL PROGRAM
+                </p>
               ) : null}
-              <p className="mt-2 sys-meta">状态 / {specimen.status}</p>
+              <p className="mt-2 sys-meta">
+                {specimen.locked ? "RESTRICTED" : "RECOVERED 91%"}
+              </p>
+              <p className="mt-2 font-sans text-[13px] text-mute">
+                状态 / {specimen.status}
+              </p>
 
               {specimen.locked ? (
                 <div>
@@ -68,7 +78,7 @@ export function IndexScene({ onAccess }: { onAccess: () => void }) {
                   ) : null}
                 </div>
               ) : (
-                <Command className="mt-5 act px-3 py-2" onClick={onAccess}>
+                <Command className="mt-5" onClick={onAccess}>
                   读取档案
                 </Command>
               )}
