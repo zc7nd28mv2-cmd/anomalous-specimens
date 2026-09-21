@@ -12,7 +12,7 @@ export function IndexScene({ onAccess }: { onAccess: () => void }) {
   return (
     <Stage>
       <div className="rise">
-        <p className="font-mono text-[11px] tracking-[0.26em] text-ink sm:text-[12px]">
+        <p className="phosphor font-mono text-[11px] tracking-[0.26em] text-ink sm:text-[12px]">
           {SYSTEM.title}
         </p>
         <p className="mt-2 font-mono text-[10px] tracking-[0.22em] text-dim sm:text-[11px]">

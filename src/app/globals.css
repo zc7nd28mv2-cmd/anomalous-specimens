@@ -3,11 +3,17 @@
 @theme inline {
   --color-bg: #050505;
   --color-bg-2: #0a0a0a;
+  --color-term: #050705;
   --color-ink: #e8e8e5;
   --color-mute: #8a8a86;
   --color-dim: #4a4a47;
   --color-line: #202020;
-  --color-danger: #b33a32;
+  --color-danger: #ff3b30;
+  --color-danger-dim: #681a17;
+  --color-green: #59e878;
+  --color-green-dim: #2d6638;
+  --color-green-border: #1e4d29;
+  --color-sys: #62625f;
   --font-sans: var(--font-zh), "Noto Sans SC", sans-serif;
   --font-mono: var(--font-sys), "IBM Plex Mono", ui-monospace, monospace;
 }
@@ -24,8 +30,8 @@ body {
 }
 
 ::selection {
-  background: #202020;
-  color: #e8e8e5;
+  background: #1e4d29;
+  color: #59e878;
 }
 
 @keyframes cursor-blink {
@@ -75,9 +81,24 @@ body {
   }
 }
 
-@keyframes dim-out {
-  to {
-    opacity: 0;
+@keyframes typing-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+@keyframes phosphor-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.82;
   }
 }
 
@@ -86,7 +107,7 @@ body {
   width: 0.52em;
   height: 1.05em;
   margin-left: 0.08em;
-  background: #e8e8e5;
+  background: currentColor;
   transform: translateY(0.14em);
   vertical-align: baseline;
 }
@@ -112,16 +133,63 @@ body {
   animation: fade 1000ms ease-out both;
 }
 
-.vanish {
-  animation: dim-out 1500ms ease-in forwards;
+.phosphor {
+  text-shadow: 0 0 8px rgba(232, 232, 229, 0.16);
+}
+
+.phosphor-green {
+  text-shadow: 0 0 8px rgba(89, 232, 120, 0.2);
+}
+
+.phosphor-red {
+  text-shadow: 0 0 8px rgba(255, 59, 48, 0.22);
+}
+
+.crt-scan {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.018) 0,
+    rgba(255, 255, 255, 0.018) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  opacity: 0.035;
+}
+
+.crt-noise {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 41;
+  opacity: 0.025;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.35) 0.4px, transparent 0.4px);
+  background-size: 3px 3px;
+}
+
+.dialogue-box {
+  background: #050705;
+  border: 1px solid #1e4d29;
+  box-shadow: 0 0 8px rgba(80, 255, 110, 0.15);
+}
+
+.folder-plate {
+  border: 1px solid #202020;
+  background: #050505;
+}
+
+.folder-plate:hover {
+  border-color: #2d6638;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .cursor-glyph.is-blink,
   .micro-flicker,
   .rise,
-  .fade,
-  .vanish {
+  .fade {
     animation: none;
   }
 

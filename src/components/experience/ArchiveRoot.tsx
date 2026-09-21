@@ -1,99 +1,40 @@
 "use client";
 
-import { useCallback, useState, useSyncExternalStore } from "react";
-import { AbandonmentScene } from "@/components/scenes/AbandonmentScene";
-import { AccessScene } from "@/components/scenes/AccessScene";
-import { BootScene } from "@/components/scenes/BootScene";
-import { CityScene } from "@/components/scenes/CityScene";
-import { CodeScene } from "@/components/scenes/CodeScene";
-import { CorruptionScene } from "@/components/scenes/CorruptionScene";
-import { CriticalScene } from "@/components/scenes/CriticalScene";
-import { DossierScene } from "@/components/scenes/DossierScene";
-import { EndingScene } from "@/components/scenes/EndingScene";
-import { IndexScene } from "@/components/scenes/IndexScene";
-import { LeakScene } from "@/components/scenes/LeakScene";
-import { LogScene } from "@/components/scenes/LogScene";
-import { NoticeScene } from "@/components/scenes/NoticeScene";
-import { OriginScene } from "@/components/scenes/OriginScene";
-import { TerminationScene } from "@/components/scenes/TerminationScene";
-import { WakeScene } from "@/components/scenes/WakeScene";
-import { SystemChrome } from "@/components/system/SystemChrome";
+import { ArchiveProvider, useArchive } from "@/context/ArchiveContext";
 import { TimingProvider } from "@/hooks/useTiming";
-import { surfaceFor, type SceneId } from "@/lib/scenes";
-
-const SCENES: SceneId[] = [
-  "boot",
-  "index",
-  "access",
-  "dossier",
-  "origin",
-  "termination",
-  "abandonment",
-  "leak",
-  "city",
-  "log",
-  "notice",
-  "corruption",
-  "critical",
-  "code",
-  "wake",
-  "ending",
-];
-
-function parseScene(value: string | null): SceneId | null {
-  if (!value) {
-    return null;
-  }
-  return SCENES.includes(value as SceneId) ? (value as SceneId) : null;
-}
-
-function readScene() {
-  return parseScene(new URLSearchParams(window.location.search).get("scene"));
-}
+import { CRTOverlay } from "@/components/overlay/CRTOverlay";
+import { SystemChrome } from "@/components/system/SystemChrome";
+import { BootScene } from "@/components/scenes/BootScene";
+import { IndexScene } from "@/components/scenes/IndexScene";
+import { AccessScene } from "@/components/scenes/AccessScene";
+import { SpecimenHome } from "@/components/archive/SpecimenHome";
+import { ArchiveReader } from "@/components/archive/ArchiveReader";
+import { DialogueTerminal } from "@/components/dialogue/DialogueTerminal";
+import { UnknownSequence } from "@/components/finale/UnknownSequence";
 
 function ArchiveInner() {
-  const urlScene = useSyncExternalStore(
-    () => () => undefined,
-    readScene,
-    () => null,
-  );
-  const [scene, setScene] = useState<SceneId | null>(null);
-  const current = scene ?? urlScene ?? "boot";
-
-  const go = useCallback((next: SceneId) => {
-    setScene(next);
-    window.scrollTo(0, 0);
-  }, []);
+  const { phase, folder, go } = useArchive();
 
   return (
     <div className="min-h-dvh bg-bg">
-      <SystemChrome surface={surfaceFor(current)} />
-      {current === "boot" ? <BootScene onComplete={() => go("index")} /> : null}
-      {current === "index" ? <IndexScene onAccess={() => go("access")} /> : null}
-      {current === "access" ? <AccessScene onComplete={() => go("dossier")} /> : null}
-      {current === "dossier" ? (
-        <DossierScene onContinue={() => go("origin")} />
+      <CRTOverlay />
+      {phase !== "pd001" && phase !== "unknown" && phase !== "ending" ? (
+        <SystemChrome
+          surface={
+            phase === "boot" ? "void" : phase === "access" ? "archive" : "archive"
+          }
+        />
       ) : null}
-      {current === "origin" ? (
-        <OriginScene onContinue={() => go("termination")} />
+
+      {phase === "boot" ? <BootScene onComplete={() => go("index")} /> : null}
+      {phase === "index" ? <IndexScene onAccess={() => go("access")} /> : null}
+      {phase === "access" ? (
+        <AccessScene onComplete={() => go("specimen")} />
       ) : null}
-      {current === "termination" ? (
-        <TerminationScene onContinue={() => go("abandonment")} />
-      ) : null}
-      {current === "abandonment" ? (
-        <AbandonmentScene onContinue={() => go("leak")} />
-      ) : null}
-      {current === "leak" ? <LeakScene onContinue={() => go("city")} /> : null}
-      {current === "city" ? <CityScene onContinue={() => go("log")} /> : null}
-      {current === "log" ? <LogScene onComplete={() => go("notice")} /> : null}
-      {current === "notice" ? <NoticeScene onComplete={() => go("corruption")} /> : null}
-      {current === "corruption" ? (
-        <CorruptionScene onComplete={() => go("critical")} />
-      ) : null}
-      {current === "critical" ? <CriticalScene onComplete={() => go("code")} /> : null}
-      {current === "code" ? <CodeScene onComplete={() => go("wake")} /> : null}
-      {current === "wake" ? <WakeScene onComplete={() => go("ending")} /> : null}
-      {current === "ending" ? <EndingScene /> : null}
+      {phase === "specimen" && !folder ? <SpecimenHome /> : null}
+      {phase === "specimen" && folder ? <ArchiveReader /> : null}
+      {phase === "pd001" ? <DialogueTerminal /> : null}
+      {phase === "unknown" || phase === "ending" ? <UnknownSequence /> : null}
     </div>
   );
 }
@@ -101,7 +42,9 @@ function ArchiveInner() {
 export function ArchiveRoot() {
   return (
     <TimingProvider>
-      <ArchiveInner />
+      <ArchiveProvider>
+        <ArchiveInner />
+      </ArchiveProvider>
     </TimingProvider>
   );
 }

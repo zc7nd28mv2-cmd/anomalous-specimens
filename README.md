@@ -2,7 +2,8 @@
 
 A recovered neural archive. Not a storefront. Not a catalog.
 
-The system boots first. Specimens appear later. One record can be opened.
+The system boots first. Specimens appear later. One record can be opened
+and explored as folders, files, and a terminal log — not as slides.
 
 ## Run locally
 
