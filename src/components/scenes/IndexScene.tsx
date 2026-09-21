@@ -19,7 +19,7 @@ const INTEGRITY = [
 ] as const;
 
 const INTEGRITY_WAIT = [
-  80, 90, 70, 100, 85, 110, 90, 120, 95, 110, 100, 120, 130, 140, 150,
+  40, 45, 35, 50, 42, 55, 45, 60, 48, 55, 50, 60, 65, 70, 75,
 ] as const;
 
 function irregular(min: number, max: number) {
@@ -63,7 +63,7 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
           INTEGRITY_WAIT[step] ?? 240,
         );
       } else {
-        later(() => setRead({ kind: "granted" }), 360);
+        later(() => setRead({ kind: "granted" }), 180);
       }
     } else if (read.kind === "granted") {
       later(() => finish.current(), 520);
