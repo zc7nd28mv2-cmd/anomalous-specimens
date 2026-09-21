@@ -1,5 +1,5 @@
 import { DIALOGUE } from "@/lib/dialogue";
-import type { SensoryId } from "@/lib/sensory";
+import type { SensoryBranchId, SensoryId } from "@/lib/sensory";
 
 export type FieldLogItem =
   | { id: string; kind: "time"; text: string }
@@ -12,15 +12,34 @@ export type FieldLogItem =
   | { id: string; kind: "invest" }
   | { id: string; kind: "lost" };
 
-export type FieldStatus = "play" | "choice" | "hold" | "analysis" | "warn" | "after";
+export type StoryState =
+  | "intro"
+  | "kai_typing_before_choice"
+  | "sensory_choice"
+  | "selected_sensory_result"
+  | "matching_result"
+  | "post_matching_dialogue"
+  | "time_21_12_33"
+  | "time_21_18_02"
+  | "connection_lost";
+
+export type FieldStatus = StoryState | "warn" | "after";
 
 export type InvestGate = "idle" | "opening" | "recovering" | "open";
+
+export const SELECTED_SENSORY_ID = "kai-selected-sensory";
+export const BRANCH_MERGE_ID = "branch-merge-wait";
+
+export function branchLineId(optionId: SensoryBranchId, who: "lin" | "kai") {
+  return `branch-${optionId}-${who}`;
+}
 
 export type FieldState = {
   index: number;
   status: FieldStatus;
   log: FieldLogItem[];
   picked: boolean;
+  pickedOption: SensoryBranchId | null;
   choice: SensoryId | null;
   scroll: number;
   pinBottom: boolean;
@@ -36,9 +55,10 @@ export type FieldState = {
 
 export const EMPTY_FIELD: FieldState = {
   index: 0,
-  status: "play",
+  status: "intro",
   log: [],
   picked: false,
+  pickedOption: null,
   choice: null,
   scroll: 0,
   pinBottom: true,

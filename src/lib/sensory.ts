@@ -6,6 +6,43 @@ export type SensoryOption = {
   lines: string[];
 };
 
+export type SensoryBranchId = "01" | "02" | "03" | "04";
+
+export type SensoryBranch = {
+  option: string;
+  linResponse: string;
+  kaiResponse: string;
+};
+
+export const BRANCH_MERGE_TEXT = "它在等我。";
+
+export const sensoryBranches: Record<SensoryBranchId, SensoryBranch> = {
+  "01": {
+    option: "一颗熟透的桃子",
+    linResponse: "系统生成的？",
+    kaiResponse: "不是。",
+  },
+  "02": {
+    option: "潮湿的工业橡胶",
+    linResponse: "橡胶？你碰到接口了？",
+    kaiResponse: "湿的。贴着我。",
+  },
+  "03": {
+    option: "冰冷的化学气体",
+    linResponse: "那不是空气。",
+    kaiResponse: "已经进来了。",
+  },
+  "04": {
+    option: "烧焦后的残留物",
+    linResponse: "烧过了？",
+    kaiResponse: "还留着。",
+  },
+};
+
+export function isSensoryBranchId(id: string): id is SensoryBranchId {
+  return id === "01" || id === "02" || id === "03" || id === "04";
+}
+
 export const SENSORY: Record<
   SensoryId,
   { label: string; prompt: string; options: SensoryOption[] }

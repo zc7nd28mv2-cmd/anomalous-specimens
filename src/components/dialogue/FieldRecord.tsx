@@ -16,11 +16,21 @@ import {
   messagePause,
   type DialogueBeat,
 } from "@/lib/dialogue";
-import { SENSORY, type SensoryId } from "@/lib/sensory";
+import {
+  BRANCH_MERGE_TEXT,
+  SENSORY,
+  isSensoryBranchId,
+  sensoryBranches,
+  type SensoryBranchId,
+  type SensoryId,
+} from "@/lib/sensory";
 import { SOURCE_BIND, SOURCE_BOOT } from "@/lib/source";
 import { cn } from "@/lib/cn";
 import {
+  BRANCH_MERGE_ID,
+  SELECTED_SENSORY_ID,
   beatId,
+  branchLineId,
   logHas,
   type FieldLogItem,
   type FieldStatus,
@@ -89,22 +99,25 @@ export function FieldRecord({
   const audio = useAudio();
   const { persistField, readField } = useArchive();
   const saved = useRef(readField());
-  const resumeHold =
-    saved.current.status === "hold" ||
-    (saved.current.picked && saved.current.status === "choice");
+  const resumeTyping =
+    saved.current.status === "kai_typing_before_choice" ||
+    saved.current.status === "sensory_choice";
 
   const [index, setIndex] = useState(saved.current.index);
-  const [status, setStatus] = useState<Status>(
-    resumeHold ? "hold" : saved.current.status,
-  );
+  const [status, setStatus] = useState<Status>(saved.current.status);
   const [log, setLog] = useState<LogItem[]>(saved.current.log);
   const [draft, setDraft] = useState(saved.current.draft);
+  const [draftSpeaker, setDraftSpeaker] = useState("");
   const [typing, setTyping] = useState(false);
   const [indicator, setIndicator] = useState(
-    resumeHold ? "Kai" : saved.current.indicator,
+    resumeTyping ? "Kai" : saved.current.indicator,
   );
   const [choice, setChoice] = useState<SensoryId | null>(
-    resumeHold ? null : saved.current.choice,
+    saved.current.status === "sensory_choice"
+      ? (saved.current.choice ?? "see")
+      : saved.current.status === "kai_typing_before_choice"
+        ? null
+        : saved.current.choice,
   );
   const [choiceLeaving, setChoiceLeaving] = useState(false);
   const [scrollbarVisible, setScrollbarVisible] = useState(false);
@@ -116,7 +129,6 @@ export function FieldRecord({
   const typingRef = useRef(typing);
   const indicatorRef = useRef(indicator);
   const choiceRef = useRef(choice);
-  const kaiHoldRef = useRef(resumeHold);
   const activeRef = useRef(active);
   const scaleRef = useRef(scale);
   const audioRef = useRef(audio);
@@ -144,8 +156,12 @@ export function FieldRecord({
 
   const force = useRef(false);
   const picked = useRef(saved.current.picked);
+  const pickedOptionRef = useRef<SensoryBranchId | null>(saved.current.pickedOption);
   const skipIndicator = useRef(false);
-  const holdFrom = useRef<number | null>(resumeHold ? saved.current.index : null);
+  const holdFrom = useRef<number | null>(
+    saved.current.picked ? saved.current.index : null,
+  );
+  const liveLine = useRef<{ speaker: string; text: string } | null>(null);
   const typedCount = useRef(saved.current.draft.length);
   const pinBottom = useRef(saved.current.pinBottom);
   const scroller = useRef<HTMLDivElement>(null);
@@ -171,6 +187,7 @@ export function FieldRecord({
       status: statusRef.current,
       log: logRef.current,
       picked: picked.current,
+      pickedOption: pickedOptionRef.current,
       choice: choiceRef.current,
       scroll: scroller.current?.scrollTop ?? savedScroll.current,
       pinBottom: pinBottom.current,
@@ -254,10 +271,26 @@ export function FieldRecord({
     return true;
   }
 
+  function setDraftSpeakerNow(next: string) {
+    setDraftSpeaker(next);
+  }
+
+  function markTimeStatus(text: string) {
+    if (text === "21:12:33") {
+      setStatusNow("time_21_12_33");
+    } else if (text === "21:18:02") {
+      setStatusNow("time_21_18_02");
+    } else if (text === "21:19:47") {
+      setStatusNow("connection_lost");
+    }
+  }
+
   function resetLineUi() {
     setDraftNow("");
+    setDraftSpeakerNow("");
     setTypingNow(false);
     setIndicatorNow("");
+    liveLine.current = null;
     force.current = false;
     typedCount.current = 0;
   }
@@ -276,6 +309,7 @@ export function FieldRecord({
       const beat = DIALOGUE[next];
       if (beat.kind === "time") {
         pushOnce({ id: beatId(next), kind: "time", text: beat.text });
+        markTimeStatus(beat.text);
         next += 1;
         continue;
       }
@@ -293,30 +327,155 @@ export function FieldRecord({
       setIndicatorNow(beat?.kind === "line" ? nameOf(beat.speaker) : "");
     }
     setIndexNow(next);
-    setStatusNow("play");
     persistProgress();
     playing.current = false;
     playRef.current();
   }
 
-  function startHold() {
+  function beginMatching() {
+    const optionId = pickedOptionRef.current;
+    const option = optionId
+      ? SENSORY.see.options.find((item) => item.id === optionId)
+      : undefined;
+    if (option) {
+      onAnalysisRef.current?.(option.lines);
+    }
+    setStatusNow("matching_result");
+    persistProgress();
+    playing.current = false;
+  }
+
+  function startSelectedHold() {
     if (holdTimerRef.current != null) {
       return;
     }
-    kaiHoldRef.current = true;
-    setIndicatorNow("Kai");
-    setStatusNow("hold");
+    setIndicatorNow("");
+    setStatusNow("selected_sensory_result");
     persistProgress();
-    const from = holdFrom.current ?? indexRef.current;
     holdTimerRef.current = window.setTimeout(() => {
       holdTimerRef.current = null;
       if (!activeRef.current) {
         return;
       }
-      kaiHoldRef.current = false;
-      skipIndicator.current = true;
-      enterNextBeat(from);
+      beginMatching();
     }, KAI_HOLD_MS);
+  }
+
+  function finishBranchesAndContinue() {
+    const from = holdFrom.current ?? indexRef.current;
+    resetLineUi();
+    skipIndicator.current = false;
+    setStatusNow("time_21_12_33");
+    persistProgress();
+    playing.current = false;
+    enterNextBeat(from);
+  }
+
+  function playSyntheticLine(
+    id: string,
+    speaker: "LIN" | "KAI",
+    text: string,
+    pace: "faster" | "fast" | "normal" | "slow" | "crawl",
+    then: () => void,
+  ) {
+    if (logHas(logRef.current, id)) {
+      then();
+      return;
+    }
+
+    const who = nameOf(speaker);
+    liveLine.current = { speaker: who, text };
+
+    const beginLine = () => {
+      setIndicatorNow("");
+      setDraftSpeakerNow(who);
+      setTypingNow(true);
+      let n = typedCount.current;
+      if (n > 0) {
+        setDraftNow(text.slice(0, n));
+      }
+
+      const commitLine = () => {
+        pushOnce({
+          id,
+          kind: "msg",
+          speaker: who,
+          text,
+        });
+        audioRef.current.message();
+        setDraftNow("");
+        setDraftSpeakerNow("");
+        setTypingNow(false);
+        typedCount.current = 0;
+        liveLine.current = null;
+        scheduleDialogue(then, scaleRef.current(messagePause("early")));
+      };
+
+      const tick = () => {
+        if (!activeRef.current) {
+          return;
+        }
+        if (force.current) {
+          setDraftNow(text);
+          typedCount.current = text.length;
+          setTypingNow(false);
+          scheduleDialogue(commitLine, scaleRef.current(40));
+          return;
+        }
+        n += 1;
+        typedCount.current = n;
+        setDraftNow(text.slice(0, n));
+        audioRef.current.tick();
+        if (n >= text.length) {
+          setTypingNow(false);
+          scheduleDialogue(commitLine, scaleRef.current(50));
+          return;
+        }
+        scheduleTyping(tick, scaleRef.current(charInterval(pace, text[n] ?? "")));
+      };
+
+      scheduleTyping(tick, scaleRef.current(charInterval(pace, text[n] ?? "")));
+    };
+
+    if (typedCount.current > 0) {
+      beginLine();
+      return;
+    }
+    setIndicatorNow(who);
+    scheduleTyping(beginLine, scaleRef.current(TYPING_INDICATOR_DELAY));
+  }
+
+  function playPostMatching() {
+    const optionId = pickedOptionRef.current;
+    if (!optionId) {
+      finishBranchesAndContinue();
+      return;
+    }
+    const branch = sensoryBranches[optionId];
+    playing.current = true;
+
+    const playMerge = () => {
+      playSyntheticLine(BRANCH_MERGE_ID, "KAI", BRANCH_MERGE_TEXT, "slow", () => {
+        playing.current = false;
+        finishBranchesAndContinue();
+      });
+    };
+    const playKai = () => {
+      playSyntheticLine(
+        branchLineId(optionId, "kai"),
+        "KAI",
+        branch.kaiResponse,
+        "slow",
+        playMerge,
+      );
+    };
+    playSyntheticLine(
+      branchLineId(optionId, "lin"),
+      "LIN",
+      branch.linResponse,
+      "normal",
+      playKai,
+    );
   }
 
   function playInject(step: number) {
@@ -346,8 +505,11 @@ export function FieldRecord({
       return;
     }
 
+    liveLine.current = { speaker: nameOf(beat.speaker), text: beat.text };
+
     const beginLine = () => {
       setIndicatorNow("");
+      setDraftSpeakerNow(nameOf(beat.speaker));
       setTypingNow(true);
       let n = typedCount.current;
       if (n > 0) {
@@ -364,8 +526,10 @@ export function FieldRecord({
         });
         audioRef.current.message();
         setDraftNow("");
+        setDraftSpeakerNow("");
         setTypingNow(false);
         typedCount.current = 0;
+        liveLine.current = null;
         scheduleDialogue(() => {
           playing.current = false;
           advanceAndPlay();
@@ -418,11 +582,33 @@ export function FieldRecord({
 
     const currentStatus = statusRef.current;
 
-    if (currentStatus === "choice") {
+    if (currentStatus === "kai_typing_before_choice") {
+      playing.current = true;
+      setIndicatorNow("Kai");
+      if (picked.current) {
+        playing.current = false;
+        setChoiceNow(null);
+        setStatusNow("selected_sensory_result");
+        playCurrentBeat();
+        return;
+      }
+      scheduleDialogue(() => {
+        const beat = DIALOGUE[indexRef.current];
+        if (beat?.kind === "choice") {
+          setChoiceNow(beat.id);
+        }
+        setStatusNow("sensory_choice");
+        playing.current = false;
+        persistProgress();
+      }, scaleRef.current(TYPING_INDICATOR_DELAY));
+      return;
+    }
+
+    if (currentStatus === "sensory_choice") {
       if (picked.current) {
         setChoiceNow(null);
         setChoiceLeaving(false);
-        setStatusNow("hold");
+        setStatusNow("selected_sensory_result");
         playCurrentBeat();
         return;
       }
@@ -430,31 +616,38 @@ export function FieldRecord({
       if (beat?.kind === "choice" && !choiceRef.current) {
         setChoiceNow(beat.id);
       }
+      setIndicatorNow("Kai");
+      return;
+    }
+
+    if (currentStatus === "selected_sensory_result") {
+      startSelectedHold();
+      return;
+    }
+
+    if (currentStatus === "matching_result") {
+      if (analysisClearedRef.current) {
+        setStatusNow("post_matching_dialogue");
+        persistProgress();
+        playPostMatching();
+      }
+      return;
+    }
+
+    if (currentStatus === "post_matching_dialogue") {
+      playPostMatching();
       return;
     }
 
     if (currentStatus === "warn") {
       if (warningClearedRef.current) {
-        setStatusNow("play");
+        setStatusNow("time_21_18_02");
         advanceAndPlay();
       }
       return;
     }
 
-    if (currentStatus === "analysis") {
-      if (analysisClearedRef.current) {
-        setStatusNow("play");
-        playCurrentBeat();
-      }
-      return;
-    }
-
     if (currentStatus === "after") {
-      return;
-    }
-
-    if (currentStatus === "hold") {
-      startHold();
       return;
     }
 
@@ -479,17 +672,33 @@ export function FieldRecord({
     }
 
     if (beat.kind === "choice") {
-      if (picked.current) {
-        enterNextBeat(beatIndex);
+      if (picked.current && logHas(logRef.current, SELECTED_SENSORY_ID)) {
+        if (analysisClearedRef.current || logHas(logRef.current, BRANCH_MERGE_ID)) {
+          setStatusNow("post_matching_dialogue");
+          persistProgress();
+          playPostMatching();
+          return;
+        }
+        if (saved.current.scan === "run" || saved.current.scan === "resume") {
+          setStatusNow("matching_result");
+          persistProgress();
+          return;
+        }
+        setStatusNow("selected_sensory_result");
+        persistProgress();
+        playCurrentBeat();
         return;
       }
       playing.current = true;
+      setIndicatorNow("Kai");
+      setStatusNow("kai_typing_before_choice");
+      persistProgress();
       scheduleDialogue(() => {
         setChoiceNow(beat.id);
-        setStatusNow("choice");
+        setStatusNow("sensory_choice");
         playing.current = false;
         persistProgress();
-      }, scaleRef.current(180));
+      }, scaleRef.current(TYPING_INDICATOR_DELAY));
       return;
     }
 
@@ -523,6 +732,7 @@ export function FieldRecord({
     if (beat.kind === "time") {
       scheduleDialogue(() => {
         pushOnce({ id: beatId(beatIndex), kind: "time", text: beat.text });
+        markTimeStatus(beat.text);
         playing.current = false;
         advanceAndPlay();
       }, scaleRef.current(280));
@@ -582,6 +792,7 @@ export function FieldRecord({
     if (beat.kind === "lost") {
       scheduleDialogue(() => {
         pushOnce({ id: beatId(beatIndex), kind: "lost" });
+        setStatusNow("connection_lost");
         scheduleDialogue(() => {
           pushOnce({ id: beatId(beatIndex, "invest"), kind: "invest" });
           setStatusNow("after");
@@ -622,7 +833,7 @@ export function FieldRecord({
     if (statusRef.current === "warn" && warningCleared) {
       playRef.current();
     }
-    if (statusRef.current === "analysis" && analysisCleared) {
+    if (statusRef.current === "matching_result" && analysisCleared) {
       playRef.current();
     }
   }, [active, analysisCleared, warningCleared]);
@@ -718,20 +929,31 @@ export function FieldRecord({
       !choiceRef.current ||
       picked.current ||
       choiceLeaving ||
-      kaiHoldRef.current ||
-      statusRef.current === "hold"
+      statusRef.current !== "sensory_choice" ||
+      !isSensoryBranchId(optionId)
     ) {
       return;
     }
     const option = SENSORY[choiceRef.current].options.find((item) => item.id === optionId);
-    if (!option) {
+    const branch = sensoryBranches[optionId];
+    if (!option || !branch) {
       return;
     }
     picked.current = true;
+    pickedOptionRef.current = optionId;
     holdFrom.current = indexRef.current;
+    setIndicatorNow("");
+    pushOnce({
+      id: SELECTED_SENSORY_ID,
+      kind: "msg",
+      speaker: "Kai",
+      text: branch.option,
+    });
+    audioRef.current.message();
     setChoiceLeaving(true);
-    persistRef.current({ picked: true });
-    onAnalysisRef.current?.(option.lines);
+    setStatusNow("selected_sensory_result");
+    persistProgress();
+    startSelectedHold();
     clearTimer(fadeTimerRef);
     fadeTimerRef.current = window.setTimeout(() => {
       fadeTimerRef.current = null;
@@ -740,21 +962,35 @@ export function FieldRecord({
       }
       setChoiceNow(null);
       setChoiceLeaving(false);
-      setStatusNow("hold");
       persistProgress();
-      playing.current = false;
-      playRef.current();
     }, scaleRef.current(260));
   }
 
   function onBoxClick() {
-    if (statusRef.current !== "play" || !typingRef.current) {
+    if (!typingRef.current) {
+      return;
+    }
+    if (
+      statusRef.current === "kai_typing_before_choice" ||
+      statusRef.current === "sensory_choice" ||
+      statusRef.current === "selected_sensory_result" ||
+      statusRef.current === "matching_result"
+    ) {
       return;
     }
     force.current = true;
+    const live = liveLine.current;
+    if (live) {
+      setDraftNow(live.text);
+      setDraftSpeakerNow(live.speaker);
+      setTypingNow(false);
+      setIndicatorNow("");
+      return;
+    }
     const beat = DIALOGUE[indexRef.current];
     if (beat?.kind === "line") {
       setDraftNow(beat.text);
+      setDraftSpeakerNow(nameOf(beat.speaker));
       setTypingNow(false);
       setIndicatorNow("");
     }
@@ -795,9 +1031,9 @@ export function FieldRecord({
 
         {draft && !indicator ? (
           <div className="font-sans text-[14px] leading-7 text-green">
-            {DIALOGUE[index]?.kind === "line" && DIALOGUE[index].speaker ? (
+            {draftSpeaker ? (
               <p className="mb-1 font-mono text-[11px] tracking-[0.18em] text-green">
-                {nameOf(DIALOGUE[index].speaker)}
+                {draftSpeaker}
               </p>
             ) : null}
             <p>{draft}</p>

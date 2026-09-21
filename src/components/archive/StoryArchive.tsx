@@ -279,7 +279,7 @@ export function StoryArchive() {
               onWarning={handleWarning}
               warningCleared={fail === "done"}
               onAnalysis={handleAnalysis}
-              analysisCleared={scan === "resume" || scan === "done"}
+              analysisCleared={scan === "done"}
               onReadyToLeave={handleReadyToLeave}
               onComplete={leaveArchive}
             />
