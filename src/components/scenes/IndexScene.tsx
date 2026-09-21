@@ -5,6 +5,7 @@ import { Command } from "@/components/system/Command";
 import { Rule } from "@/components/system/Rule";
 import { ACCESS, SPECIMENS, SYSTEM, integrityLine } from "@/lib/content";
 import { useAudio } from "@/context/AudioContext";
+import { useArchive } from "@/context/ArchiveContext";
 import { useScaledMs } from "@/hooks/useTiming";
 
 type ReadPhase =
@@ -27,12 +28,20 @@ function irregular(min: number, max: number) {
 }
 
 export function IndexScene({ onComplete }: { onComplete: () => void }) {
+  const { sample001AccessApproved, approveSample001 } = useArchive();
   const [denied, setDenied] = useState<string | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
-  const [read, setRead] = useState<ReadPhase>({ kind: "off" });
+  const [read, setRead] = useState<ReadPhase>(() =>
+    sample001AccessApproved ? { kind: "granted" } : { kind: "off" },
+  );
   const audio = useAudio();
   const scale = useScaledMs();
-  const reading = read.kind !== "off";
+  const alreadyApproved = useRef(sample001AccessApproved);
+  const animating =
+    read.kind === "accessing" ||
+    read.kind === "verifying" ||
+    read.kind === "integrity" ||
+    (read.kind === "granted" && !alreadyApproved.current);
   const finish = useRef(onComplete);
   finish.current = onComplete;
 
@@ -66,6 +75,10 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
         later(() => setRead({ kind: "granted" }), 180);
       }
     } else if (read.kind === "granted") {
+      if (alreadyApproved.current) {
+        return;
+      }
+      approveSample001();
       later(() => finish.current(), 520);
     }
 
@@ -73,7 +86,7 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
       cancelled = true;
       timers.forEach((id) => window.clearTimeout(id));
     };
-  }, [read, scale]);
+  }, [approveSample001, read, scale]);
 
   return (
     <div className="relative min-h-dvh bg-bg px-5 py-16 sm:px-10 sm:py-20 md:px-16">
@@ -134,12 +147,16 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
                 <div>
                   <button
                     type="button"
-                    disabled={reading}
+                    disabled={animating}
                     onClick={() => {
-                      if (reading) {
+                      if (animating) {
                         return;
                       }
                       audio.click();
+                      if (sample001AccessApproved || alreadyApproved.current) {
+                        finish.current();
+                        return;
+                      }
                       setRead({ kind: "accessing" });
                     }}
                     className="read-tag"

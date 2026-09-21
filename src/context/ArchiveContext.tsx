@@ -29,6 +29,8 @@ type ArchiveContextValue = {
   folder: FolderId | null;
   file: FileId | null;
   pd001Done: boolean;
+  sample001AccessApproved: boolean;
+  approveSample001: () => void;
   autoOpenPd001: boolean;
   startFinale: boolean;
   archiveEnterTop: boolean;
@@ -114,6 +116,7 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
   const [folder, setFolder] = useState<FolderId | null>(null);
   const [file, setFile] = useState<FileId | null>(null);
   const [pd001Done, setPd001Done] = useState(false);
+  const [sample001AccessApproved, setSample001AccessApproved] = useState(false);
   const [fieldOpen, setFieldOpen] = useState(autoOpenPd001);
   const [field, setField] = useState<FieldState>(emptyField);
   const [fieldEpoch, setFieldEpoch] = useState(0);
@@ -171,6 +174,10 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
     setPd001Done(true);
   }, []);
 
+  const approveSample001 = useCallback(() => {
+    setSample001AccessApproved(true);
+  }, []);
+
   const openField = useCallback(() => {
     setFieldOpen(true);
   }, []);
@@ -196,6 +203,8 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       folder,
       file,
       pd001Done,
+      sample001AccessApproved,
+      approveSample001,
       autoOpenPd001,
       startFinale,
       archiveEnterTop,
@@ -215,6 +224,7 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       resetYumeMomoStory,
     }),
     [
+      approveSample001,
       archiveEnterTop,
       autoOpenPd001,
       closeField,
@@ -235,6 +245,7 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       pd001Done,
       readField,
       resetYumeMomoStory,
+      sample001AccessApproved,
       startFinale,
     ],
   );
