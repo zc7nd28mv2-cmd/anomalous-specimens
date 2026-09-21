@@ -136,12 +136,10 @@ export function StoryArchive() {
         </div>
 
         <section id="sec-pd001" className="mt-16">
-          <div className="field-module">
-            <p className="sys-meta text-green-dim">ARCHIVE LOG / PD-001</p>
-            <p className="mt-5 font-sans text-[14px] text-ink">現場數據記錄</p>
-            <p className="sys-meta mt-6">STATUS: ACTIVE</p>
-            <p className="sys-meta mt-1">SOURCE: UNKNOWN NEURAL RELAY</p>
-            <div className="mt-8 flex justify-end">
+          <p className="aux-en text-green-dim">ARCHIVE LOG / PD-001</p>
+          <div className="field-module mt-4">
+            <div className="field-titlebar">現場數據記錄</div>
+            <div className="field-node">
               <PulseNode onOpen={() => setOpen(true)} />
             </div>
           </div>
