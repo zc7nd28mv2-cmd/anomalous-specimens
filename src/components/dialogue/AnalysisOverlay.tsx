@@ -17,18 +17,22 @@ type Phase =
 
 export function AnalysisOverlay({
   result,
+  onResume,
   onDone,
 }: {
   result: string[];
+  onResume: () => void;
   onDone: () => void;
 }) {
   const scale = useScaledMs();
   const [phase, setPhase] = useState<Phase>("wait");
+  const resume = useRef(onResume);
   const done = useRef(onDone);
 
   useEffect(() => {
+    resume.current = onResume;
     done.current = onDone;
-  }, [onDone]);
+  }, [onDone, onResume]);
 
   useEffect(() => {
     const steps: Array<[Phase, number]> = [
@@ -38,14 +42,16 @@ export function AnalysisOverlay({
       ["match", 1600],
       ["complete", 2200],
       ["result", 2500],
-      ["out", 4100],
+      ["out", 5500],
     ];
     const timers = steps.map(([next, at]) =>
       window.setTimeout(() => setPhase(next), scale(at)),
     );
-    const end = window.setTimeout(() => done.current(), scale(4900));
+    const go = window.setTimeout(() => resume.current(), scale(3500));
+    const end = window.setTimeout(() => done.current(), scale(5800));
     return () => {
       timers.forEach((id) => window.clearTimeout(id));
+      window.clearTimeout(go);
       window.clearTimeout(end);
     };
   }, [scale]);

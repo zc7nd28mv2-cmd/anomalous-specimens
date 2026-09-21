@@ -22,7 +22,7 @@ export function StoryArchive() {
     startFinale ? "run" : pd001Done ? "done" : "off",
   );
   const [fail, setFail] = useState<"off" | "run" | "done">("off");
-  const [scan, setScan] = useState<"off" | "run" | "done">("off");
+  const [scan, setScan] = useState<"off" | "run" | "resume" | "done">("off");
   const [scanLines, setScanLines] = useState<string[] | null>(null);
 
   useEffect(() => {
@@ -207,7 +207,7 @@ export function StoryArchive() {
                 setScanLines(lines);
                 setScan("run");
               }}
-              analysisCleared={scan === "done"}
+              analysisCleared={scan === "resume" || scan === "done"}
               onComplete={() => {
                 if (finale === "off") {
                   setFinale("run");
@@ -218,8 +218,12 @@ export function StoryArchive() {
         </div>
       ) : null}
 
-      {scan === "run" && scanLines ? (
-        <AnalysisOverlay result={scanLines} onDone={() => setScan("done")} />
+      {(scan === "run" || scan === "resume") && scanLines ? (
+        <AnalysisOverlay
+          result={scanLines}
+          onResume={() => setScan("resume")}
+          onDone={() => setScan("done")}
+        />
       ) : null}
 
       {fail === "run" ? (
