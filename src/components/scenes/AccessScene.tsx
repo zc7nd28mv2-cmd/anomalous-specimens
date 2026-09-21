@@ -59,9 +59,7 @@ export function AccessScene({ onComplete }: { onComplete: () => void }) {
         <div className="boot-bar-fill" style={{ width: `${pct}%` }} />
       </div>
       {loaded ? (
-        <p className="grant-breathe mt-10 font-mono text-[13px] tracking-[0.12em] text-ink">
-          {ACCESS.granted}
-        </p>
+        <p className="grant-mark is-breathe">{ACCESS.granted}</p>
       ) : null}
     </Stage>
   );
