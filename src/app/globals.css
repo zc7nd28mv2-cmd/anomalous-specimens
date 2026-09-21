@@ -1079,6 +1079,10 @@ body {
   color: #62625f;
 }
 
+.boot-snap {
+  animation: fade 120ms ease-out both;
+}
+
 .boot-bar {
   width: min(78%, 360px);
   height: 4px;

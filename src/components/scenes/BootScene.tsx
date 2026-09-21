@@ -9,7 +9,7 @@ import { Stage, SysLine } from "@/components/system/Stage";
 import { SYSTEM } from "@/lib/content";
 
 const INTRO_DELAYS = [900, 800, 700, 900] as const;
-const AFTER_DELAYS = [1400, 500, 700, 140] as const;
+const AFTER_DELAYS = [80, 120, 100, 60] as const;
 const EMPTY_DELAYS = [] as const;
 
 const INIT_LINES = [
@@ -19,8 +19,6 @@ const INIT_LINES = [
   SYSTEM.specimenOk,
   SYSTEM.integrity47,
 ] as const;
-
-const DETECTED_LINES = [SYSTEM.detected] as const;
 
 const LINE_PACE = [18, 16, 20, 17, 19] as const;
 
@@ -111,7 +109,6 @@ export function BootScene({ onComplete }: { onComplete: () => void }) {
   const typing = intro >= 4;
   const init = useParallelType(INIT_LINES, typing);
   const after = useReveal(init.finished ? AFTER_DELAYS : EMPTY_DELAYS);
-  const detect = useParallelType(DETECTED_LINES, after >= 4);
   const audio = useAudio();
 
   return (
@@ -139,32 +136,32 @@ export function BootScene({ onComplete }: { onComplete: () => void }) {
         )}
       </div>
 
-      {after >= 2 ? (
-        <p className="mt-12 font-mono text-[12px] tracking-[0.28em] text-danger">
+      {after >= 1 ? (
+        <p className="boot-snap mt-12 font-mono text-[12px] tracking-[0.28em] text-danger">
           {SYSTEM.warning}
         </p>
       ) : null}
 
-      {after >= 3 ? (
-        <p className="mt-3 font-mono text-[12px] tracking-[0.08em] text-danger">
+      {after >= 2 ? (
+        <p className="boot-snap mt-3 font-mono text-[12px] tracking-[0.08em] text-danger">
           {SYSTEM.corrupted}
         </p>
       ) : null}
 
-      {detect.parts[0] ? (
-        <p className="mt-3 font-mono text-[12px] tracking-[0.08em] text-mute">
-          {detect.parts[0]}
+      {after >= 3 ? (
+        <p className="boot-snap mt-3 font-mono text-[12px] tracking-[0.08em] text-mute">
+          {SYSTEM.detected}
         </p>
       ) : null}
 
-      {detect.finished ? (
+      {after >= 4 ? (
         <button
           type="button"
           onClick={() => {
             audio.click();
             onComplete();
           }}
-          className="read-tag"
+          className="read-tag boot-snap"
         >
           {SYSTEM.enter}
         </button>
