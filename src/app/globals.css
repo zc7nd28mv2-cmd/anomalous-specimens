@@ -343,14 +343,17 @@ body {
 }
 
 .field-module {
+  overflow: hidden;
   background: #080807;
   border: 1px solid #2d6638;
   border-radius: 1px;
-  padding: 12px;
+  padding: 0;
 }
 
 .field-titlebar {
-  border: 1px solid #2d6638;
+  margin: 0;
+  border: none;
+  background: #2d6638;
   padding: 8px 14px;
   font-family: var(--font-zh), "Noto Sans SC", sans-serif;
   font-size: 14px;
