@@ -6,6 +6,7 @@ import { useAudio } from "@/context/AudioContext";
 import { BackLink } from "@/components/system/BackLink";
 import { PulseNode } from "@/components/dialogue/PulseNode";
 import { FieldRecord } from "@/components/dialogue/FieldRecord";
+import { WarningOverlay } from "@/components/dialogue/WarningOverlay";
 import { InfectionOverlay } from "@/components/finale/InfectionOverlay";
 import { STORY } from "@/lib/story";
 import { DOSSIER, ENDING } from "@/lib/content";
@@ -19,6 +20,7 @@ export function StoryArchive() {
   const [finale, setFinale] = useState<"off" | "run" | "done">(
     startFinale ? "run" : pd001Done ? "done" : "off",
   );
+  const [fail, setFail] = useState<"off" | "run" | "done">("off");
 
   useEffect(() => {
     if (autoOpenPd001 || startFinale) {
@@ -136,11 +138,20 @@ export function StoryArchive() {
         </div>
 
         <section id="sec-pd001" className="mt-16">
-          <p className="aux-en text-green-dim">ARCHIVE LOG / PD-001</p>
-          <div className="field-module mt-4">
+          <div className="field-module">
             <div className="field-titlebar">現場數據記錄</div>
+            <div className="field-meta">
+              <p>ARCHIVE LOG / PD-001</p>
+              <p>STATUS: ACTIVE</p>
+              <p>SOURCE: UNKNOWN NEURAL RELAY</p>
+            </div>
             <div className="field-node">
-              <PulseNode onOpen={() => setOpen(true)} />
+              <PulseNode
+                onOpen={() => {
+                  setFail("off");
+                  setOpen(true);
+                }}
+              />
             </div>
           </div>
         </section>
@@ -157,8 +168,14 @@ export function StoryArchive() {
       </div>
 
       {open && finale !== "run" ? (
-        <div className="record-veil fixed inset-0 z-40 flex items-center justify-center bg-black/72 px-6 py-10">
-          <div className={cn("pd-modal", closing && "is-out")}>
+        <div className="record-veil fixed inset-0 flex items-center justify-center bg-black/72 px-6 py-10">
+          <div
+            className={cn(
+              "pd-modal",
+              closing && "is-out",
+              fail === "run" && "is-interrupted",
+            )}
+          >
             <div className="flex shrink-0 items-center justify-between border-b border-green-border/50 px-5 py-3">
               <div>
                 <p className="aux-en text-green-dim">ARCHIVE LOG / PD-001</p>
@@ -167,6 +184,9 @@ export function StoryArchive() {
               <button
                 type="button"
                 onClick={() => {
+                  if (fail === "run") {
+                    return;
+                  }
                   audio.click();
                   closeModal();
                 }}
@@ -176,6 +196,8 @@ export function StoryArchive() {
               </button>
             </div>
             <FieldRecord
+              onWarning={() => setFail("run")}
+              warningCleared={fail === "done"}
               onComplete={() => {
                 if (finale === "off") {
                   setFinale("run");
@@ -184,6 +206,10 @@ export function StoryArchive() {
             />
           </div>
         </div>
+      ) : null}
+
+      {fail === "run" ? (
+        <WarningOverlay onDone={() => setFail("done")} />
       ) : null}
 
       {finale === "run" ? (

@@ -16,7 +16,6 @@ import {
 } from "@/lib/dialogue";
 import { SENSORY, type SensoryId } from "@/lib/sensory";
 import { SOURCE_BIND, SOURCE_BOOT } from "@/lib/source";
-import { cn } from "@/lib/cn";
 
 const INJECT = [...SOURCE_BOOT, ...SOURCE_BIND] as const;
 
@@ -31,7 +30,7 @@ type LogItem =
   | { key: string; kind: "invest" }
   | { key: string; kind: "lost" };
 
-type Status = "play" | "choice" | "analysis" | "after";
+type Status = "play" | "choice" | "analysis" | "warn" | "after";
 
 function nameOf(speaker: "LIN" | "KAI" | null) {
   if (speaker === "LIN") {
@@ -61,7 +60,15 @@ function pausePhase(index: number) {
   return "early" as const;
 }
 
-export function FieldRecord({ onComplete }: { onComplete: () => void }) {
+export function FieldRecord({
+  onComplete,
+  onWarning,
+  warningCleared = false,
+}: {
+  onComplete: () => void;
+  onWarning?: () => void;
+  warningCleared?: boolean;
+}) {
   const scale = useScaledMs();
   const audio = useAudio();
   const [index, setIndex] = useState(0);
@@ -72,7 +79,6 @@ export function FieldRecord({ onComplete }: { onComplete: () => void }) {
   const [indicator, setIndicator] = useState("");
   const [choice, setChoice] = useState<SensoryId | null>(null);
   const [pending, setPending] = useState<string[] | null>(null);
-  const [warnFade, setWarnFade] = useState(false);
   const force = useRef(false);
   const keys = useRef(0);
   const end = useRef<HTMLDivElement>(null);
@@ -93,7 +99,7 @@ export function FieldRecord({ onComplete }: { onComplete: () => void }) {
       return;
     }
     end.current?.scrollIntoView({ block: "end" });
-  }, [log, draft, indicator, choice, pending, warnFade]);
+  }, [log, draft, indicator, choice, pending]);
 
   const advance = useCallback(() => {
     setIndex((value) => value + 1);
@@ -158,12 +164,13 @@ export function FieldRecord({ onComplete }: { onComplete: () => void }) {
     } else if (beat.kind === "warn") {
       later(() => {
         audio.alert();
-        push({ key: nextKey(), kind: "warn", title: beat.title, body: beat.body });
-      }, 200);
-      later(() => setWarnFade(true), 2400);
-      later(() => {
-        advance();
-      }, 2800);
+        if (!onWarning) {
+          advance();
+          return;
+        }
+        onWarning();
+        setStatus("warn");
+      }, 40);
     } else if (beat.kind === "inject") {
       INJECT.forEach((line, i) => {
         later(() => push({ key: nextKey(), kind: "code", text: line }), 220 * i);
@@ -230,7 +237,15 @@ export function FieldRecord({ onComplete }: { onComplete: () => void }) {
       cancelled = true;
       timers.forEach((id) => window.clearTimeout(id));
     };
-  }, [advance, audio, index, push, scale, status]);
+  }, [advance, audio, index, onWarning, push, scale, status]);
+
+  useEffect(() => {
+    if (status !== "warn" || !warningCleared) {
+      return;
+    }
+    setStatus("play");
+    advance();
+  }, [advance, status, warningCleared]);
 
   function onPick(optionId: string) {
     if (!choice) {
@@ -295,7 +310,7 @@ export function FieldRecord({ onComplete }: { onComplete: () => void }) {
 
       <div className="mt-6 space-y-5 pb-4">
         {log.map((item) => (
-          <LogLine key={item.key} item={item} warnFade={warnFade} onInvestDone={onComplete} />
+          <LogLine key={item.key} item={item} onInvestDone={onComplete} />
         ))}
 
         {indicator ? <TypingIndicator name={indicator} /> : null}
@@ -461,11 +476,9 @@ function InvestigationRecord({ onDone }: { onDone: () => void }) {
 
 function LogLine({
   item,
-  warnFade,
   onInvestDone,
 }: {
   item: LogItem;
-  warnFade: boolean;
   onInvestDone: () => void;
 }) {
   if (item.kind === "time") {
@@ -496,16 +509,7 @@ function LogLine({
     return <p className="font-mono text-[12px] text-sys">{item.text}</p>;
   }
   if (item.kind === "warn") {
-    return (
-      <div className={cn("warn-panel space-y-4", warnFade && "opacity-35")}>
-        <p className="font-mono text-[12px] tracking-[0.12em]">{item.title}</p>
-        <div className="font-mono text-[13px] leading-6 tracking-[0.06em]">
-          <p>HOST VITAL SIGNS</p>
-          <p>ARE DECLINING</p>
-        </div>
-        <p className="font-mono text-[11px] tracking-[0.1em]">SYSTEM STATUS: CRITICAL</p>
-      </div>
-    );
+    return null;
   }
   if (item.kind === "analysis") {
     return (
