@@ -15,7 +15,10 @@ import {
   type DialogueBeat,
 } from "@/lib/dialogue";
 import { SENSORY, type SensoryId } from "@/lib/sensory";
+import { SOURCE_BIND, SOURCE_BOOT } from "@/lib/source";
 import { cn } from "@/lib/cn";
+
+const INJECT = [...SOURCE_BOOT, ...SOURCE_BIND] as const;
 
 type LogItem =
   | { key: string; kind: "time"; text: string }
@@ -161,7 +164,12 @@ export function FieldRecord({ onComplete }: { onComplete: () => void }) {
       later(() => {
         advance();
       }, 2800);
-    } else if (beat.kind === "inject" || beat.kind === "exitreq") {
+    } else if (beat.kind === "inject") {
+      INJECT.forEach((line, i) => {
+        later(() => push({ key: nextKey(), kind: "code", text: line }), 220 * i);
+      });
+      later(advance, 220 * INJECT.length + 200);
+    } else if (beat.kind === "exitreq") {
       later(advance, 40);
     } else if (beat.kind === "lost") {
       later(() => {

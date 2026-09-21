@@ -38,6 +38,7 @@ export const DIALOGUE: DialogueBeat[] = [
     text: "等等……这串代码好不对劲……",
     pace: "slow",
   },
+  { kind: "inject" },
   {
     kind: "line",
     speaker: "KAI",
