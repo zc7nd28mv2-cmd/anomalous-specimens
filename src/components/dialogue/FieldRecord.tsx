@@ -805,6 +805,12 @@ export function FieldRecord({
     if (beat.kind === "warn") {
       scheduleDialogue(() => {
         if (warningSequenceClearedRef.current) {
+          pushOnce({
+            id: beatId(beatIndex),
+            kind: "note",
+            text: "⚠ WARNING! Host vital signs are declining.",
+            danger: true,
+          });
           playing.current = false;
           advanceAndPlay();
           return;
