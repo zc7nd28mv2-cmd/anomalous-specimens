@@ -525,6 +525,10 @@ body {
   color: #e8e8e5;
 }
 
+.story-lift {
+  font-size: 15px;
+}
+
 .story-divider {
   width: 100%;
   height: 1px;
@@ -1176,6 +1180,10 @@ body {
   .story-rumor {
     font-size: 14px;
     line-height: 1.9;
+  }
+
+  .story-lift {
+    font-size: 15px;
   }
 
   .pd-modal {

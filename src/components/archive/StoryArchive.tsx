@@ -152,7 +152,7 @@ export function StoryArchive() {
           <p className="story-body">{STORY.reconstruction.lover}</p>
           <p className="story-body">{STORY.reconstruction.self}</p>
           <p className="story-body">{STORY.reconstruction.unique}</p>
-          <p className="story-key mt-6">{STORY.lastPlace.en}</p>
+          <p className="story-key story-lift mt-6">{STORY.lastPlace.en}</p>
           <p className="story-body">{STORY.lastPlace.zh}</p>
         </div>
 
@@ -169,7 +169,7 @@ export function StoryArchive() {
           <p className="story-body">{STORY.abandonment.lead}</p>
           <p className="story-key">{STORY.abandonment.death}</p>
           <p className="story-body">{STORY.abandonment.instead}</p>
-          <p className="story-key">{STORY.abandonment.term}</p>
+          <p className="story-key story-lift">{STORY.abandonment.term}</p>
         </div>
 
         <div className="story-divider" />
@@ -193,9 +193,9 @@ export function StoryArchive() {
             ))}
           </ul>
           <p className="story-body">{STORY.leak.pack}</p>
-          <p className="story-key">{STORY.leak.opium}</p>
+          <p className="story-key story-lift">{STORY.leak.opium}</p>
           <p className="story-body">{STORY.leak.became}</p>
-          <p className="story-key">{STORY.leak.fragment}</p>
+          <p className="story-key story-lift">{STORY.leak.fragment}</p>
           <p className="story-body">{STORY.leak.close1}</p>
           <p className="story-body">{STORY.leak.close2}</p>
         </div>
@@ -205,7 +205,7 @@ export function StoryArchive() {
         <div className="space-y-6">
           <p className="story-body">{STORY.city.lead}</p>
           <p className="story-body">{STORY.city.l1}</p>
-          <p className="story-body">{STORY.city.l2}</p>
+          <p className="story-body story-lift">{STORY.city.l2}</p>
         </div>
 
         <section id="sec-pd001" className="mt-16">
