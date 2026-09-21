@@ -22,6 +22,12 @@ export function SpecimenHome() {
         </h1>
         <p className="mt-2 font-sans text-[15px] text-mute">「仙桃梦」</p>
 
+        {pd001Done ? (
+          <p className="mt-8 font-mono text-[10px] tracking-[0.16em] text-danger">
+            UNKNOWN SIGNAL DETECTED
+          </p>
+        ) : null}
+
         <div className="mt-12 space-y-3">
           {FOLDERS.map((folder) => {
             const locked = folder.id === "unknown" && !pd001Done;
@@ -72,6 +78,7 @@ export function SpecimenHome() {
                   <span>
                     {corrupted ? "RECOVERY —" : `RECOVERY ${folder.recovery}`}
                   </span>
+                  <span>{corrupted ? "STAMP —" : folder.stamp}</span>
                 </div>
               </button>
             );

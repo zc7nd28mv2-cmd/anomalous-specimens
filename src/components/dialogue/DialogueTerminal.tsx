@@ -5,22 +5,57 @@ import { useArchive } from "@/context/ArchiveContext";
 import { useScaledMs } from "@/hooks/useTiming";
 import { Cursor } from "@/components/system/Cursor";
 import { Command } from "@/components/system/Command";
-import { charInterval, DIALOGUE, LOG_AFTER, type DialogueBeat } from "@/lib/dialogue";
+import { TypingIndicator } from "@/components/dialogue/TypingIndicator";
+import {
+  charInterval,
+  DIALOGUE,
+  LOG_AFTER,
+  type DialogueBeat,
+  type Pace,
+} from "@/lib/dialogue";
 import { SOURCE_BIND, SOURCE_BOOT } from "@/lib/source";
 import { cn } from "@/lib/cn";
 
-type Mode = "play" | "after";
+type Mode = "play" | "dead" | "after";
+
+const INJECT_LINES = [...SOURCE_BOOT, ...SOURCE_BIND] as const;
+const EXIT_LINES = [
+  "> EXIT REQUEST",
+  "PROCESSING...",
+  "TERMINATION PROTOCOL",
+  "ERROR",
+] as const;
+
+function speakerWait(pace: Pace) {
+  switch (pace) {
+    case "faster":
+      return 320;
+    case "fast":
+      return 480;
+    case "normal":
+      return 700;
+    case "slow":
+      return 920;
+    case "crawl":
+      return 1200;
+    default:
+      return 700;
+  }
+}
 
 export function DialogueTerminal() {
   const { finishPd001 } = useArchive();
   const scale = useScaledMs();
   const [index, setIndex] = useState(0);
-  const [typing, setTyping] = useState(true);
+  const [typing, setTyping] = useState(false);
   const [shown, setShown] = useState("");
   const [indicator, setIndicator] = useState(false);
   const [frozen, setFrozen] = useState(false);
   const [mode, setMode] = useState<Mode>("play");
+  const [exitCount, setExitCount] = useState(0);
+  const [injectCount, setInjectCount] = useState(0);
   const forceComplete = useRef(false);
+  const timers = useRef<number[]>([]);
 
   const beat = DIALOGUE[index] as DialogueBeat | undefined;
   const seen = useMemo(() => DIALOGUE.slice(0, index + 1), [index]);
@@ -30,112 +65,166 @@ export function DialogueTerminal() {
   const flash = beat?.kind === "flash" ? beat.code : null;
   const inject = seen.some((item) => item.kind === "inject");
   const exitReq = seen.some((item) => item.kind === "exitreq");
-  const lost = seen.some((item) => item.kind === "lost");
+  const lost = mode !== "play" || seen.some((item) => item.kind === "lost");
   const darken = seen.some(
     (item) =>
       (item.kind === "line" && item.text.includes("她比我记忆里的年轻")) ||
       (item.kind === "warn" && item.title.includes("WARNING!")),
   );
+  const redShift = seen.some(
+    (item) => item.kind === "warn" && item.title.includes("WARNING!"),
+  );
+
+  const clearTimers = useCallback(() => {
+    timers.current.forEach((id) => window.clearTimeout(id));
+    timers.current = [];
+  }, []);
+
+  const later = useCallback(
+    (fn: () => void, ms: number) => {
+      const id = window.setTimeout(fn, scale(ms));
+      timers.current.push(id);
+    },
+    [scale],
+  );
 
   const advance = useCallback(() => {
+    clearTimers();
     if (index + 1 >= DIALOGUE.length) {
-      setMode("after");
+      setMode("dead");
       return;
     }
     setIndex((value) => value + 1);
-    setTyping(true);
+    setTyping(false);
     setShown("");
     setIndicator(false);
-  }, [index]);
+    forceComplete.current = false;
+  }, [clearTimers, index]);
 
   useEffect(() => {
     if (mode !== "play" || !beat) {
       return;
     }
 
+    clearTimers();
+    forceComplete.current = false;
+
     if (beat.kind !== "line") {
       const wait =
         beat.kind === "flash"
           ? 320
           : beat.kind === "lost"
-            ? 1400
+            ? 900
             : beat.kind === "exitreq"
-              ? 1600
+              ? 1680
               : beat.kind === "inject"
-                ? 800
+                ? 900
                 : beat.kind === "warn"
                   ? 1100
                   : 700;
-      const id = window.setTimeout(() => {
+      later(() => {
         if (beat.kind === "lost") {
-          setMode("after");
+          setMode("dead");
           return;
         }
         advance();
-      }, scale(wait));
-      return () => window.clearTimeout(id);
+      }, wait);
+      return clearTimers;
     }
 
-    forceComplete.current = false;
-    let cancelled = false;
-    const start = window.setTimeout(() => {
-      if (cancelled) {
-        return;
-      }
+    later(() => {
+      setIndicator(Boolean(beat.speaker));
+    }, 0);
+
+    later(() => {
       setIndicator(false);
+      setTyping(true);
       let i = 0;
       const tick = () => {
-        if (cancelled) {
-          return;
-        }
         if (forceComplete.current) {
           setShown(beat.text);
           setTyping(false);
-          window.setTimeout(advance, scale(beat.hold ?? 350));
+          later(() => {
+            if (beat.freeze) {
+              setFrozen(true);
+              later(() => {
+                setFrozen(false);
+                advance();
+              }, beat.freeze);
+              return;
+            }
+            later(advance, beat.hold ?? 480);
+          }, 80);
           return;
         }
         i += 1;
         setShown(beat.text.slice(0, i));
         if (i >= beat.text.length) {
           setTyping(false);
-          const hold = beat.freeze ?? beat.hold ?? 400;
           if (beat.freeze) {
             setFrozen(true);
-            window.setTimeout(() => {
+            later(() => {
               setFrozen(false);
               advance();
-            }, scale(hold));
+            }, beat.freeze);
             return;
           }
-          window.setTimeout(advance, scale(hold));
+          later(advance, beat.hold ?? 480);
           return;
         }
-        window.setTimeout(tick, scale(charInterval(beat.pace, beat.text[i] ?? "")));
+        later(tick, charInterval(beat.pace, beat.text[i] ?? ""));
       };
-      window.setTimeout(tick, scale(charInterval(beat.pace, beat.text[0] ?? "")));
-    }, scale(beat.speaker ? 700 : 200));
+      later(tick, charInterval(beat.pace, beat.text[0] ?? ""));
+    }, beat.speaker ? speakerWait(beat.pace) : 180);
 
-    const hint = window.setTimeout(() => {
-      if (!cancelled) {
-        setIndicator(Boolean(beat.speaker));
-      }
-    }, 0);
+    return clearTimers;
+  }, [advance, beat, clearTimers, later, mode]);
 
-    return () => {
-      cancelled = true;
-      window.clearTimeout(start);
-      window.clearTimeout(hint);
-    };
-  }, [advance, beat, mode, scale]);
-
-  function onBoxClick() {
-    if (mode !== "play" || !beat || beat.kind !== "line" || !typing) {
+  useEffect(() => {
+    if (!exitReq || lost) {
       return;
     }
-    forceComplete.current = true;
-    setShown(beat.text);
-    setTyping(false);
-    setIndicator(false);
+    const ids = [1, 2, 3, 4].map((step, i) =>
+      window.setTimeout(() => setExitCount(step), scale(420 * i)),
+    );
+    return () => ids.forEach((id) => window.clearTimeout(id));
+  }, [exitReq, lost, scale]);
+
+  useEffect(() => {
+    if (!inject || lost || frozen) {
+      return;
+    }
+    if (injectCount >= INJECT_LINES.length) {
+      return;
+    }
+    const id = window.setTimeout(() => {
+      setInjectCount((value) => Math.min(INJECT_LINES.length, value + 1));
+    }, scale(280));
+    return () => window.clearTimeout(id);
+  }, [frozen, inject, injectCount, lost, scale]);
+
+  useEffect(() => {
+    if (mode !== "dead") {
+      return;
+    }
+    const id = window.setTimeout(() => setMode("after"), scale(1600));
+    return () => window.clearTimeout(id);
+  }, [mode, scale]);
+
+  function onBoxClick() {
+    if (mode !== "play" || !beat || beat.kind !== "line" || frozen) {
+      return;
+    }
+    if (typing) {
+      forceComplete.current = true;
+      setShown(beat.text);
+      setTyping(false);
+      setIndicator(false);
+      return;
+    }
+    if (shown === beat.text) {
+      advance();
+    }
   }
 
   const line = beat?.kind === "line" ? beat : null;
@@ -143,22 +232,29 @@ export function DialogueTerminal() {
   return (
     <div
       className={cn(
-        "relative min-h-dvh px-4 py-10 sm:px-8 sm:py-16",
-        darken ? "bg-black" : "bg-term",
-        frozen && "opacity-40",
+        "relative min-h-dvh overflow-hidden px-4 py-10 sm:px-8 sm:py-16",
+        darken || lost ? "bg-black" : "bg-term",
+        frozen && "opacity-30",
+        redShift && !lost && "after:pointer-events-none after:absolute after:inset-0 after:bg-[rgba(104,26,23,0.12)]",
       )}
     >
-      {inject && !lost ? (
-        <div className="pointer-events-none absolute inset-x-4 top-16 space-y-2 opacity-40 sm:inset-x-10">
-          {[...SOURCE_BOOT, ...SOURCE_BIND].map((code) => (
-            <p key={code} className="font-mono text-[11px] text-sys">
+      {inject && !lost && !frozen ? (
+        <div className="pointer-events-none absolute inset-x-4 top-14 space-y-2 sm:inset-x-10">
+          {INJECT_LINES.slice(0, injectCount).map((code, i) => (
+            <p
+              key={code}
+              className={cn(
+                "font-mono text-[11px] text-sys/80",
+                i % 2 === 0 ? "ml-[2vw]" : "ml-[18vw]",
+              )}
+            >
               {code}
             </p>
           ))}
         </div>
       ) : null}
 
-      {flash ? (
+      {flash && !lost ? (
         <p className="pointer-events-none absolute left-6 top-1/3 font-mono text-[12px] text-sys sm:left-16">
           {flash}
         </p>
@@ -188,10 +284,14 @@ export function DialogueTerminal() {
 
         {exitReq && !lost ? (
           <div className="mb-4 space-y-1 font-mono text-[11px] text-danger">
-            <p>&gt; EXIT REQUEST</p>
-            <p>PROCESSING...</p>
-            <p>TERMINATION PROTOCOL</p>
-            <p className="phosphor-red">ERROR</p>
+            {EXIT_LINES.slice(0, exitCount).map((item) => (
+              <p
+                key={item}
+                className={item === "ERROR" ? "phosphor-red" : undefined}
+              >
+                {item}
+              </p>
+            ))}
           </div>
         ) : null}
 
@@ -208,12 +308,7 @@ export function DialogueTerminal() {
             ) : null}
 
             {indicator && line?.speaker ? (
-              <div className="font-mono text-[11px] text-green-dim">
-                <p className="phosphor-green tracking-[0.2em] text-green">
-                  {line.speaker}
-                </p>
-                <p className="mt-3">正在输入...</p>
-              </div>
+              <TypingIndicator name={line.speaker} />
             ) : null}
 
             {line && !indicator ? (

@@ -108,19 +108,19 @@ export function UnknownSequence() {
 }
 
 function StillThere({ onDone }: { onDone: () => void }) {
-  const step = useReveal([400, 1800, 900, 1200, 1000]);
-  useAfter(400, onDone, step >= 5);
+  const step = useReveal([500, 1600, 700, 280, 900, 700]);
+  useAfter(350, onDone, step >= 6);
 
-  if (step === 0 || step >= 5) {
+  if (step === 0 || step >= 6) {
     return <div className="min-h-dvh bg-bg" />;
   }
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-bg">
-      {step >= 1 && step < 4 ? (
+      {step >= 1 && step < 5 ? (
         <p
           className={`font-mono text-[13px] tracking-[0.06em] ${
-            step >= 3 ? "text-sys" : "text-ink"
+            step === 3 ? "opacity-20" : step >= 4 ? "text-sys" : "text-ink"
           }`}
         >
           Are you still there？
@@ -218,7 +218,12 @@ function FailBurst({ onDone }: { onDone: () => void }) {
         {step >= 3 ? <p className="text-danger">{FAILURE.error}</p> : null}
         {step >= 4 ? <p className="text-mute">SYSTEM FAILURE</p> : null}
         {step >= 5 ? <p className="text-danger">TERMINATION FAILED</p> : null}
-        {step >= 6 ? <CodeLine text={SOURCE_RETURN} /> : null}
+        {step >= 6 ? (
+          <div className="space-y-3 pt-4">
+            <CodeLine text={SOURCE_EXIT} />
+            <CodeLine text={SOURCE_RETURN} />
+          </div>
+        ) : null}
       </div>
     </div>
   );

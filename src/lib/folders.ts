@@ -16,6 +16,7 @@ export type FolderDef = {
   status: string;
   recovery: string;
   kind: string;
+  stamp: string;
 };
 
 export const FOLDERS: FolderDef[] = [
@@ -27,6 +28,7 @@ export const FOLDERS: FolderDef[] = [
     status: "RECOVERED",
     recovery: "82%",
     kind: "FILE / CLASSIFIED",
+    stamp: "STAMP 00:14:07",
   },
   {
     id: "memory",
@@ -36,6 +38,7 @@ export const FOLDERS: FolderDef[] = [
     status: "RECOVERED",
     recovery: "91%",
     kind: "RECORD / PARTIAL",
+    stamp: "STAMP 00:14:22",
   },
   {
     id: "termination",
@@ -45,6 +48,7 @@ export const FOLDERS: FolderDef[] = [
     status: "RESTRICTED",
     recovery: "74%",
     kind: "REPORT / SEALED",
+    stamp: "STAMP 00:15:03",
   },
   {
     id: "leak",
@@ -54,6 +58,7 @@ export const FOLDERS: FolderDef[] = [
     status: "CORRUPTED",
     recovery: "47%",
     kind: "FRAGMENT / UNKNOWN",
+    stamp: "STAMP 00:16:41",
   },
   {
     id: "pd001",
@@ -63,6 +68,7 @@ export const FOLDERS: FolderDef[] = [
     status: "RECOVERED",
     recovery: "91%",
     kind: "LOG / RELAY",
+    stamp: "21:07:14",
   },
   {
     id: "unknown",
@@ -72,6 +78,7 @@ export const FOLDERS: FolderDef[] = [
     status: "LOCKED",
     recovery: "—",
     kind: "UNKNOWN",
+    stamp: "—",
   },
 ];
 

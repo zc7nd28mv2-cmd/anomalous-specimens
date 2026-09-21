@@ -26,24 +26,36 @@ export function ArchiveReader() {
           {meta?.title}
         </p>
 
-        <div className="mt-8 flex flex-wrap gap-2">
+        <div className="mt-8 space-y-2">
           {files.map((item) => (
             <button
               key={item.id}
               type="button"
               onClick={() => openFile(item.id)}
               className={cn(
-                "border border-line px-3 py-2 font-mono text-[10px] tracking-[0.14em] transition-colors duration-300",
+                "folder-plate flex w-full items-baseline justify-between gap-4 px-3 py-3 text-left transition-colors duration-300",
                 active === item.id ? "border-green-dim text-ink" : "text-sys hover:text-mute",
               )}
             >
-              {item.label}
+              <span className="font-mono text-[10px] tracking-[0.16em]">
+                {item.label}
+              </span>
+              <span className="font-mono text-[11px] tracking-[0.08em]">
+                {item.name}
+              </span>
             </button>
           ))}
         </div>
 
         <div className="mt-10">
-          {active ? <FileBody folder={folder} file={active} /> : null}
+          {active ? (
+            <>
+              <p className="mb-6 font-mono text-[10px] tracking-[0.18em] text-sys">
+                {files.find((item) => item.id === active)?.name}
+              </p>
+              <FileBody folder={folder} file={active} />
+            </>
+          ) : null}
         </div>
 
         <Command onClick={closeReader}>CLOSE FILE</Command>
