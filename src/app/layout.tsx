@@ -1,11 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Mono, Noto_Sans_SC } from "next/font/google";
+import { IBM_Plex_Mono, JetBrains_Mono, Noto_Sans_SC } from "next/font/google";
 import "./globals.css";
 
 const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-sys",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-code",
   display: "swap",
 });
 
@@ -34,7 +41,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="zh-Hans"
-      className={`${ibmPlexMono.variable} ${notoSansSC.variable} h-full bg-bg antialiased`}
+      className={`${ibmPlexMono.variable} ${jetbrainsMono.variable} ${notoSansSC.variable} h-full bg-bg antialiased`}
     >
       <body className="min-h-full bg-bg font-sans text-ink">{children}</body>
     </html>

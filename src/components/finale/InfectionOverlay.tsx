@@ -4,10 +4,9 @@ import { useEffect, useState } from "react";
 import { useAfter } from "@/hooks/useReveal";
 import { useScaledMs } from "@/hooks/useTiming";
 import { useAudio } from "@/context/AudioContext";
-import { CodeLine } from "@/components/system/CodeLine";
 import { Cursor } from "@/components/system/Cursor";
+import { YumeProtocol } from "@/components/finale/YumeProtocol";
 import {
-  PEACH_DREAM_SOURCE,
   SOURCE_BIND,
   SOURCE_BOOT,
   SOURCE_EXIT,
@@ -40,8 +39,6 @@ const DENY_LINES = [
   { text: "PROCESS: ACTIVE", tone: "sys" },
 ] as const;
 
-const PROTOCOL_LINES = PEACH_DREAM_SOURCE.split("\n").filter((line) => line.length > 0);
-
 type Gate = "black" | "ask" | "next" | "flash";
 
 export function InfectionOverlay({ onDone }: { onDone: () => void }) {
@@ -73,7 +70,7 @@ export function InfectionOverlay({ onDone }: { onDone: () => void }) {
     return <FlashOut onDone={onDone} />;
   }
 
-  return <ProtocolPath onHoldDone={() => setGate("flash")} />;
+  return <YumeProtocol onHoldDone={() => setGate("flash")} />;
 }
 
 function StillThere({ onYes }: { onYes: () => void }) {
@@ -185,35 +182,6 @@ function DenyLog() {
 }
 
 function FlashOut({ onDone }: { onDone: () => void }) {
-  useAfter(280, onDone, true);
+  useAfter(140, onDone, true);
   return <div className="still-overlay" />;
-}
-
-function ProtocolPath({ onHoldDone }: { onHoldDone: () => void }) {
-  const scale = useScaledMs();
-  const [shown, setShown] = useState(0);
-  const finished = shown >= PROTOCOL_LINES.length;
-
-  useEffect(() => {
-    if (shown >= PROTOCOL_LINES.length) {
-      return;
-    }
-    const id = window.setTimeout(
-      () => setShown((value) => value + 1),
-      scale(irregular(140, 240)),
-    );
-    return () => window.clearTimeout(id);
-  }, [scale, shown]);
-
-  useAfter(4000, onHoldDone, finished);
-
-  return (
-    <div className="still-overlay still-protocol">
-      <div className="still-protocol-log">
-        {PROTOCOL_LINES.slice(0, shown).map((line, index) => (
-          <CodeLine key={`${index}-${line}`} text={line} className="text-[12px] text-mute" />
-        ))}
-      </div>
-    </div>
-  );
 }

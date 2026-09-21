@@ -14,7 +14,7 @@ import { DOSSIER, ENDING } from "@/lib/content";
 import { cn } from "@/lib/cn";
 
 export function StoryArchive() {
-  const { go, autoOpenPd001, startFinale, pd001Done, finishPd001 } = useArchive();
+  const { go, autoOpenPd001, startFinale, pd001Done } = useArchive();
   const audio = useAudio();
   const [open, setOpen] = useState(autoOpenPd001);
   const [closing, setClosing] = useState(false);
@@ -244,9 +244,8 @@ export function StoryArchive() {
       {finale === "run" ? (
         <InfectionOverlay
           onDone={() => {
-            setFinale("done");
+            setFinale("off");
             setOpen(false);
-            finishPd001();
             go("index");
           }}
         />

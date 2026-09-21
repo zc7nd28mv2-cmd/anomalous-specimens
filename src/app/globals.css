@@ -229,20 +229,52 @@ body {
   color: #62625f;
 }
 
-.still-protocol {
-  display: flex;
-  align-items: flex-start;
-  padding: 40px 28px;
+.yume-view {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: #000;
+  padding: 48px 64px;
 }
 
-.still-protocol-log {
-  display: flex;
-  max-height: 100%;
-  width: min(520px, 100%);
-  flex-direction: column;
-  justify-content: flex-end;
+.yume-code {
+  max-width: 1160px;
+  height: 100%;
   overflow: hidden;
-  gap: 4px;
+  margin: 0;
+  font-family: var(--font-code), "SFMono-Regular", Menlo, Monaco, Consolas, var(--font-sys),
+    ui-monospace, monospace;
+  font-size: clamp(8px, calc((100dvh - 96px) / 74), 13px);
+  font-weight: 400;
+  line-height: 1.28;
+  letter-spacing: 0;
+  color: #d4d4d4;
+  white-space: pre;
+  text-shadow: none;
+}
+
+.yume-line {
+  display: inline;
+}
+
+.yume-key {
+  color: #7dd3fc;
+}
+
+.yume-cmt {
+  color: #6b7280;
+}
+
+@media (max-width: 800px) {
+  .yume-view {
+    padding: 24px 18px;
+  }
+
+  .yume-code {
+    font-size: clamp(7px, calc((100dvh - 48px) / 74), 11px);
+  }
 }
 
 .micro-flicker {
