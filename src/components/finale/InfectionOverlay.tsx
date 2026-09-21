@@ -140,7 +140,12 @@ function StillThere({ onYes }: { onYes: () => void }) {
       return;
     }
     const wait = irregular(400, 700);
-    window.setTimeout(() => setPromptPhase("enter"), scale(wait));
+    window.setTimeout(() => {
+      setTyped("");
+      setChunk(0);
+      setChoices(false);
+      setPromptPhase("enter");
+    }, scale(wait));
   }
 
   return (
@@ -156,12 +161,12 @@ function StillThere({ onYes }: { onYes: () => void }) {
         <div className="still-prompt">
           <div
             className={cn(
-              done && "still-ask",
+              "still-ask",
               promptPhase === "leave" && "is-leave",
               promptPhase === "enter" && "is-enter",
             )}
           >
-            <p className="font-mono text-[13px] tracking-[0.06em] text-ink">
+            <p className="still-ask-line font-mono text-[13px] tracking-[0.06em] text-ink">
               {typed}
               <Cursor />
             </p>
@@ -211,24 +216,13 @@ function DenyStream({
   activeId: number | null;
   onActiveDone: (id: number) => void;
 }) {
-  const scroller = useRef<HTMLDivElement>(null);
-  const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    const node = scroller.current;
-    if (!node) {
-      return;
-    }
-    node.scrollTop = node.scrollHeight;
-  }, [logs, tick]);
-
   return (
-    <div ref={scroller} className="still-fault" aria-hidden>
+    <div className="still-fault" aria-hidden>
       {logs.map((log) => (
         <DenyGroup
           key={log.id}
           live={log.id === activeId}
-          onLine={() => setTick((value) => value + 1)}
+          onLine={() => undefined}
           onDone={() => onActiveDone(log.id)}
         />
       ))}

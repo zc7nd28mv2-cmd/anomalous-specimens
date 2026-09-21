@@ -187,14 +187,22 @@ body {
 }
 
 .still-ask {
-  display: inline-flex;
-  min-width: min(420px, calc(100vw - 48px));
+  display: flex;
+  width: min(420px, calc(100vw - 48px));
+  min-height: 196px;
   flex-direction: column;
-  align-items: stretch;
+  align-items: center;
+  justify-content: center;
   border: 1px solid rgba(124, 255, 138, 0.45);
   border-radius: 0;
   padding: 28px 32px 24px;
-  text-align: left;
+  text-align: center;
+}
+
+.still-ask-line {
+  width: 100%;
+  margin: 0;
+  text-align: center;
 }
 
 .still-ask-actions {
@@ -240,11 +248,17 @@ body {
   display: flex;
   width: min(38vw, 300px);
   flex-direction: column;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
   padding: 28px 20px;
-  pointer-events: auto;
+  pointer-events: none;
   user-select: none;
+  scrollbar-width: none;
+}
+
+.still-fault::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .still-fault-group + .still-fault-group {
