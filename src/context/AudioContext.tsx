@@ -15,6 +15,8 @@ import {
   playDenied,
   playMessage,
   playResult,
+  playSystemConfirm,
+  playTerminalTick,
   playTick,
   setAudioEnabled,
   unlockAudio,
@@ -27,6 +29,8 @@ type AudioApi = {
   click: () => void;
   denied: () => void;
   tick: () => void;
+  terminalTick: () => void;
+  confirm: () => void;
   message: () => void;
   alert: () => void;
   result: () => void;
@@ -62,6 +66,11 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         playDenied();
       },
       tick: playTick,
+      terminalTick: playTerminalTick,
+      confirm: () => {
+        unlockAudio();
+        playSystemConfirm();
+      },
       message: playMessage,
       alert: playAlert,
       result: playResult,

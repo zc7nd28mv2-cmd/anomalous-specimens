@@ -47,12 +47,29 @@ function countVisible(stamps: number[], elapsed: number) {
   return count;
 }
 
-function useParallelType(lines: readonly string[], enabled: boolean) {
+function addedChars(prev: readonly string[], next: readonly string[]) {
+  let extra = "";
+  for (let i = 0; i < next.length; i += 1) {
+    const before = prev[i] ?? "";
+    if (next[i].length > before.length) {
+      extra += next[i].slice(before.length);
+    }
+  }
+  return extra;
+}
+
+function useParallelType(
+  lines: readonly string[],
+  enabled: boolean,
+  onChars?: (chars: string) => void,
+) {
   const scale = useScaledMs();
   const reduced = usePrefersReducedMotion();
   const [parts, setParts] = useState<string[]>(() => lines.map(() => ""));
   const [finished, setFinished] = useState(false);
   const frame = useRef<number | null>(null);
+  const onCharsRef = useRef(onChars);
+  onCharsRef.current = onChars;
 
   useEffect(() => {
     if (!enabled) {
@@ -69,6 +86,7 @@ function useParallelType(lines: readonly string[], enabled: boolean) {
     const start = performance.now();
     let cancelled = false;
     let last = "";
+    let lastParts = lines.map(() => "");
 
     const tick = (now: number) => {
       if (cancelled) {
@@ -80,8 +98,13 @@ function useParallelType(lines: readonly string[], enabled: boolean) {
       );
       const key = next.join("\n");
       if (key !== last) {
+        const fresh = addedChars(lastParts, next);
         last = key;
+        lastParts = next;
         setParts(next);
+        if (fresh) {
+          onCharsRef.current?.(fresh);
+        }
       }
       if (next.every((part, index) => part.length >= lines[index].length)) {
         setFinished(true);
@@ -107,9 +130,15 @@ function useParallelType(lines: readonly string[], enabled: boolean) {
 export function BootScene({ onComplete }: { onComplete: () => void }) {
   const intro = useReveal(INTRO_DELAYS);
   const typing = intro >= 4;
-  const init = useParallelType(INIT_LINES, typing);
-  const after = useReveal(init.finished ? AFTER_DELAYS : EMPTY_DELAYS);
   const audio = useAudio();
+  const init = useParallelType(INIT_LINES, typing, (chars) => {
+    for (const ch of chars) {
+      if (ch.trim()) {
+        audio.terminalTick();
+      }
+    }
+  });
+  const after = useReveal(init.finished ? AFTER_DELAYS : EMPTY_DELAYS);
 
   return (
     <Stage className="overflow-hidden">
@@ -158,7 +187,7 @@ export function BootScene({ onComplete }: { onComplete: () => void }) {
         <button
           type="button"
           onClick={() => {
-            audio.click();
+            audio.confirm();
             onComplete();
           }}
           className="read-tag boot-snap"

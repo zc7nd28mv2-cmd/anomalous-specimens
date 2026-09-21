@@ -27,8 +27,9 @@ function context() {
 export function unlockAudio() {
   const audio = context();
   if (audio && audio.state === "suspended") {
-    void audio.resume();
+    return audio.resume().catch(() => undefined);
   }
+  return Promise.resolve();
 }
 
 export function setAudioEnabled(value: boolean) {
@@ -42,22 +43,37 @@ export function isAudioEnabled() {
   return enabled;
 }
 
-function tone({ freq, dur, type, gain }: Tone) {
-  const audio = context();
-  if (!audio || !enabled || audio.state !== "running") {
+function speak(audio: AudioContext, { freq, dur, type, gain }: Tone) {
+  if (!enabled || audio.state !== "running") {
     return;
   }
   const osc = audio.createOscillator();
   const amp = audio.createGain();
   osc.type = type;
   osc.frequency.value = freq;
-  amp.gain.value = gain;
+  amp.gain.setValueAtTime(gain, audio.currentTime);
   osc.connect(amp);
   amp.connect(audio.destination);
   const now = audio.currentTime;
   osc.start(now);
   amp.gain.exponentialRampToValueAtTime(0.0001, now + dur);
   osc.stop(now + dur);
+}
+
+function tone(spec: Tone) {
+  try {
+    const audio = context();
+    if (!audio || !enabled) {
+      return;
+    }
+    if (audio.state === "suspended") {
+      void audio.resume().then(() => speak(audio, spec)).catch(() => undefined);
+      return;
+    }
+    speak(audio, spec);
+  } catch {
+    // Audio is optional. Never block the page.
+  }
 }
 
 export function playClick() {
@@ -76,6 +92,23 @@ export function playTick() {
     return;
   }
   tone({ freq: 640 + Math.random() * 80, dur: 0.012, type: "square", gain: 0.012 });
+}
+
+export function playTerminalTick() {
+  if (Math.random() > 0.72) {
+    return;
+  }
+  tone({
+    freq: 490 + Math.random() * 110,
+    dur: 0.016 + Math.random() * 0.018,
+    type: "square",
+    gain: 0.007 + Math.random() * 0.003,
+  });
+}
+
+export function playSystemConfirm() {
+  tone({ freq: 196, dur: 0.072, type: "triangle", gain: 0.046 });
+  tone({ freq: 98, dur: 0.096, type: "sine", gain: 0.022 });
 }
 
 export function playMessage() {
