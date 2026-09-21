@@ -10,6 +10,11 @@ import {
   type ReactNode,
 } from "react";
 import { FOLDER_FILES, type FileId, type FolderId } from "@/lib/folders";
+import {
+  loadFieldSession,
+  writeFieldSession,
+  type FieldSession,
+} from "@/lib/field-session";
 
 export type Phase =
   | "boot"
@@ -29,11 +34,16 @@ type ArchiveContextValue = {
   pd001Done: boolean;
   autoOpenPd001: boolean;
   startFinale: boolean;
+  fieldOpen: boolean;
+  field: FieldSession;
   go: (phase: Phase) => void;
   openFolder: (id: FolderId) => void;
   openFile: (id: FileId) => void;
   closeReader: () => void;
   finishPd001: () => void;
+  openField: () => void;
+  closeField: () => void;
+  patchField: (patch: Partial<FieldSession>) => void;
 };
 
 const ArchiveContext = createContext<ArchiveContextValue | null>(null);
@@ -91,6 +101,8 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
   const [folder, setFolder] = useState<FolderId | null>(null);
   const [file, setFile] = useState<FileId | null>(null);
   const [pd001Done, setPd001Done] = useState(false);
+  const [fieldOpen, setFieldOpen] = useState(autoOpenPd001);
+  const [field, setField] = useState<FieldSession>(loadFieldSession);
 
   const current = phase ?? urlPhase ?? "boot";
 
@@ -122,6 +134,22 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
     setPd001Done(true);
   }, []);
 
+  const openField = useCallback(() => {
+    setFieldOpen(true);
+  }, []);
+
+  const closeField = useCallback(() => {
+    setFieldOpen(false);
+  }, []);
+
+  const patchField = useCallback((patch: Partial<FieldSession>) => {
+    setField((prev) => {
+      const next = { ...prev, ...patch };
+      writeFieldSession(next);
+      return next;
+    });
+  }, []);
+
   const value = useMemo(
     () => ({
       phase: current,
@@ -130,22 +158,32 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       pd001Done,
       autoOpenPd001,
       startFinale,
+      fieldOpen,
+      field,
       go,
       openFolder,
       openFile,
       closeReader,
       finishPd001,
+      openField,
+      closeField,
+      patchField,
     }),
     [
       autoOpenPd001,
+      closeField,
       closeReader,
       current,
+      field,
+      fieldOpen,
       file,
       finishPd001,
       folder,
       go,
+      openField,
       openFile,
       openFolder,
+      patchField,
       pd001Done,
       startFinale,
     ],

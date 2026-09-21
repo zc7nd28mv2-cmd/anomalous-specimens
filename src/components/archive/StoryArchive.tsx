@@ -14,17 +14,26 @@ import { DOSSIER, ENDING } from "@/lib/content";
 import { cn } from "@/lib/cn";
 
 export function StoryArchive() {
-  const { go, autoOpenPd001, startFinale, pd001Done } = useArchive();
+  const {
+    go,
+    autoOpenPd001,
+    startFinale,
+    pd001Done,
+    fieldOpen,
+    field,
+    openField,
+    closeField,
+    patchField,
+  } = useArchive();
   const audio = useAudio();
-  const [open, setOpen] = useState(autoOpenPd001);
   const [closing, setClosing] = useState(false);
   const [finale, setFinale] = useState<"off" | "run" | "done">(
     startFinale ? "run" : pd001Done ? "done" : "off",
   );
-  const [fail, setFail] = useState<"off" | "run" | "done">("off");
-  const [scan, setScan] = useState<"off" | "run" | "resume" | "done">("off");
-  const [scanLines, setScanLines] = useState<string[] | null>(null);
-  const [canLeave, setCanLeave] = useState(false);
+  const [fail, setFail] = useState<"off" | "run" | "done">(field.warning);
+  const [scan, setScan] = useState<"off" | "run" | "resume" | "done">(field.scan);
+  const [scanLines, setScanLines] = useState<string[] | null>(field.scanLines);
+  const [canLeave, setCanLeave] = useState(field.canLeave);
 
   useEffect(() => {
     if (autoOpenPd001 || startFinale) {
@@ -41,9 +50,13 @@ export function StoryArchive() {
     if (finale !== "off") {
       return;
     }
+    if (scan === "run" || scan === "resume") {
+      setScan("done");
+      patchField({ scan: "done" });
+    }
     setClosing(true);
     window.setTimeout(() => {
-      setOpen(false);
+      closeField();
       setClosing(false);
     }, 240);
   }
@@ -158,15 +171,7 @@ export function StoryArchive() {
               <p>SOURCE: UNKNOWN NEURAL RELAY</p>
             </div>
             <div className="field-node">
-              <PulseNode
-                onOpen={() => {
-                  setFail("off");
-                  setScan("off");
-                  setScanLines(null);
-                  setCanLeave(false);
-                  setOpen(true);
-                }}
-              />
+              <PulseNode onOpen={() => openField()} />
             </div>
           </div>
         </section>
@@ -182,7 +187,7 @@ export function StoryArchive() {
         <BackLink label="返回 仙桃夢" onClick={() => go("specimen")} />
       </div>
 
-      {open && finale !== "run" ? (
+      {fieldOpen && finale !== "run" ? (
         <div className="record-veil fixed inset-0 flex items-center justify-center bg-black/72 px-6 py-10">
           <div
             className={cn(
@@ -215,14 +220,21 @@ export function StoryArchive() {
               </button>
             </div>
             <FieldRecord
-              onWarning={() => setFail("run")}
+              onWarning={() => {
+                setFail("run");
+                patchField({ warning: "run" });
+              }}
               warningCleared={fail === "done"}
               onAnalysis={(lines) => {
                 setScanLines(lines);
                 setScan("run");
+                patchField({ scan: "run", scanLines: lines });
               }}
               analysisCleared={scan === "resume" || scan === "done"}
-              onReadyToLeave={() => setCanLeave(true)}
+              onReadyToLeave={() => {
+                setCanLeave(true);
+                patchField({ canLeave: true });
+              }}
               onComplete={leaveArchive}
             />
           </div>
@@ -232,20 +244,31 @@ export function StoryArchive() {
       {(scan === "run" || scan === "resume") && scanLines ? (
         <AnalysisOverlay
           result={scanLines}
-          onResume={() => setScan("resume")}
-          onDone={() => setScan("done")}
+          onResume={() => {
+            setScan("resume");
+            patchField({ scan: "resume" });
+          }}
+          onDone={() => {
+            setScan("done");
+            patchField({ scan: "done" });
+          }}
         />
       ) : null}
 
       {fail === "run" ? (
-        <WarningOverlay onDone={() => setFail("done")} />
+        <WarningOverlay
+          onDone={() => {
+            setFail("done");
+            patchField({ warning: "done" });
+          }}
+        />
       ) : null}
 
       {finale === "run" ? (
         <InfectionOverlay
           onDone={() => {
             setFinale("off");
-            setOpen(false);
+            closeField();
             go("index");
           }}
         />

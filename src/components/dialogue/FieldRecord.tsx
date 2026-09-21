@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useScaledMs } from "@/hooks/useTiming";
 import { useAudio } from "@/context/AudioContext";
+import { useArchive } from "@/context/ArchiveContext";
 import { TypingIndicator } from "@/components/dialogue/TypingIndicator";
 import { SensoryChoice } from "@/components/dialogue/SensoryChoice";
 import {
@@ -16,21 +17,18 @@ import {
 } from "@/lib/dialogue";
 import { SENSORY, type SensoryId } from "@/lib/sensory";
 import { SOURCE_BIND, SOURCE_BOOT } from "@/lib/source";
+import {
+  loadFieldSession,
+  type FieldLogItem,
+  type FieldSession,
+  type FieldStatus,
+  type InvestGate,
+} from "@/lib/field-session";
 
 const INJECT = [...SOURCE_BOOT, ...SOURCE_BIND] as const;
 
-type LogItem =
-  | { key: string; kind: "time"; text: string }
-  | { key: string; kind: "msg"; speaker: string; text: string }
-  | { key: string; kind: "sys"; k: string; v: string }
-  | { key: string; kind: "code"; text: string }
-  | { key: string; kind: "warn"; title: string; body?: string; faded?: boolean }
-  | { key: string; kind: "note"; text: string; danger?: boolean }
-  | { key: string; kind: "analysis"; steps: string[]; result: string[] }
-  | { key: string; kind: "invest" }
-  | { key: string; kind: "lost" };
-
-type Status = "play" | "choice" | "analysis" | "warn" | "after";
+type LogItem = FieldLogItem;
+type Status = FieldStatus;
 
 function nameOf(speaker: "LIN" | "KAI" | null) {
   if (speaker === "LIN") {
@@ -77,20 +75,33 @@ export function FieldRecord({
 }) {
   const scale = useScaledMs();
   const audio = useAudio();
-  const [index, setIndex] = useState(0);
-  const [status, setStatus] = useState<Status>("play");
-  const [log, setLog] = useState<LogItem[]>([]);
+  const { patchField } = useArchive();
+  const saved = useRef(loadFieldSession());
+  const [index, setIndex] = useState(saved.current.index);
+  const [status, setStatus] = useState<Status>(saved.current.status);
+  const [log, setLog] = useState<LogItem[]>(saved.current.log);
   const [draft, setDraft] = useState("");
   const [typing, setTyping] = useState(false);
   const [indicator, setIndicator] = useState("");
-  const [choice, setChoice] = useState<SensoryId | null>(null);
+  const [choice, setChoice] = useState<SensoryId | null>(saved.current.choice);
   const [choiceLeaving, setChoiceLeaving] = useState(false);
   const force = useRef(false);
-  const picked = useRef(false);
-  const keys = useRef(0);
+  const picked = useRef(saved.current.picked);
+  const keys = useRef(saved.current.keyCount);
   const end = useRef<HTMLDivElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
-  const pinBottom = useRef(true);
+  const pinBottom = useRef(saved.current.pinBottom);
+  const restoring = useRef(saved.current.log.length > 0 || saved.current.scroll > 0);
+  const snapshot = useRef<Partial<FieldSession>>({});
+  const live = useRef({
+    index,
+    status,
+    log,
+    typing,
+    draft,
+    indicator,
+  });
+  live.current = { index, status, log, typing, draft, indicator };
 
   const nextKey = () => {
     keys.current += 1;
@@ -101,12 +112,75 @@ export function FieldRecord({
     setLog((value) => [...value, item]);
   }, []);
 
+  useLayoutEffect(() => {
+    if (!restoring.current) {
+      return;
+    }
+    const node = scroller.current;
+    const top = saved.current.scroll;
+    if (!node) {
+      return;
+    }
+    const apply = () => {
+      node.scrollTop = top;
+      pinBottom.current = saved.current.pinBottom;
+    };
+    apply();
+    const frame = window.requestAnimationFrame(() => {
+      apply();
+      window.requestAnimationFrame(() => {
+        apply();
+        restoring.current = false;
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [log.length]);
+
   useEffect(() => {
-    if (!pinBottom.current) {
+    if (restoring.current || !pinBottom.current) {
       return;
     }
     end.current?.scrollIntoView({ block: "end" });
   }, [log, draft, indicator, choice]);
+
+  useEffect(() => {
+    snapshot.current = {
+      index,
+      status,
+      log,
+      keyCount: keys.current,
+      picked: picked.current,
+      choice,
+      scroll: scroller.current?.scrollTop ?? saved.current.scroll,
+      pinBottom: pinBottom.current,
+    };
+    patchField(snapshot.current);
+  }, [choice, index, log, patchField, status]);
+
+  useEffect(() => {
+    return () => {
+      const current = live.current;
+      const beat = DIALOGUE[current.index] as DialogueBeat | undefined;
+      const next: Partial<FieldSession> = { ...snapshot.current };
+      if (
+        current.status === "play" &&
+        beat?.kind === "line" &&
+        (current.typing || current.draft || current.indicator)
+      ) {
+        const item: LogItem = {
+          key: `k-${(keys.current += 1)}`,
+          kind: "msg",
+          speaker: nameOf(beat.speaker),
+          text: beat.text,
+        };
+        next.log = [...current.log, item];
+        next.index = current.index + 1;
+        next.keyCount = keys.current;
+        next.status = "play";
+      }
+      patchField(next);
+    };
+  }, [patchField]);
 
   const advance = useCallback(() => {
     setIndex((value) => value + 1);
@@ -332,11 +406,20 @@ export function FieldRecord({
       ref={scroller}
       onScroll={() => {
         const node = scroller.current;
-        if (!node) {
+        if (!node || restoring.current) {
           return;
         }
         pinBottom.current =
           node.scrollHeight - node.scrollTop - node.clientHeight < 56;
+        snapshot.current = {
+          ...snapshot.current,
+          scroll: node.scrollTop,
+          pinBottom: pinBottom.current,
+        };
+        patchField({
+          scroll: node.scrollTop,
+          pinBottom: pinBottom.current,
+        });
       }}
       onClick={onBoxClick}
       className="chat-content px-5 py-4"
@@ -355,6 +438,12 @@ export function FieldRecord({
             item={item}
             onInvestDone={onComplete}
             onReadyToLeave={onReadyToLeave}
+            investGate={saved.current.investGate}
+            investStep={saved.current.investStep}
+            onInvestChange={(investGate, investStep) => {
+              snapshot.current = { ...snapshot.current, investGate, investStep };
+              patchField({ investGate, investStep });
+            }}
           />
         ))}
 
@@ -384,35 +473,55 @@ export function FieldRecord({
 function InvestigationRecord({
   onDone,
   onReadyToLeave,
+  initialGate = "idle",
+  initialStep = 0,
+  onInvestChange,
 }: {
   onDone: () => void;
   onReadyToLeave?: () => void;
+  initialGate?: InvestGate;
+  initialStep?: number;
+  onInvestChange?: (gate: InvestGate, step: number) => void;
 }) {
   const scale = useScaledMs();
   const audio = useAudio();
-  const [gate, setGate] = useState<"idle" | "opening" | "recovering" | "open">("idle");
-  const [step, setStep] = useState(0);
+  const unlocked = initialGate !== "idle" || initialStep > 0;
+  const [gate, setGate] = useState<InvestGate>(unlocked ? "open" : "idle");
+  const [step, setStep] = useState(unlocked ? 4 : initialStep);
+  const investChange = useRef(onInvestChange);
+  investChange.current = onInvestChange;
 
   useEffect(() => {
+    if (unlocked) {
+      investChange.current?.("open", 4);
+      return;
+    }
     if (gate === "opening") {
       const id = window.setTimeout(() => setGate("recovering"), scale(400));
       return () => window.clearTimeout(id);
     }
     if (gate === "recovering") {
-      const id = window.setTimeout(() => setGate("open"), scale(500));
+      const id = window.setTimeout(() => {
+        setGate("open");
+        investChange.current?.("open", 0);
+      }, scale(500));
       return () => window.clearTimeout(id);
     }
     if (gate !== "open") {
       return;
     }
+    investChange.current?.("open", 0);
     const waits = [80, 420, 1400, 420, 420];
     let total = 0;
     const timers = waits.map((wait, i) => {
       total += wait;
-      return window.setTimeout(() => setStep(i + 1), scale(total));
+      return window.setTimeout(() => {
+        setStep(i + 1);
+        investChange.current?.("open", i + 1);
+      }, scale(total));
     });
     return () => timers.forEach((id) => window.clearTimeout(id));
-  }, [gate, scale]);
+  }, [gate, scale, unlocked]);
 
   return (
     <div className="invest-panel is-enter">
@@ -431,6 +540,7 @@ function InvestigationRecord({
               event.stopPropagation();
               audio.click();
               onReadyToLeave?.();
+              investChange.current?.("opening", 0);
               setGate("opening");
             }}
             className="invest-open is-enter"
@@ -463,7 +573,7 @@ function InvestigationRecord({
                 <p className="font-mono text-[11px] tracking-[0.08em] text-sys">
                   {INVESTIGATION.nameLabel}
                 </p>
-                <CorruptName />
+                <CorruptName settled={unlocked} />
               </div>
             ) : null}
             {step >= 3 ? (
@@ -505,24 +615,31 @@ function InvestigationRecord({
   );
 }
 
-function CorruptName() {
+function CorruptName({ settled = false }: { settled?: boolean }) {
   const scale = useScaledMs();
-  const [index, setIndex] = useState(-1);
+  const [index, setIndex] = useState(settled ? INVESTIGATION.garbles.length : -1);
   const clear = index >= INVESTIGATION.garbles.length;
 
   useEffect(() => {
+    if (settled) {
+      return;
+    }
     const start = window.setTimeout(() => setIndex(0), scale(340));
     return () => window.clearTimeout(start);
-  }, [scale]);
+  }, [scale, settled]);
 
   useEffect(() => {
-    if (index < 0 || index >= INVESTIGATION.garbles.length) {
+    if (settled || index < 0 || index >= INVESTIGATION.garbles.length) {
       return;
     }
     const wait = index === INVESTIGATION.garbles.length - 1 ? 280 : 150;
     const id = window.setTimeout(() => setIndex((value) => value + 1), scale(wait));
     return () => window.clearTimeout(id);
   }, [index, scale]);
+
+  if (settled) {
+    return <p className="recover-name is-clear">{INVESTIGATION.name}</p>;
+  }
 
   if (index < 0) {
     return null;
@@ -539,10 +656,16 @@ function LogLine({
   item,
   onInvestDone,
   onReadyToLeave,
+  investGate,
+  investStep,
+  onInvestChange,
 }: {
   item: LogItem;
   onInvestDone: () => void;
   onReadyToLeave?: () => void;
+  investGate?: InvestGate;
+  investStep?: number;
+  onInvestChange?: (gate: InvestGate, step: number) => void;
 }) {
   if (item.kind === "time") {
     return (
@@ -594,7 +717,15 @@ function LogLine({
     );
   }
   if (item.kind === "invest") {
-    return <InvestigationRecord onDone={onInvestDone} onReadyToLeave={onReadyToLeave} />;
+    return (
+      <InvestigationRecord
+        onDone={onInvestDone}
+        onReadyToLeave={onReadyToLeave}
+        initialGate={investGate}
+        initialStep={investStep}
+        onInvestChange={onInvestChange}
+      />
+    );
   }
   if (item.kind === "lost") {
     return (
