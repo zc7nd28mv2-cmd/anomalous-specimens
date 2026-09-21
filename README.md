@@ -1,30 +1,28 @@
-# ANOMALOUS SPECIMENS / 异常样本
+# 异常样本 / ANOMALOUS SPECIMENS
 
-A recovered neural archive. Not a storefront. Not a catalog.
+一份可被打开的异常数字档案。不是商店，不是商品页。
 
-The system boots first. Specimens appear later. One record can be opened
-and explored as folders, files, and a terminal log — not as slides.
+系统先启动。样本随后出现。001「仙桃梦」是一份可以连续阅读的完整档案。
+故事结束后，现场记录 PD-001 才会作为残留数据被打开。
 
-## Run locally
+## 本地运行
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open [http://127.0.0.1:43147](http://127.0.0.1:43147).
+打开 [http://127.0.0.1:43147](http://127.0.0.1:43147)。
 
-The first screen is black on purpose.
+第一屏是黑的，这是故意的。
 
-## Stack
+右下角可以开关声音。没有背景音乐。
 
-- Next.js (App Router)
+## 技术
+
+- Next.js（App Router）
 - TypeScript
 - Tailwind CSS
 - IBM Plex Mono / Noto Sans SC
 
-No login. No database. No checkout.
-
-## Deploy
-
-Netlify detects Next.js automatically. Build command: `npm run build`.
+没有登录。没有数据库。没有结算。

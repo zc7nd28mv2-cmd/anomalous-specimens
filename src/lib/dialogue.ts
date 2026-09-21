@@ -15,6 +15,7 @@ export type DialogueBeat =
   | { kind: "warn"; title: string; body?: string }
   | { kind: "inject" }
   | { kind: "exitreq" }
+  | { kind: "choice"; id: "see" | "smell" }
   | { kind: "lost" };
 
 export const DIALOGUE: DialogueBeat[] = [
@@ -29,6 +30,7 @@ export const DIALOGUE: DialogueBeat[] = [
   { kind: "line", speaker: "LIN", text: "系统生成的？", pace: "normal" },
   { kind: "line", speaker: "KAI", text: "不是。", pace: "fast" },
   { kind: "line", speaker: "KAI", text: "它在等我。", pace: "slow", hold: 1400 },
+  { kind: "choice", id: "see" },
   { kind: "sys", k: "MEMORY SYNC", v: "ACTIVE" },
   { kind: "time", text: "21:12:33" },
   { kind: "line", speaker: "KAI", text: "我见到她了。", pace: "slow", hold: 1600 },
@@ -51,6 +53,7 @@ export const DIALOGUE: DialogueBeat[] = [
   { kind: "line", speaker: "LIN", text: "操！退出……快退出。", pace: "fast" },
   { kind: "exitreq" },
   { kind: "line", speaker: "KAI", text: "她哭了。", pace: "crawl", freeze: 1100 },
+  { kind: "choice", id: "smell" },
   { kind: "time", text: "21:18:02" },
   {
     kind: "warn",

@@ -25,6 +25,8 @@ type ArchiveContextValue = {
   folder: FolderId | null;
   file: FileId | null;
   pd001Done: boolean;
+  autoOpenPd001: boolean;
+  startFinale: boolean;
   go: (phase: Phase) => void;
   openFolder: (id: FolderId) => void;
   openFile: (id: FileId) => void;
@@ -44,9 +46,25 @@ const PHASES: Phase[] = [
   "ending",
 ];
 
+function readSearch() {
+  return new URLSearchParams(window.location.search);
+}
+
 function readPhase(): Phase | null {
-  const value = new URLSearchParams(window.location.search).get("scene");
+  const value = readSearch().get("scene");
+  if (value === "pd001" || value === "unknown" || value === "ending") {
+    return "specimen";
+  }
   return PHASES.includes(value as Phase) ? (value as Phase) : null;
+}
+
+function readAutoOpen() {
+  return readSearch().get("scene") === "pd001";
+}
+
+function readFinale() {
+  const value = readSearch().get("scene");
+  return value === "unknown" || value === "ending";
 }
 
 export function ArchiveProvider({ children }: { children: ReactNode }) {
@@ -54,6 +72,16 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
     () => () => undefined,
     readPhase,
     () => null,
+  );
+  const autoOpenPd001 = useSyncExternalStore(
+    () => () => undefined,
+    readAutoOpen,
+    () => false,
+  );
+  const startFinale = useSyncExternalStore(
+    () => () => undefined,
+    readFinale,
+    () => false,
   );
   const [phase, setPhase] = useState<Phase | null>(null);
   const [folder, setFolder] = useState<FolderId | null>(null);
@@ -63,27 +91,13 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
   const current = phase ?? urlPhase ?? "boot";
 
   const go = useCallback((next: Phase) => {
-    setPhase(next);
+    setPhase(next === "pd001" || next === "unknown" || next === "ending" ? "specimen" : next);
     setFolder(null);
     setFile(null);
     window.scrollTo(0, 0);
   }, []);
 
   const openFolder = useCallback((id: FolderId) => {
-    if (id === "pd001") {
-      setPhase("pd001");
-      setFolder(null);
-      setFile(null);
-      window.scrollTo(0, 0);
-      return;
-    }
-    if (id === "unknown") {
-      setPhase("unknown");
-      setFolder(null);
-      setFile(null);
-      window.scrollTo(0, 0);
-      return;
-    }
     setFolder(id);
     const first = FOLDER_FILES[id as keyof typeof FOLDER_FILES]?.[0]?.id ?? null;
     setFile(first);
@@ -100,10 +114,6 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
 
   const finishPd001 = useCallback(() => {
     setPd001Done(true);
-    setPhase("specimen");
-    setFolder(null);
-    setFile(null);
-    window.scrollTo(0, 0);
   }, []);
 
   const value = useMemo(
@@ -112,13 +122,27 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       folder,
       file,
       pd001Done,
+      autoOpenPd001,
+      startFinale,
       go,
       openFolder,
       openFile,
       closeReader,
       finishPd001,
     }),
-    [closeReader, current, file, finishPd001, folder, go, openFile, openFolder, pd001Done],
+    [
+      autoOpenPd001,
+      closeReader,
+      current,
+      file,
+      finishPd001,
+      folder,
+      go,
+      openFile,
+      openFolder,
+      pd001Done,
+      startFinale,
+    ],
   );
 
   return (

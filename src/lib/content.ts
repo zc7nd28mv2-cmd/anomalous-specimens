@@ -1,62 +1,66 @@
 export const SYSTEM = {
+  titleZh: "异常样本",
   title: "ANOMALOUS SPECIMENS",
   archive: "ARCHIVE SYSTEM",
-  index: "ARCHIVE INDEX",
+  index: "档案索引",
   initializing: "INITIALIZING ARCHIVE...",
   memoryOk: "MEMORY INDEX ........ OK",
   neuralOk: "NEURAL ARCHIVE ...... OK",
   specimenOk: "SPECIMEN DATABASE ... OK",
   integrity47: "SOURCE INTEGRITY .... 47%",
   warning: "WARNING",
-  corrupted: "ARCHIVE PARTIALLY CORRUPTED",
-  detected: "3 / SPECIMENS DETECTED",
-  count: "3 / 3 SPECIMENS",
+  corrupted: "档案部分损坏",
+  detected: "已检测到 3 份样本",
+  count: "3 / 3 样本",
 } as const;
 
 export const SPECIMENS = [
   {
     id: "001",
+    title: "仙桃梦",
     name: "PEACH DREAM",
     alias: "「仙桃梦」",
-    kind: "MEDICAL NEURAL PROGRAM",
-    status: "LEAKED",
+    kind: "医疗神经程序",
+    status: "已泄露",
     locked: false,
   },
   {
     id: "002",
+    title: "晶蕊体",
     name: "CRYSTAL BLOOM",
     alias: "「晶蕊体」",
     kind: null,
-    status: "RESTRICTED",
+    status: "受限访问",
     locked: true,
   },
   {
     id: "003",
+    title: "复方咖啡",
     name: "COMPOUND COFFEE",
     alias: "「复方咖啡」",
     kind: null,
-    status: "RESTRICTED",
+    status: "受限访问",
     locked: true,
   },
 ] as const;
 
 export const ACCESS = {
-  accessing: "ACCESSING SPECIMEN 001",
-  verifying: "VERIFYING ARCHIVE...",
-  integrity: "SOURCE INTEGRITY 82%",
-  granted: "ACCESS GRANTED",
+  accessing: "正在读取样本 001",
+  verifying: "正在核验档案……",
+  integrity: "源完整性 82%",
+  granted: "访问已批准",
 } as const;
 
 export const DOSSIER = {
-  heading: "PROJECT DOSSIER",
-  projectLabel: "PROJECT:",
+  heading: "项目档案",
+  projectLabel: "项目：",
   project: "YUME MOMO 2.0",
-  classLabel: "CLASSIFICATION:",
-  classification: "MEDICAL NEURAL PROGRAM",
-  versionLabel: "VERSION:",
+  classLabel: "分类：",
+  classification: "医疗神经程序",
+  versionLabel: "版本：",
   version: "2.0.41-BETA",
-  statusLabel: "STATUS:",
-  status: "TERMINATED / SOURCE CODE LEAKED",
+  statusLabel: "状态：",
+  status: "已终止 / 源码泄漏",
 } as const;
 
 export const ORIGIN = [

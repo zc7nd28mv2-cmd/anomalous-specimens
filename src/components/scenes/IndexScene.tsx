@@ -3,85 +3,91 @@
 import { useState } from "react";
 import { Command } from "@/components/system/Command";
 import { Rule } from "@/components/system/Rule";
-import { Stage } from "@/components/system/Stage";
 import { SPECIMENS, SYSTEM } from "@/lib/content";
+import { useAudio } from "@/context/AudioContext";
+import { cn } from "@/lib/cn";
 
 export function IndexScene({ onAccess }: { onAccess: () => void }) {
   const [denied, setDenied] = useState<string | null>(null);
+  const audio = useAudio();
 
   return (
-    <Stage>
-      <div className="rise">
-        <p className="phosphor font-mono text-[11px] tracking-[0.26em] text-ink sm:text-[12px]">
-          {SYSTEM.title}
-        </p>
-        <p className="mt-2 font-mono text-[10px] tracking-[0.22em] text-dim sm:text-[11px]">
-          {SYSTEM.index}
-        </p>
-      </div>
+    <div className="relative min-h-dvh bg-bg px-5 py-16 sm:px-10 sm:py-20 md:px-16">
+      <div className="mx-auto w-full max-w-[720px] md:ml-[6vw]">
+        <div className="rise">
+          <h1 className="font-sans text-[48px] font-bold leading-none tracking-tight text-ink sm:text-[64px] md:text-[72px]">
+            {SYSTEM.titleZh}
+          </h1>
+          <p className="phosphor mt-4 font-mono text-[11px] tracking-[0.26em] text-sys">
+            {SYSTEM.title}
+          </p>
+          <p className="mt-8 font-sans text-[14px] text-mute">{SYSTEM.index}</p>
+        </div>
 
-      <div className="mt-14 space-y-12">
-        {SPECIMENS.map((specimen) => (
-          <section key={specimen.id} className="rise">
-            <Rule className="mb-8" />
-            <p className="font-mono text-[10px] tracking-[0.24em] text-dim">
-              {specimen.id}
-            </p>
-            {specimen.locked ? (
-              <>
-                <h2 className="mt-3 font-mono text-[15px] tracking-[0.12em] text-mute sm:text-[16px]">
-                  {specimen.name}
-                </h2>
-                <p className="mt-2 font-sans text-[14px] text-mute">{specimen.alias}</p>
-              </>
-            ) : (
-              <button type="button" onClick={onAccess} className="block text-left">
-                <h2 className="mt-3 font-mono text-[15px] tracking-[0.12em] text-ink transition-colors duration-300 hover:text-ink sm:text-[16px]">
-                  {specimen.name}
-                </h2>
-                <p className="mt-2 font-sans text-[14px] text-mute">{specimen.alias}</p>
-              </button>
-            )}
-            {specimen.kind ? (
-              <p className="mt-5 font-mono text-[10px] tracking-[0.16em] text-dim">
-                {specimen.kind}
-              </p>
-            ) : null}
-            <p
-              className={`mt-4 font-mono text-[10px] tracking-[0.18em] ${
-                specimen.locked ? "text-dim" : "text-mute"
-              }`}
-            >
-              STATUS: {specimen.status}
-            </p>
-
-            {specimen.locked ? (
-              <div>
-                <Command
-                  className="mt-6"
-                  onClick={() => setDenied(specimen.id)}
-                >
-                  LOCKED
-                </Command>
-                {denied === specimen.id ? (
-                  <p className="fade mt-4 font-mono text-[10px] tracking-[0.16em] text-danger">
-                    ACCESS DENIED
+        <div className="mt-16 space-y-14">
+          {SPECIMENS.map((specimen) => (
+            <section key={specimen.id} className="rise">
+              <Rule className="mb-8" />
+              <p className="sys-meta">档案 / {specimen.id}</p>
+              {specimen.locked ? (
+                <>
+                  <h2 className="mt-4 font-sans text-[28px] font-bold text-mute sm:text-[32px]">
+                    {specimen.title}
+                  </h2>
+                  <p className="mt-2 font-mono text-[12px] tracking-[0.14em] text-sys">
+                    {specimen.name}
                   </p>
-                ) : null}
-              </div>
-            ) : (
-              <Command className="mt-6" onClick={onAccess}>
-                ACCESS SPECIMEN
-              </Command>
-            )}
-          </section>
-        ))}
-      </div>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    audio.click();
+                    onAccess();
+                  }}
+                  className="block text-left"
+                >
+                  <h2 className="mt-4 font-sans text-[40px] font-bold leading-none text-ink sm:text-[56px] md:text-[64px]">
+                    {specimen.title}
+                  </h2>
+                  <p className="mt-3 font-mono text-[13px] tracking-[0.16em] text-sys">
+                    {specimen.name}
+                  </p>
+                </button>
+              )}
+              {specimen.kind ? (
+                <p className="mt-5 font-sans text-[14px] text-mute">{specimen.kind}</p>
+              ) : null}
+              <p className={cn("mt-3 sys-meta", specimen.locked && "text-sys")}>
+                状态 / {specimen.status}
+              </p>
 
-      <Rule className="mt-12" />
-      <p className="mt-6 font-mono text-[10px] tracking-[0.18em] text-dim">
-        {SYSTEM.count}
-      </p>
-    </Stage>
+              {specimen.locked ? (
+                <div>
+                  <Command
+                    className="mt-6"
+                    onClick={() => setDenied(specimen.id)}
+                  >
+                    锁定
+                  </Command>
+                  {denied === specimen.id ? (
+                    <p className="fade mt-4 font-sans text-[13px] text-danger">
+                      访问被拒绝
+                    </p>
+                  ) : null}
+                </div>
+              ) : (
+                <Command className="mt-6 act px-3 py-2" onClick={onAccess}>
+                  读取档案
+                </Command>
+              )}
+            </section>
+          ))}
+        </div>
+
+        <Rule className="mt-14" />
+        <p className="mt-6 sys-meta">{SYSTEM.count}</p>
+      </div>
+    </div>
   );
 }

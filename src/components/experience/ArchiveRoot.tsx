@@ -1,40 +1,54 @@
 "use client";
 
+import { useEffect } from "react";
 import { ArchiveProvider, useArchive } from "@/context/ArchiveContext";
+import { AudioProvider, useAudio } from "@/context/AudioContext";
 import { TimingProvider } from "@/hooks/useTiming";
 import { CRTOverlay } from "@/components/overlay/CRTOverlay";
 import { SystemChrome } from "@/components/system/SystemChrome";
+import { AudioToggle } from "@/components/system/AudioToggle";
 import { BootScene } from "@/components/scenes/BootScene";
 import { IndexScene } from "@/components/scenes/IndexScene";
 import { AccessScene } from "@/components/scenes/AccessScene";
-import { SpecimenHome } from "@/components/archive/SpecimenHome";
-import { ArchiveReader } from "@/components/archive/ArchiveReader";
-import { DialogueTerminal } from "@/components/dialogue/DialogueTerminal";
-import { UnknownSequence } from "@/components/finale/UnknownSequence";
+import { PeachDreamDossier } from "@/components/archive/PeachDreamDossier";
+
+function UnlockAudio() {
+  const audio = useAudio();
+
+  useEffect(() => {
+    const unlock = () => audio.unlock();
+    window.addEventListener("pointerdown", unlock);
+    return () => window.removeEventListener("pointerdown", unlock);
+  }, [audio]);
+
+  return null;
+}
 
 function ArchiveInner() {
-  const { phase, folder, go } = useArchive();
+  const { phase, go } = useArchive();
 
   return (
     <div className="min-h-dvh bg-bg">
       <CRTOverlay />
-      {phase !== "pd001" && phase !== "unknown" && phase !== "ending" ? (
-        <SystemChrome
-          surface={
-            phase === "boot" ? "void" : phase === "access" ? "archive" : "archive"
-          }
-        />
-      ) : null}
+      <UnlockAudio />
+      <AudioToggle />
+      {phase !== "boot" ? (
+        <SystemChrome surface={phase === "access" ? "archive" : "archive"} />
+      ) : (
+        <SystemChrome surface="void" />
+      )}
 
       {phase === "boot" ? <BootScene onComplete={() => go("index")} /> : null}
       {phase === "index" ? <IndexScene onAccess={() => go("access")} /> : null}
       {phase === "access" ? (
         <AccessScene onComplete={() => go("specimen")} />
       ) : null}
-      {phase === "specimen" && !folder ? <SpecimenHome /> : null}
-      {phase === "specimen" && folder ? <ArchiveReader /> : null}
-      {phase === "pd001" ? <DialogueTerminal /> : null}
-      {phase === "unknown" || phase === "ending" ? <UnknownSequence /> : null}
+      {phase === "specimen" ||
+      phase === "pd001" ||
+      phase === "unknown" ||
+      phase === "ending" ? (
+        <PeachDreamDossier />
+      ) : null}
     </div>
   );
 }
@@ -42,9 +56,11 @@ function ArchiveInner() {
 export function ArchiveRoot() {
   return (
     <TimingProvider>
-      <ArchiveProvider>
-        <ArchiveInner />
-      </ArchiveProvider>
+      <AudioProvider>
+        <ArchiveProvider>
+          <ArchiveInner />
+        </ArchiveProvider>
+      </AudioProvider>
     </TimingProvider>
   );
 }

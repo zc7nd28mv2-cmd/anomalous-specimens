@@ -10,14 +10,14 @@ export function SystemChrome({ surface }: { surface: Surface }) {
       ? "PROCESS"
       : surface === "system"
         ? "UNSTABLE"
-        : "ANOMALOUS SPECIMENS";
+        : "异常样本";
 
   const right =
     surface === "terminal"
       ? "INTERNAL"
       : surface === "system"
         ? "SOURCE UNKNOWN"
-        : "ARCHIVE / PARTIAL";
+        : "ARCHIVE / 部分恢复";
 
   return (
     <div className="pointer-events-none fixed inset-x-0 top-0 z-10 flex items-start justify-between px-5 py-4 sm:px-8">

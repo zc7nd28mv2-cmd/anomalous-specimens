@@ -30,14 +30,14 @@ export function BootScene({ onComplete }: { onComplete: () => void }) {
   return (
     <Stage>
       {step >= 1 ? (
-        <p className="phosphor micro-flicker font-mono text-[13px] tracking-[0.28em] text-ink sm:text-[14px]">
-          {SYSTEM.title}
+        <p className="font-sans text-[32px] font-bold tracking-tight text-ink sm:text-[40px]">
+          {SYSTEM.titleZh}
         </p>
       ) : null}
 
       {step >= 2 ? (
-        <p className="mt-3 font-mono text-[11px] tracking-[0.22em] text-mute">
-          {SYSTEM.archive}
+        <p className="phosphor micro-flicker mt-3 font-mono text-[11px] tracking-[0.26em] text-sys">
+          {SYSTEM.title}
         </p>
       ) : null}
 

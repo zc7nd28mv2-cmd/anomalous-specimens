@@ -11,7 +11,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 
 const notoSansSC = Noto_Sans_SC({
   subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["400", "500", "700"],
   variable: "--font-zh",
   display: "swap",
 });
@@ -36,7 +36,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="zh-Hans"
       className={`${ibmPlexMono.variable} ${notoSansSC.variable} h-full bg-bg antialiased`}
     >
-      <body className="min-h-full bg-bg text-ink">{children}</body>
+      <body className="min-h-full bg-bg font-sans text-ink">{children}</body>
     </html>
   );
 }
