@@ -47,6 +47,7 @@ type ArchiveContextValue = {
   finishPd001: () => void;
   openField: () => void;
   closeField: () => void;
+  persistField: (patch: Partial<FieldSession>) => void;
   patchField: (patch: Partial<FieldSession>) => void;
   resetYumeMomoStory: () => void;
 };
@@ -108,6 +109,7 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
   const [pd001Done, setPd001Done] = useState(false);
   const [fieldOpen, setFieldOpen] = useState(autoOpenPd001);
   const [field, setField] = useState<FieldSession>(loadFieldSession);
+  const fieldRef = useRef<FieldSession>(field);
   const persistAllowed = useRef(true);
 
   const current = phase ?? urlPhase ?? "boot";
@@ -118,6 +120,7 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
     persistAllowed.current = false;
     setFieldOpen(false);
     setPd001Done(false);
+    fieldRef.current = EMPTY_FIELD;
     setField(EMPTY_FIELD);
     clearFieldSession();
   }, []);
@@ -167,12 +170,22 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
     setFieldOpen(false);
   }, []);
 
+  const persistField = useCallback((patch: Partial<FieldSession>) => {
+    if (!persistAllowed.current) {
+      return;
+    }
+    const next = { ...fieldRef.current, ...patch };
+    fieldRef.current = next;
+    writeFieldSession(next);
+  }, []);
+
   const patchField = useCallback((patch: Partial<FieldSession>) => {
     if (!persistAllowed.current) {
       return;
     }
     setField((prev) => {
       const next = { ...prev, ...patch };
+      fieldRef.current = next;
       writeFieldSession(next);
       return next;
     });
@@ -195,6 +208,7 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       finishPd001,
       openField,
       closeField,
+      persistField,
       patchField,
       resetYumeMomoStory,
     }),
@@ -213,6 +227,7 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       openFile,
       openFolder,
       patchField,
+      persistField,
       pd001Done,
       resetYumeMomoStory,
       startFinale,

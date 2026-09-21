@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useScaledMs } from "@/hooks/useTiming";
 import { useAudio } from "@/context/AudioContext";
 import { useArchive } from "@/context/ArchiveContext";
@@ -19,9 +19,10 @@ import {
 import { SENSORY, type SensoryId } from "@/lib/sensory";
 import { SOURCE_BIND, SOURCE_BOOT } from "@/lib/source";
 import {
+  beatKey,
   loadFieldSession,
+  logHas,
   type FieldLogItem,
-  type FieldSession,
   type FieldStatus,
   type InvestGate,
 } from "@/lib/field-session";
@@ -30,6 +31,7 @@ const INJECT = [...SOURCE_BOOT, ...SOURCE_BIND] as const;
 
 type LogItem = FieldLogItem;
 type Status = FieldStatus;
+type TimerRef = { current: number | null };
 
 function nameOf(speaker: "LIN" | "KAI" | null) {
   if (speaker === "LIN") {
@@ -59,7 +61,15 @@ function pausePhase(index: number) {
   return "early" as const;
 }
 
+function clearTimer(ref: TimerRef) {
+  if (ref.current != null) {
+    window.clearTimeout(ref.current);
+    ref.current = null;
+  }
+}
+
 export function FieldRecord({
+  active = true,
   onComplete,
   onWarning,
   warningCleared = false,
@@ -67,6 +77,7 @@ export function FieldRecord({
   analysisCleared = false,
   onReadyToLeave,
 }: {
+  active?: boolean;
   onComplete: () => void;
   onWarning?: () => void;
   warningCleared?: boolean;
@@ -76,313 +87,193 @@ export function FieldRecord({
 }) {
   const scale = useScaledMs();
   const audio = useAudio();
-  const { patchField } = useArchive();
+  const { persistField } = useArchive();
   const saved = useRef(loadFieldSession());
   const resumeHold =
     saved.current.status === "hold" ||
     (saved.current.picked && saved.current.status === "choice");
+
   const [index, setIndex] = useState(saved.current.index);
   const [status, setStatus] = useState<Status>(
     resumeHold ? "hold" : saved.current.status,
   );
   const [log, setLog] = useState<LogItem[]>(saved.current.log);
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState(saved.current.draft);
   const [typing, setTyping] = useState(false);
-  const [indicator, setIndicator] = useState(resumeHold ? "Kai" : "");
+  const [indicator, setIndicator] = useState(
+    resumeHold ? "Kai" : saved.current.indicator,
+  );
   const [choice, setChoice] = useState<SensoryId | null>(
     resumeHold ? null : saved.current.choice,
   );
   const [choiceLeaving, setChoiceLeaving] = useState(false);
-  const [kaiHold, setKaiHold] = useState(resumeHold);
+
+  const indexRef = useRef(index);
+  const statusRef = useRef(status);
+  const logRef = useRef(log);
+  const draftRef = useRef(draft);
+  const typingRef = useRef(typing);
+  const indicatorRef = useRef(indicator);
+  const choiceRef = useRef(choice);
+  const kaiHoldRef = useRef(resumeHold);
+  const activeRef = useRef(active);
+  const scaleRef = useRef(scale);
+  const audioRef = useRef(audio);
+  const persistRef = useRef(persistField);
+  const onWarningRef = useRef(onWarning);
+  const onAnalysisRef = useRef(onAnalysis);
+  const warningClearedRef = useRef(warningCleared);
+  const analysisClearedRef = useRef(analysisCleared);
+
+  indexRef.current = index;
+  statusRef.current = status;
+  logRef.current = log;
+  draftRef.current = draft;
+  typingRef.current = typing;
+  indicatorRef.current = indicator;
+  choiceRef.current = choice;
+  activeRef.current = active;
+  scaleRef.current = scale;
+  audioRef.current = audio;
+  persistRef.current = persistField;
+  onWarningRef.current = onWarning;
+  onAnalysisRef.current = onAnalysis;
+  warningClearedRef.current = warningCleared;
+  analysisClearedRef.current = analysisCleared;
+
   const force = useRef(false);
   const picked = useRef(saved.current.picked);
   const skipIndicator = useRef(false);
-  const pickTimers = useRef<number[]>([]);
-  const holdFrom = useRef(resumeHold ? saved.current.index : null);
-  const keys = useRef(saved.current.keyCount);
-  const end = useRef<HTMLDivElement>(null);
-  const scroller = useRef<HTMLDivElement>(null);
+  const holdFrom = useRef<number | null>(resumeHold ? saved.current.index : null);
+  const typedCount = useRef(saved.current.draft.length);
   const pinBottom = useRef(saved.current.pinBottom);
-  const restoring = useRef(saved.current.log.length > 0 || saved.current.scroll > 0);
-  const snapshot = useRef<Partial<FieldSession>>({});
-  const live = useRef({
-    index,
-    status,
-    log,
-    typing,
-    draft,
-    indicator,
-  });
-  live.current = { index, status, log, typing, draft, indicator };
+  const scroller = useRef<HTMLDivElement>(null);
+  const end = useRef<HTMLDivElement>(null);
+  const restoring = useRef(false);
+  const needScrollRestore = useRef(
+    saved.current.scroll > 0 || saved.current.log.length > 0,
+  );
+  const savedScroll = useRef(saved.current.scroll);
+  const running = useRef(false);
 
-  const nextKey = () => {
-    keys.current += 1;
-    return `k-${keys.current}`;
-  };
+  const dialogueTimerRef = useRef<number | null>(null);
+  const typingTimerRef = useRef<number | null>(null);
+  const holdTimerRef = useRef<number | null>(null);
+  const fadeTimerRef = useRef<number | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const playRef = useRef<() => void>(() => undefined);
 
-  const push = useCallback((item: LogItem) => {
-    setLog((value) => [...value, item]);
-  }, []);
-
-  useLayoutEffect(() => {
-    if (!restoring.current) {
-      return;
-    }
-    const node = scroller.current;
-    const top = saved.current.scroll;
-    if (!node) {
-      return;
-    }
-    const apply = () => {
-      node.scrollTop = top;
-      pinBottom.current = saved.current.pinBottom;
-    };
-    apply();
-    const frame = window.requestAnimationFrame(() => {
-      apply();
-      window.requestAnimationFrame(() => {
-        apply();
-        restoring.current = false;
-      });
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [log.length]);
-
-  useEffect(() => {
-    if (restoring.current || !pinBottom.current) {
-      return;
-    }
-    end.current?.scrollIntoView({ block: "end" });
-  }, [log, draft, indicator, choice]);
-
-  useEffect(() => {
-    snapshot.current = {
-      index,
-      status,
-      log,
-      keyCount: keys.current,
+  function persistProgress() {
+    persistRef.current({
+      index: indexRef.current,
+      status: statusRef.current,
+      log: logRef.current,
       picked: picked.current,
-      choice,
-      scroll: scroller.current?.scrollTop ?? saved.current.scroll,
+      choice: choiceRef.current,
+      scroll: scroller.current?.scrollTop ?? savedScroll.current,
       pinBottom: pinBottom.current,
-    };
-    patchField(snapshot.current);
-  }, [choice, index, log, patchField, status]);
+      draft: draftRef.current,
+      indicator: indicatorRef.current,
+    });
+  }
 
-  useEffect(() => {
-    return () => {
-      const current = live.current;
-      const beat = DIALOGUE[current.index] as DialogueBeat | undefined;
-      const next: Partial<FieldSession> = { ...snapshot.current };
-      if (
-        current.status === "play" &&
-        beat?.kind === "line" &&
-        (current.typing || current.draft || current.indicator)
-      ) {
-        const item: LogItem = {
-          key: `k-${(keys.current += 1)}`,
-          kind: "msg",
-          speaker: nameOf(beat.speaker),
-          text: beat.text,
-        };
-        next.log = [...current.log, item];
-        next.index = current.index + 1;
-        next.keyCount = keys.current;
-        next.status = "play";
-      }
-      patchField(next);
-    };
-  }, [patchField]);
-
-  const advance = useCallback(() => {
-    setIndex((value) => value + 1);
-    setDraft("");
-    setTyping(false);
-    setIndicator("");
-    force.current = false;
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      pickTimers.current.forEach((id) => window.clearTimeout(id));
-    };
-  }, []);
-
-  useEffect(() => {
-    if (status !== "hold") {
-      return;
+  function clearAllAsync() {
+    clearTimer(dialogueTimerRef);
+    clearTimer(typingTimerRef);
+    clearTimer(holdTimerRef);
+    clearTimer(fadeTimerRef);
+    if (animationFrameRef.current != null) {
+      window.cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
     }
-    setKaiHold(true);
-    setIndicator("Kai");
-    const from = holdFrom.current ?? index;
-    const id = window.setTimeout(() => {
-      setKaiHold(false);
-      skipIndicator.current = true;
-      enterNextBeat(from);
-    }, KAI_HOLD_MS);
-    return () => window.clearTimeout(id);
-  }, [index, status]);
+    running.current = false;
+  }
 
-  useEffect(() => {
-    if (status !== "play" || kaiHold) {
-      return;
-    }
-    const beat = DIALOGUE[index] as DialogueBeat | undefined;
-    if (!beat) {
-      const id = window.setTimeout(() => setStatus("after"), scale(600));
-      return () => window.clearTimeout(id);
-    }
-
-    if (beat.kind === "line" && beat.hidden) {
-      const skip = window.setTimeout(() => setIndex((value) => value + 1), 0);
-      return () => window.clearTimeout(skip);
-    }
-
-    let cancelled = false;
-    const timers: number[] = [];
-    const later = (fn: () => void, ms: number) => {
-      const id = window.setTimeout(() => {
-        if (!cancelled) {
-          fn();
-        }
-      }, scale(ms));
-      timers.push(id);
-    };
-
-    if (beat.kind === "choice") {
-      if (picked.current || kaiHold) {
+  function scheduleDialogue(fn: () => void, ms: number) {
+    clearTimer(dialogueTimerRef);
+    dialogueTimerRef.current = window.setTimeout(() => {
+      dialogueTimerRef.current = null;
+      if (!activeRef.current) {
         return;
       }
-      later(() => {
-        setChoice(beat.id);
-        setStatus("choice");
-      }, 180);
-      return () => {
-        cancelled = true;
-        timers.forEach((id) => window.clearTimeout(id));
-      };
-    }
+      fn();
+    }, ms);
+  }
 
-    if (beat.kind === "time") {
-      later(() => {
-        push({ key: nextKey(), kind: "time", text: beat.text });
-        advance();
-      }, 280);
-    } else if (beat.kind === "sys") {
-      later(() => {
-        push({ key: nextKey(), kind: "sys", k: beat.k, v: beat.v });
-        advance();
-      }, 500);
-    } else if (beat.kind === "flash") {
-      later(() => {
-        push({ key: nextKey(), kind: "code", text: beat.code });
-        advance();
-      }, 320);
-    } else if (beat.kind === "warn") {
-      later(() => {
-        audio.alert();
-        if (!onWarning) {
-          advance();
-          return;
-        }
-        onWarning();
-        setStatus("warn");
-      }, 40);
-    } else if (beat.kind === "inject") {
-      INJECT.forEach((line, i) => {
-        later(() => push({ key: nextKey(), kind: "code", text: line }), 220 * i);
-      });
-      later(advance, 220 * INJECT.length + 200);
-    } else if (beat.kind === "exitreq") {
-      later(advance, 40);
-    } else if (beat.kind === "lost") {
-      later(() => {
-        push({ key: nextKey(), kind: "lost" });
-        later(() => {
-          push({ key: nextKey(), kind: "invest" });
-          setStatus("after");
-        }, 700);
-      }, 200);
-    } else if (beat.kind === "line") {
-      const beginLine = () => {
-        setIndicator("");
-        setTyping(true);
-        let i = 0;
-        const hold = beat.freeze ?? messagePause(pausePhase(index));
-        const tick = () => {
-          if (force.current) {
-            setDraft(beat.text);
-            setTyping(false);
-            later(() => {
-              push({
-                key: nextKey(),
-                kind: "msg",
-                speaker: nameOf(beat.speaker),
-                text: beat.text,
-              });
-              audio.message();
-              later(advance, hold);
-            }, 40);
-            return;
-          }
-          i += 1;
-          setDraft(beat.text.slice(0, i));
-          audio.tick();
-          if (i >= beat.text.length) {
-            setTyping(false);
-            later(() => {
-              push({
-                key: nextKey(),
-                kind: "msg",
-                speaker: nameOf(beat.speaker),
-                text: beat.text,
-              });
-              setDraft("");
-              audio.message();
-              later(advance, hold);
-            }, 50);
-            return;
-          }
-          later(tick, charInterval(beat.pace, beat.text[i] ?? ""));
-        };
-        later(tick, charInterval(beat.pace, beat.text[0] ?? ""));
-      };
-      if (skipIndicator.current) {
-        skipIndicator.current = false;
-        beginLine();
-      } else {
-        later(() => setIndicator(nameOf(beat.speaker)), 0);
-        later(beginLine, TYPING_INDICATOR_DELAY);
+  function scheduleTyping(fn: () => void, ms: number) {
+    clearTimer(typingTimerRef);
+    typingTimerRef.current = window.setTimeout(() => {
+      typingTimerRef.current = null;
+      if (!activeRef.current) {
+        return;
       }
-    }
+      fn();
+    }, ms);
+  }
 
-    return () => {
-      cancelled = true;
-      timers.forEach((id) => window.clearTimeout(id));
-    };
-  }, [advance, audio, index, kaiHold, onWarning, push, scale, status]);
+  function setIndexNow(next: number) {
+    indexRef.current = next;
+    setIndex(next);
+  }
 
-  useEffect(() => {
-    if (status !== "warn" || !warningCleared) {
-      return;
-    }
-    setStatus("play");
-    advance();
-  }, [advance, status, warningCleared]);
+  function setStatusNow(next: Status) {
+    statusRef.current = next;
+    setStatus(next);
+  }
 
-  useEffect(() => {
-    if (status !== "analysis" || !analysisCleared) {
-      return;
+  function setDraftNow(next: string) {
+    draftRef.current = next;
+    setDraft(next);
+  }
+
+  function setTypingNow(next: boolean) {
+    typingRef.current = next;
+    setTyping(next);
+  }
+
+  function setIndicatorNow(next: string) {
+    indicatorRef.current = next;
+    setIndicator(next);
+  }
+
+  function setChoiceNow(next: SensoryId | null) {
+    choiceRef.current = next;
+    setChoice(next);
+  }
+
+  function pushOnce(item: LogItem) {
+    if (logHas(logRef.current, item.key)) {
+      return false;
     }
-    setStatus("play");
-  }, [analysisCleared, status]);
+    const next = [...logRef.current, item];
+    logRef.current = next;
+    setLog(next);
+    persistProgress();
+    return true;
+  }
+
+  function resetLineUi() {
+    setDraftNow("");
+    setTypingNow(false);
+    setIndicatorNow("");
+    force.current = false;
+    typedCount.current = 0;
+  }
+
+  function advanceAndPlay() {
+    resetLineUi();
+    setIndexNow(indexRef.current + 1);
+    persistProgress();
+    running.current = false;
+    playRef.current();
+  }
 
   function enterNextBeat(from: number) {
     let next = from + 1;
     while (next < DIALOGUE.length) {
       const beat = DIALOGUE[next];
       if (beat.kind === "time") {
-        push({ key: nextKey(), kind: "time", text: beat.text });
+        pushOnce({ key: beatKey(next), kind: "time", text: beat.text });
         next += 1;
         continue;
       }
@@ -392,76 +283,447 @@ export function FieldRecord({
       }
       break;
     }
-    setIndex(next);
-    setDraft("");
-    setTyping(false);
-    force.current = false;
+    resetLineUi();
     if (skipIndicator.current) {
-      setIndicator("");
+      setIndicatorNow("");
     } else {
       const beat = DIALOGUE[next] as DialogueBeat | undefined;
-      setIndicator(beat?.kind === "line" ? nameOf(beat.speaker) : "");
+      setIndicatorNow(beat?.kind === "line" ? nameOf(beat.speaker) : "");
     }
-    setStatus("play");
+    setIndexNow(next);
+    setStatusNow("play");
+    persistProgress();
+    running.current = false;
+    playRef.current();
   }
 
-  function onPick(optionId: string) {
-    if (!choice || picked.current || choiceLeaving || kaiHold || status === "hold") {
+  function startHold() {
+    if (holdTimerRef.current != null) {
       return;
     }
-    const option = SENSORY[choice].options.find((item) => item.id === optionId);
+    kaiHoldRef.current = true;
+    setIndicatorNow("Kai");
+    setStatusNow("hold");
+    persistProgress();
+    const from = holdFrom.current ?? indexRef.current;
+    holdTimerRef.current = window.setTimeout(() => {
+      holdTimerRef.current = null;
+      if (!activeRef.current) {
+        return;
+      }
+      kaiHoldRef.current = false;
+      skipIndicator.current = true;
+      enterNextBeat(from);
+    }, KAI_HOLD_MS);
+  }
+
+  function playInject(step: number) {
+    const beatIndex = indexRef.current;
+    if (step < INJECT.length) {
+      scheduleDialogue(() => {
+        pushOnce({
+          key: beatKey(beatIndex, `inj-${step}`),
+          kind: "code",
+          text: INJECT[step],
+        });
+        playInject(step + 1);
+      }, scaleRef.current(220));
+      return;
+    }
+    scheduleDialogue(() => {
+      running.current = false;
+      advanceAndPlay();
+    }, scaleRef.current(200));
+  }
+
+  function playLine(beat: Extract<DialogueBeat, { kind: "line" }>, beatIndex: number) {
+    const beginLine = () => {
+      setIndicatorNow("");
+      setTypingNow(true);
+      let n = typedCount.current;
+      if (n > 0) {
+        setDraftNow(beat.text.slice(0, n));
+      }
+      const hold = beat.freeze ?? messagePause(pausePhase(beatIndex));
+
+      const commitLine = () => {
+        pushOnce({
+          key: beatKey(beatIndex),
+          kind: "msg",
+          speaker: nameOf(beat.speaker),
+          text: beat.text,
+        });
+        audioRef.current.message();
+        setDraftNow("");
+        setTypingNow(false);
+        typedCount.current = 0;
+        scheduleDialogue(() => {
+          running.current = false;
+          advanceAndPlay();
+        }, scaleRef.current(hold));
+      };
+
+      const tick = () => {
+        if (!activeRef.current) {
+          return;
+        }
+        if (force.current) {
+          setDraftNow(beat.text);
+          typedCount.current = beat.text.length;
+          setTypingNow(false);
+          scheduleDialogue(commitLine, scaleRef.current(40));
+          return;
+        }
+        n += 1;
+        typedCount.current = n;
+        setDraftNow(beat.text.slice(0, n));
+        audioRef.current.tick();
+        if (n >= beat.text.length) {
+          setTypingNow(false);
+          scheduleDialogue(commitLine, scaleRef.current(50));
+          return;
+        }
+        scheduleTyping(tick, scaleRef.current(charInterval(beat.pace, beat.text[n] ?? "")));
+      };
+
+      scheduleTyping(tick, scaleRef.current(charInterval(beat.pace, beat.text[n] ?? "")));
+    };
+
+    if (skipIndicator.current) {
+      skipIndicator.current = false;
+      beginLine();
+      return;
+    }
+    if (typedCount.current > 0) {
+      beginLine();
+      return;
+    }
+    setIndicatorNow(nameOf(beat.speaker));
+    scheduleTyping(beginLine, scaleRef.current(TYPING_INDICATOR_DELAY));
+  }
+
+  function playCurrentBeat() {
+    if (!activeRef.current || running.current) {
+      return;
+    }
+
+    const currentStatus = statusRef.current;
+
+    if (currentStatus === "choice") {
+      if (picked.current) {
+        setChoiceNow(null);
+        setChoiceLeaving(false);
+        setStatusNow("hold");
+        playCurrentBeat();
+        return;
+      }
+      const beat = DIALOGUE[indexRef.current];
+      if (beat?.kind === "choice" && !choiceRef.current) {
+        setChoiceNow(beat.id);
+      }
+      return;
+    }
+
+    if (currentStatus === "warn") {
+      if (warningClearedRef.current) {
+        setStatusNow("play");
+        advanceAndPlay();
+      }
+      return;
+    }
+
+    if (currentStatus === "analysis") {
+      if (analysisClearedRef.current) {
+        setStatusNow("play");
+        playCurrentBeat();
+      }
+      return;
+    }
+
+    if (currentStatus === "after") {
+      return;
+    }
+
+    if (currentStatus === "hold") {
+      startHold();
+      return;
+    }
+
+    const beatIndex = indexRef.current;
+    const beat = DIALOGUE[beatIndex] as DialogueBeat | undefined;
+
+    if (!beat) {
+      running.current = true;
+      scheduleDialogue(() => {
+        running.current = false;
+        setStatusNow("after");
+        persistProgress();
+      }, scaleRef.current(600));
+      return;
+    }
+
+    if (beat.kind === "line" && beat.hidden) {
+      setIndexNow(beatIndex + 1);
+      persistProgress();
+      playCurrentBeat();
+      return;
+    }
+
+    if (beat.kind === "choice") {
+      if (picked.current) {
+        enterNextBeat(beatIndex);
+        return;
+      }
+      running.current = true;
+      scheduleDialogue(() => {
+        setChoiceNow(beat.id);
+        setStatusNow("choice");
+        running.current = false;
+        persistProgress();
+      }, scaleRef.current(180));
+      return;
+    }
+
+    if (logHas(logRef.current, beatKey(beatIndex))) {
+      if (beat.kind === "lost" && !logHas(logRef.current, beatKey(beatIndex, "invest"))) {
+        running.current = true;
+        scheduleDialogue(() => {
+          pushOnce({ key: beatKey(beatIndex, "invest"), kind: "invest" });
+          setStatusNow("after");
+          running.current = false;
+          persistProgress();
+        }, scaleRef.current(700));
+        return;
+      }
+      if (beat.kind === "inject") {
+        const start = INJECT.findIndex(
+          (_, step) => !logHas(logRef.current, beatKey(beatIndex, `inj-${step}`)),
+        );
+        if (start >= 0) {
+          running.current = true;
+          playInject(start);
+          return;
+        }
+      }
+      advanceAndPlay();
+      return;
+    }
+
+    running.current = true;
+
+    if (beat.kind === "time") {
+      scheduleDialogue(() => {
+        pushOnce({ key: beatKey(beatIndex), kind: "time", text: beat.text });
+        running.current = false;
+        advanceAndPlay();
+      }, scaleRef.current(280));
+      return;
+    }
+
+    if (beat.kind === "sys") {
+      scheduleDialogue(() => {
+        pushOnce({ key: beatKey(beatIndex), kind: "sys", k: beat.k, v: beat.v });
+        running.current = false;
+        advanceAndPlay();
+      }, scaleRef.current(500));
+      return;
+    }
+
+    if (beat.kind === "flash") {
+      scheduleDialogue(() => {
+        pushOnce({ key: beatKey(beatIndex), kind: "code", text: beat.code });
+        running.current = false;
+        advanceAndPlay();
+      }, scaleRef.current(320));
+      return;
+    }
+
+    if (beat.kind === "warn") {
+      scheduleDialogue(() => {
+        audioRef.current.alert();
+        if (!onWarningRef.current) {
+          running.current = false;
+          advanceAndPlay();
+          return;
+        }
+        onWarningRef.current();
+        setStatusNow("warn");
+        running.current = false;
+        persistProgress();
+      }, scaleRef.current(40));
+      return;
+    }
+
+    if (beat.kind === "inject") {
+      const start = INJECT.findIndex(
+        (_, step) => !logHas(logRef.current, beatKey(beatIndex, `inj-${step}`)),
+      );
+      playInject(start < 0 ? INJECT.length : start);
+      return;
+    }
+
+    if (beat.kind === "exitreq") {
+      scheduleDialogue(() => {
+        running.current = false;
+        advanceAndPlay();
+      }, scaleRef.current(40));
+      return;
+    }
+
+    if (beat.kind === "lost") {
+      scheduleDialogue(() => {
+        pushOnce({ key: beatKey(beatIndex), kind: "lost" });
+        scheduleDialogue(() => {
+          pushOnce({ key: beatKey(beatIndex, "invest"), kind: "invest" });
+          setStatusNow("after");
+          running.current = false;
+          persistProgress();
+        }, scaleRef.current(700));
+      }, scaleRef.current(200));
+      return;
+    }
+
+    if (beat.kind === "line") {
+      playLine(beat, beatIndex);
+      return;
+    }
+
+    running.current = false;
+  }
+
+  playRef.current = playCurrentBeat;
+
+  useEffect(() => {
+    activeRef.current = active;
+    if (!active) {
+      clearAllAsync();
+      persistProgress();
+      return;
+    }
+    playRef.current();
+    return () => {
+      clearAllAsync();
+    };
+  }, [active]);
+
+  useEffect(() => {
+    if (!active) {
+      return;
+    }
+    if (statusRef.current === "warn" && warningCleared) {
+      playRef.current();
+    }
+    if (statusRef.current === "analysis" && analysisCleared) {
+      playRef.current();
+    }
+  }, [active, analysisCleared, warningCleared]);
+
+  useEffect(() => {
+    const node = scroller.current;
+    if (!node) {
+      return;
+    }
+    const handleScroll = () => {
+      if (restoring.current) {
+        return;
+      }
+      pinBottom.current =
+        node.scrollHeight - node.scrollTop - node.clientHeight < 56;
+      savedScroll.current = node.scrollTop;
+      persistRef.current({
+        scroll: node.scrollTop,
+        pinBottom: pinBottom.current,
+      });
+    };
+    node.addEventListener("scroll", handleScroll, { passive: true });
+    return () => node.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!active || !needScrollRestore.current) {
+      return;
+    }
+    const node = scroller.current;
+    if (!node) {
+      return;
+    }
+    restoring.current = true;
+    const top = savedScroll.current;
+    node.scrollTop = top;
+    const id = window.requestAnimationFrame(() => {
+      node.scrollTop = top;
+      pinBottom.current = saved.current.pinBottom;
+      restoring.current = false;
+      needScrollRestore.current = false;
+      animationFrameRef.current = null;
+    });
+    animationFrameRef.current = id;
+    return () => window.cancelAnimationFrame(id);
+  }, [active]);
+
+  useEffect(() => {
+    if (!active || restoring.current || needScrollRestore.current || !pinBottom.current) {
+      return;
+    }
+    end.current?.scrollIntoView({ block: "end" });
+  }, [active, choice, draft, indicator, log]);
+
+  useEffect(() => {
+    return () => {
+      persistProgress();
+      clearAllAsync();
+    };
+  }, []);
+
+  function onPick(optionId: string) {
+    if (
+      !choiceRef.current ||
+      picked.current ||
+      choiceLeaving ||
+      kaiHoldRef.current ||
+      statusRef.current === "hold"
+    ) {
+      return;
+    }
+    const option = SENSORY[choiceRef.current].options.find((item) => item.id === optionId);
     if (!option) {
       return;
     }
     picked.current = true;
-    holdFrom.current = index;
+    holdFrom.current = indexRef.current;
     setChoiceLeaving(true);
-    patchField({ picked: true });
-    onAnalysis?.(option.lines);
-    const fade = window.setTimeout(() => {
-      setChoice(null);
+    persistRef.current({ picked: true });
+    onAnalysisRef.current?.(option.lines);
+    clearTimer(fadeTimerRef);
+    fadeTimerRef.current = window.setTimeout(() => {
+      fadeTimerRef.current = null;
+      if (!activeRef.current) {
+        return;
+      }
+      setChoiceNow(null);
       setChoiceLeaving(false);
-      setStatus("hold");
-    }, scale(260));
-    pickTimers.current.push(fade);
+      setStatusNow("hold");
+      persistProgress();
+      running.current = false;
+      playRef.current();
+    }, scaleRef.current(260));
   }
 
   function onBoxClick() {
-    if (status !== "play" || !typing) {
+    if (statusRef.current !== "play" || !typingRef.current) {
       return;
     }
     force.current = true;
-    const beat = DIALOGUE[index];
+    const beat = DIALOGUE[indexRef.current];
     if (beat?.kind === "line") {
-      setDraft(beat.text);
-      setTyping(false);
-      setIndicator("");
+      setDraftNow(beat.text);
+      setTypingNow(false);
+      setIndicatorNow("");
     }
   }
 
   return (
-    <div
-      ref={scroller}
-      onScroll={() => {
-        const node = scroller.current;
-        if (!node || restoring.current) {
-          return;
-        }
-        pinBottom.current =
-          node.scrollHeight - node.scrollTop - node.clientHeight < 56;
-        snapshot.current = {
-          ...snapshot.current,
-          scroll: node.scrollTop,
-          pinBottom: pinBottom.current,
-        };
-        patchField({
-          scroll: node.scrollTop,
-          pinBottom: pinBottom.current,
-        });
-      }}
-      onClick={onBoxClick}
-      className="chat-content px-5 py-4"
-    >
+    <div ref={scroller} onClick={onBoxClick} className="chat-content px-5 py-4">
       <div className="sys-meta space-y-1 text-green-dim">
         <p>ARCHIVE LOG</p>
         <p>ID: PD-001</p>
@@ -474,13 +736,15 @@ export function FieldRecord({
           <LogLine
             key={item.key}
             item={item}
+            active={active}
             onInvestDone={onComplete}
             onReadyToLeave={onReadyToLeave}
             investGate={saved.current.investGate}
             investStep={saved.current.investStep}
             onInvestChange={(investGate, investStep) => {
-              snapshot.current = { ...snapshot.current, investGate, investStep };
-              patchField({ investGate, investStep });
+              saved.current.investGate = investGate;
+              saved.current.investStep = investStep;
+              persistRef.current({ investGate, investStep });
             }}
           />
         ))}
@@ -509,12 +773,14 @@ export function FieldRecord({
 }
 
 function InvestigationRecord({
+  active,
   onDone,
   onReadyToLeave,
   initialGate = "idle",
   initialStep = 0,
   onInvestChange,
 }: {
+  active: boolean;
   onDone: () => void;
   onReadyToLeave?: () => void;
   initialGate?: InvestGate;
@@ -524,14 +790,20 @@ function InvestigationRecord({
   const scale = useScaledMs();
   const audio = useAudio();
   const unlocked = initialGate !== "idle" || initialStep > 0;
-  const [gate, setGate] = useState<InvestGate>(unlocked ? "open" : "idle");
+  const [gate, setGate] = useState<InvestGate>(unlocked ? "open" : initialGate);
   const [step, setStep] = useState(unlocked ? 4 : initialStep);
   const investChange = useRef(onInvestChange);
   investChange.current = onInvestChange;
 
   useEffect(() => {
+    if (!active) {
+      return;
+    }
     if (unlocked) {
       investChange.current?.("open", 4);
+      return;
+    }
+    if (gate === "idle") {
       return;
     }
     if (gate === "opening") {
@@ -545,21 +817,17 @@ function InvestigationRecord({
       }, scale(500));
       return () => window.clearTimeout(id);
     }
-    if (gate !== "open") {
+    if (gate !== "open" || step >= 4) {
       return;
     }
-    investChange.current?.("open", 0);
     const waits = [80, 420, 1400, 420, 420];
-    let total = 0;
-    const timers = waits.map((wait, i) => {
-      total += wait;
-      return window.setTimeout(() => {
-        setStep(i + 1);
-        investChange.current?.("open", i + 1);
-      }, scale(total));
-    });
-    return () => timers.forEach((id) => window.clearTimeout(id));
-  }, [gate, scale, unlocked]);
+    const id = window.setTimeout(() => {
+      const next = step + 1;
+      setStep(next);
+      investChange.current?.("open", next);
+    }, scale(waits[step] ?? 420));
+    return () => window.clearTimeout(id);
+  }, [active, gate, scale, step, unlocked]);
 
   return (
     <div className="invest-panel is-enter">
@@ -611,7 +879,7 @@ function InvestigationRecord({
                 <p className="font-mono text-[11px] tracking-[0.08em] text-sys">
                   {INVESTIGATION.nameLabel}
                 </p>
-                <CorruptName settled={unlocked} />
+                <CorruptName active={active} settled={unlocked} />
               </div>
             ) : null}
             {step >= 3 ? (
@@ -653,27 +921,33 @@ function InvestigationRecord({
   );
 }
 
-function CorruptName({ settled = false }: { settled?: boolean }) {
+function CorruptName({
+  active,
+  settled = false,
+}: {
+  active: boolean;
+  settled?: boolean;
+}) {
   const scale = useScaledMs();
   const [index, setIndex] = useState(settled ? INVESTIGATION.garbles.length : -1);
   const clear = index >= INVESTIGATION.garbles.length;
 
   useEffect(() => {
-    if (settled) {
+    if (!active || settled || index >= 0) {
       return;
     }
     const start = window.setTimeout(() => setIndex(0), scale(340));
     return () => window.clearTimeout(start);
-  }, [scale, settled]);
+  }, [active, index, scale, settled]);
 
   useEffect(() => {
-    if (settled || index < 0 || index >= INVESTIGATION.garbles.length) {
+    if (!active || settled || index < 0 || index >= INVESTIGATION.garbles.length) {
       return;
     }
     const wait = index === INVESTIGATION.garbles.length - 1 ? 280 : 150;
     const id = window.setTimeout(() => setIndex((value) => value + 1), scale(wait));
     return () => window.clearTimeout(id);
-  }, [index, scale]);
+  }, [active, index, scale, settled]);
 
   if (settled) {
     return <p className="recover-name is-clear">{INVESTIGATION.name}</p>;
@@ -692,6 +966,7 @@ function CorruptName({ settled = false }: { settled?: boolean }) {
 
 function LogLine({
   item,
+  active,
   onInvestDone,
   onReadyToLeave,
   investGate,
@@ -699,6 +974,7 @@ function LogLine({
   onInvestChange,
 }: {
   item: LogItem;
+  active: boolean;
   onInvestDone: () => void;
   onReadyToLeave?: () => void;
   investGate?: InvestGate;
@@ -757,6 +1033,7 @@ function LogLine({
   if (item.kind === "invest") {
     return (
       <InvestigationRecord
+        active={active}
         onDone={onInvestDone}
         onReadyToLeave={onReadyToLeave}
         initialGate={investGate}

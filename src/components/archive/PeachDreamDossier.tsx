@@ -22,9 +22,16 @@ export function PeachDreamDossier() {
   const { go, autoOpenPd001, startFinale, pd001Done } = useArchive();
   const audio = useAudio();
   const [open, setOpen] = useState(autoOpenPd001);
+  const [mounted, setMounted] = useState(autoOpenPd001);
   const [finale, setFinale] = useState<"off" | "run" | "done">(
     startFinale ? "run" : pd001Done ? "done" : "off",
   );
+
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+    }
+  }, [open]);
 
   useEffect(() => {
     if (autoOpenPd001) {
@@ -216,8 +223,14 @@ export function PeachDreamDossier() {
         <BackLink onClick={() => go("index")} />
       </div>
 
-      {open && finale !== "run" ? (
-        <div className="record-veil fixed inset-0 z-40 flex items-end justify-center bg-black/72 px-3 py-6 sm:items-center sm:px-6">
+      {mounted && finale !== "run" ? (
+        <div
+          className={cn(
+            "record-veil fixed inset-0 z-40 flex items-end justify-center bg-black/72 px-3 py-6 sm:items-center sm:px-6",
+            !open && "invisible pointer-events-none",
+          )}
+          aria-hidden={!open}
+        >
           <div className="record-panel flex max-h-[88vh] w-full max-w-[720px] flex-col border border-green-border bg-term">
             <div className="flex items-center justify-between border-b border-green-border/50 px-4 py-3">
               <p className="font-mono text-[10px] tracking-[0.16em] text-green-dim">
@@ -238,6 +251,7 @@ export function PeachDreamDossier() {
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto px-1">
               <FieldRecord
+                active={open}
                 onComplete={() => {
                   if (finale === "off") {
                     setFinale("run");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useArchive } from "@/context/ArchiveContext";
 import { useAudio } from "@/context/AudioContext";
 import { BackLink } from "@/components/system/BackLink";
@@ -27,6 +27,7 @@ export function StoryArchive() {
   } = useArchive();
   const audio = useAudio();
   const [closing, setClosing] = useState(false);
+  const [fieldMounted, setFieldMounted] = useState(fieldOpen);
   const [finale, setFinale] = useState<"off" | "run" | "done">(
     startFinale ? "run" : pd001Done ? "done" : "off",
   );
@@ -34,19 +35,41 @@ export function StoryArchive() {
   const [scan, setScan] = useState<"off" | "run" | "resume" | "done">(field.scan);
   const [scanLines, setScanLines] = useState<string[] | null>(field.scanLines);
   const [canLeave, setCanLeave] = useState(field.canLeave);
+  const closeTimer = useRef<number | null>(null);
+  const scrollTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (fieldOpen) {
+      setFieldMounted(true);
+    }
+  }, [fieldOpen]);
 
   useEffect(() => {
     if (autoOpenPd001 || startFinale) {
-      window.setTimeout(() => {
+      scrollTimer.current = window.setTimeout(() => {
         document.getElementById("sec-pd001")?.scrollIntoView({
           behavior: "smooth",
           block: "start",
         });
       }, 80);
     }
+    return () => {
+      if (scrollTimer.current != null) {
+        window.clearTimeout(scrollTimer.current);
+        scrollTimer.current = null;
+      }
+    };
   }, [autoOpenPd001, startFinale]);
 
-  function closeModal() {
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current != null) {
+        window.clearTimeout(closeTimer.current);
+      }
+    };
+  }, []);
+
+  const closeModal = useCallback(() => {
     if (finale !== "off") {
       return;
     }
@@ -55,19 +78,42 @@ export function StoryArchive() {
       patchField({ scan: "done" });
     }
     setClosing(true);
-    window.setTimeout(() => {
+    if (closeTimer.current != null) {
+      window.clearTimeout(closeTimer.current);
+    }
+    closeTimer.current = window.setTimeout(() => {
+      closeTimer.current = null;
       closeField();
       setClosing(false);
     }, 240);
-  }
+  }, [closeField, finale, patchField, scan]);
 
-  function leaveArchive() {
+  const leaveArchive = useCallback(() => {
     if (finale !== "off") {
       return;
     }
     audio.click();
     setFinale("run");
-  }
+  }, [audio, finale]);
+
+  const handleWarning = useCallback(() => {
+    setFail("run");
+    patchField({ warning: "run" });
+  }, [patchField]);
+
+  const handleAnalysis = useCallback((lines: string[]) => {
+    setScanLines(lines);
+    setScan("run");
+    patchField({ scan: "run", scanLines: lines });
+  }, [patchField]);
+
+  const handleReadyToLeave = useCallback(() => {
+    setCanLeave(true);
+    patchField({ canLeave: true });
+  }, [patchField]);
+
+  const visible = fieldOpen || closing;
+  const fieldActive = fieldOpen && !closing && finale !== "run";
 
   return (
     <div className="relative min-h-dvh bg-bg px-5 py-16 sm:px-10 sm:py-20 md:px-16">
@@ -159,7 +205,7 @@ export function StoryArchive() {
         <div className="space-y-6">
           <p className="story-body">{STORY.city.lead}</p>
           <p className="story-body">{STORY.city.l1}</p>
-          <p className="story-rumor">{STORY.city.l2}</p>
+          <p className="story-body">{STORY.city.l2}</p>
         </div>
 
         <section id="sec-pd001" className="mt-16">
@@ -187,8 +233,15 @@ export function StoryArchive() {
         <BackLink label="返回 仙桃夢" onClick={() => go("specimen")} />
       </div>
 
-      {fieldOpen && finale !== "run" ? (
-        <div className="record-veil fixed inset-0 flex items-center justify-center bg-black/72 px-6 py-10">
+      {fieldMounted && finale !== "run" ? (
+        <div
+          className={cn(
+            "record-veil fixed inset-0 flex items-center justify-center bg-black/72 px-6 py-10",
+            !visible && "invisible pointer-events-none",
+          )}
+          aria-hidden={!visible}
+          inert={!visible}
+        >
           <div
             className={cn(
               "pd-modal",
@@ -220,21 +273,12 @@ export function StoryArchive() {
               </button>
             </div>
             <FieldRecord
-              onWarning={() => {
-                setFail("run");
-                patchField({ warning: "run" });
-              }}
+              active={fieldActive}
+              onWarning={handleWarning}
               warningCleared={fail === "done"}
-              onAnalysis={(lines) => {
-                setScanLines(lines);
-                setScan("run");
-                patchField({ scan: "run", scanLines: lines });
-              }}
+              onAnalysis={handleAnalysis}
               analysisCleared={scan === "resume" || scan === "done"}
-              onReadyToLeave={() => {
-                setCanLeave(true);
-                patchField({ canLeave: true });
-              }}
+              onReadyToLeave={handleReadyToLeave}
               onComplete={leaveArchive}
             />
           </div>

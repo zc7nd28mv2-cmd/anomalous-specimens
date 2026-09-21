@@ -30,6 +30,8 @@ export type FieldSession = {
   warning: "off" | "run" | "done";
   scan: "off" | "run" | "resume" | "done";
   scanLines: string[] | null;
+  draft: string;
+  indicator: string;
 };
 
 export const FIELD_STORAGE_KEY = "anomalous-specimens-investigation";
@@ -49,6 +51,8 @@ export const EMPTY_FIELD: FieldSession = {
   warning: "off",
   scan: "off",
   scanLines: null,
+  draft: "",
+  indicator: "",
 };
 
 export function loadFieldSession(): FieldSession {
@@ -90,4 +94,12 @@ export function isYumeStoryPhase(phase: string) {
     phase === "unknown" ||
     phase === "ending"
   );
+}
+
+export function beatKey(index: number, suffix = "") {
+  return suffix ? `d-${index}-${suffix}` : `d-${index}`;
+}
+
+export function logHas(log: FieldLogItem[], key: string) {
+  return log.some((item) => item.key === key);
 }
