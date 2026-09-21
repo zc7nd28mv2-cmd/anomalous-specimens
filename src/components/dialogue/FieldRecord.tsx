@@ -303,6 +303,7 @@ export function FieldRecord({
       return false;
     }
     warningSequenceStartedRef.current = true;
+    audioRef.current.alert();
     onWarningSequenceRef.current();
     setStatusNow("time_21_18_02");
     persistProgress();
@@ -788,6 +789,11 @@ export function FieldRecord({
 
     if (beat.kind === "warn") {
       scheduleDialogue(() => {
+        if (warningSequenceClearedRef.current) {
+          playing.current = false;
+          advanceAndPlay();
+          return;
+        }
         audioRef.current.alert();
         if (!onWarningRef.current) {
           playing.current = false;

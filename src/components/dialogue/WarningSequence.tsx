@@ -5,9 +5,19 @@ import { useScaledMs } from "@/hooks/useTiming";
 import {
   WARNING_SCREENS,
   WARNING_SEQUENCE_STEPS,
+  type WarningAnchor,
+  type WarningScreen,
   type WarningSequenceState,
 } from "@/lib/warning-sequence";
 import { cn } from "@/lib/cn";
+
+const WINDOW_ORDER = [
+  "warning_01",
+  "warning_02",
+  "warning_03",
+  "warning_04",
+  "warning_05",
+] as const;
 
 let activeRun = 0;
 let phaseNow: WarningSequenceState = "warning_01";
@@ -49,6 +59,52 @@ function startRun(
   });
 }
 
+function visibleScreens(phase: WarningSequenceState) {
+  if (
+    phase === "idle" ||
+    phase === "flash" ||
+    phase === "black" ||
+    phase === "complete"
+  ) {
+    return [];
+  }
+  const current = phase === "out" ? "warning_05" : phase;
+  const end = WINDOW_ORDER.indexOf(current);
+  if (end < 0) {
+    return [];
+  }
+  return WARNING_SCREENS.filter((_, index) => index <= end);
+}
+
+function WarningWindow({
+  screen,
+  leaving,
+}: {
+  screen: WarningScreen;
+  leaving: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "fail-panel",
+        leaving ? "is-out" : "is-in",
+        `is-anchor-${screen.anchor}`,
+      )}
+    >
+      <div className="fail-panel-inner">
+        <p className="font-mono text-[12px] tracking-[0.14em]">{screen.kicker}</p>
+        <div className="mt-6 font-mono text-[14px] leading-6 tracking-[0.06em]">
+          <p>{screen.title}</p>
+          {screen.lines.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+        </div>
+        <p className="mt-8 font-mono text-[11px] tracking-[0.1em]">{screen.foot}</p>
+      </div>
+    </div>
+  );
+}
+
 export function WarningSequence({
   runId,
   onDone,
@@ -73,41 +129,33 @@ export function WarningSequence({
     };
   }, [runId, scale]);
 
-  const screen = WARNING_SCREENS.find((item) => item.id === phase);
-  const rank = Number(String(phase).slice(-1)) || 1;
-
   if (phase === "complete") {
     return null;
   }
 
   if (phase === "flash") {
     return (
-      <div className="intrude-root is-flash" aria-live="assertive">
+      <div className="fail-root is-flash" aria-live="assertive">
         <div className="intrude-flash" />
       </div>
     );
   }
 
   if (phase === "black") {
-    return <div className="intrude-root is-cut" aria-live="assertive" />;
+    return <div className="fail-root is-cut" aria-live="assertive" />;
   }
 
-  if (!screen) {
-    return null;
-  }
+  const screens = visibleScreens(phase);
+  const leaving = phase === "out";
 
   return (
-    <div className={cn("intrude-root", `is-${rank}`)} aria-live="assertive">
-      <div className={cn("intrude-frame", `is-${rank}`)}>
-        <p className="intrude-kicker">{screen.kicker}</p>
-        <p className={cn("intrude-title", screen.key && "is-key")}>{screen.title}</p>
-        <div className="intrude-body">
-          {screen.lines.map((line) => (
-            <p key={line}>{line}</p>
-          ))}
-        </div>
-        <p className="intrude-foot">{screen.foot}</p>
-      </div>
+    <div className="fail-root" aria-live="assertive">
+      <div className="fail-dim" />
+      {screens.map((screen) => (
+        <WarningWindow key={screen.id} screen={screen} leaving={leaving} />
+      ))}
     </div>
   );
 }
+
+export type { WarningAnchor };
