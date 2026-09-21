@@ -191,7 +191,6 @@ export function FieldRecord({
   const pinBottom = useRef(saved.current.pinBottom);
   const scroller = useRef<HTMLDivElement>(null);
   const latest = useRef<HTMLDivElement>(null);
-  const breathTop = useRef<HTMLDivElement>(null);
   const breathBottom = useRef<HTMLDivElement>(null);
   const restoring = useRef(false);
   const needScrollRestore = useRef(
@@ -213,6 +212,9 @@ export function FieldRecord({
   const scrollbarVisibleRef = useRef(false);
   const playRef = useRef<() => void>(() => undefined);
   const centerLatestRef = useRef<(smooth: boolean) => void>(() => undefined);
+  const isShortContentRef = useRef(() => true);
+  const sizeBreathRef = useRef(() => undefined);
+  const pinLatestToTopRef = useRef(() => undefined);
 
   function persistProgress() {
     persistRef.current({
@@ -939,7 +941,9 @@ export function FieldRecord({
         return;
       }
       const mark = latest.current;
-      if (mark) {
+      // Short logs stay top-aligned. Do not treat that as "unfollow",
+      // or later messages will never start moving toward the mid-frame.
+      if (mark && !isShortContentRef.current()) {
         const viewMid = node.getBoundingClientRect().top + node.clientHeight * 0.5;
         const markMid = mark.getBoundingClientRect().top + mark.offsetHeight * 0.5;
         pinBottom.current = Math.abs(markMid - viewMid) < 96;
@@ -964,13 +968,7 @@ export function FieldRecord({
     };
 
     const fitBreath = () => {
-      const room = Math.round(node.clientHeight * 0.42);
-      if (breathTop.current) {
-        breathTop.current.style.height = `${room}px`;
-      }
-      if (breathBottom.current) {
-        breathBottom.current.style.height = `${room}px`;
-      }
+      sizeBreathRef.current();
     };
     fitBreath();
     const resize = new ResizeObserver(fitBreath);
@@ -989,45 +987,97 @@ export function FieldRecord({
   }, []);
 
   useLayoutEffect(() => {
-    if (!active || !needScrollRestore.current) {
+    if (!active) {
       return;
     }
     const node = scroller.current;
     if (!node) {
       return;
     }
-    restoring.current = true;
-    const top = savedScroll.current;
-    node.scrollTop = top;
-    const id = window.requestAnimationFrame(() => {
+    if (needScrollRestore.current) {
+      restoring.current = true;
+      const top = savedScroll.current;
       node.scrollTop = top;
-      pinBottom.current = saved.current.pinBottom;
-      restoring.current = false;
-      needScrollRestore.current = false;
-      animationFrameRef.current = null;
-    });
-    animationFrameRef.current = id;
-    return () => window.cancelAnimationFrame(id);
+      const id = window.requestAnimationFrame(() => {
+        node.scrollTop = top;
+        pinBottom.current = saved.current.pinBottom;
+        restoring.current = false;
+        needScrollRestore.current = false;
+        animationFrameRef.current = null;
+      });
+      animationFrameRef.current = id;
+      return () => window.cancelAnimationFrame(id);
+    }
+    if (isShortContentRef.current()) {
+      restoring.current = true;
+      node.scrollTop = 0;
+      savedScroll.current = 0;
+      const id = window.requestAnimationFrame(() => {
+        node.scrollTop = 0;
+        restoring.current = false;
+        animationFrameRef.current = null;
+      });
+      animationFrameRef.current = id;
+      return () => window.cancelAnimationFrame(id);
+    }
   }, [active]);
 
+  function contentHeight() {
+    const view = scroller.current;
+    if (!view) {
+      return 0;
+    }
+    return view.scrollHeight - (breathBottom.current?.offsetHeight ?? 0);
+  }
+
+  function isShortContent() {
+    const view = scroller.current;
+    if (!view) {
+      return true;
+    }
+    return contentHeight() <= view.clientHeight * 0.75;
+  }
+
   function sizeBreath() {
+    const view = scroller.current;
+    if (!view || !breathBottom.current) {
+      return;
+    }
+    if (isShortContent()) {
+      breathBottom.current.style.height = "0px";
+      return;
+    }
+    breathBottom.current.style.height = `${Math.round(view.clientHeight * 0.42)}px`;
+  }
+
+  function pinLatestToTop() {
     const view = scroller.current;
     if (!view) {
       return;
     }
-    const room = Math.round(view.clientHeight * 0.42);
-    if (breathTop.current) {
-      breathTop.current.style.height = `${room}px`;
+    sizeBreath();
+    if (view.scrollTop === 0) {
+      return;
     }
-    if (breathBottom.current) {
-      breathBottom.current.style.height = `${room}px`;
-    }
+    restoring.current = true;
+    view.scrollTop = 0;
+    savedScroll.current = 0;
+    window.requestAnimationFrame(() => {
+      restoring.current = false;
+    });
   }
 
   function centerLatest(smooth: boolean) {
     const view = scroller.current;
     const mark = latest.current;
-    if (!view || !mark || !pinBottom.current) {
+    if (!view || !mark) {
+      return;
+    }
+    if (isShortContent()) {
+      pinLatestToTop();
+      return;
+    }
+    if (!pinBottom.current) {
       return;
     }
     sizeBreath();
@@ -1055,7 +1105,7 @@ export function FieldRecord({
     const started = performance.now();
     restoring.current = true;
     const tick = (now: number) => {
-      const t = Math.min(1, (now - started) / 280);
+      const t = Math.min(1, (now - started) / 300);
       const eased = 1 - (1 - t) * (1 - t);
       view.scrollTop = from + (next - from) * eased;
       if (t < 1) {
@@ -1069,14 +1119,34 @@ export function FieldRecord({
     animationFrameRef.current = window.requestAnimationFrame(tick);
   }
 
+  isShortContentRef.current = isShortContent;
+  sizeBreathRef.current = sizeBreath;
+  pinLatestToTopRef.current = pinLatestToTop;
   centerLatestRef.current = centerLatest;
+
+  useLayoutEffect(() => {
+    if (!active || restoring.current || needScrollRestore.current) {
+      return;
+    }
+    if (isShortContentRef.current()) {
+      pinLatestToTopRef.current();
+      return;
+    }
+    if (!pinBottom.current) {
+      return;
+    }
+    centerLatestRef.current(true);
+  }, [active, choice, indicator, log]);
 
   useLayoutEffect(() => {
     if (!active || restoring.current || needScrollRestore.current || !pinBottom.current) {
       return;
     }
-    centerLatestRef.current(true);
-  }, [active, choice, indicator, log]);
+    if (isShortContentRef.current()) {
+      return;
+    }
+    centerLatestRef.current(false);
+  }, [active, draft]);
 
   useEffect(() => {
     return () => {
@@ -1223,7 +1293,6 @@ export function FieldRecord({
         className={cn("chat-content px-5 py-4", scrollbarVisible && "is-scrolling")}
       >
         <div className="chat-stack">
-          <div ref={breathTop} className="chat-breath" aria-hidden="true" />
           <div className="sys-meta space-y-1 text-green-dim">
             <p>ARCHIVE LOG</p>
             <p>ID: PD-001</p>
