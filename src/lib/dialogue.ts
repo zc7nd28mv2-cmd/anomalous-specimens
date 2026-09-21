@@ -15,7 +15,7 @@ export type DialogueBeat =
   | { kind: "warn"; title: string; body?: string }
   | { kind: "inject" }
   | { kind: "exitreq" }
-  | { kind: "choice"; id: "see" | "smell" }
+  | { kind: "choice"; id: "see" }
   | { kind: "lost" };
 
 export const DIALOGUE: DialogueBeat[] = [
@@ -53,7 +53,6 @@ export const DIALOGUE: DialogueBeat[] = [
   { kind: "line", speaker: "LIN", text: "操！退出……快退出。", pace: "fast" },
   { kind: "exitreq" },
   { kind: "line", speaker: "KAI", text: "她哭了。", pace: "crawl", freeze: 1100 },
-  { kind: "choice", id: "smell" },
   { kind: "time", text: "21:18:02" },
   {
     kind: "warn",

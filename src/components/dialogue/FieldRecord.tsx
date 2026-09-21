@@ -278,8 +278,8 @@ export function FieldRecord({ onComplete }: { onComplete: () => void }) {
   return (
     <div
       className={cn(
-        "mt-8 border border-green-border bg-term px-4 py-5 sm:px-6",
-        unstable && "shadow-[0_0_24px_rgba(104,26,23,0.18)]",
+        "px-4 py-5 sm:px-6",
+        unstable && "bg-[rgba(104,26,23,0.08)]",
       )}
     >
       <div className="sys-meta space-y-1 text-green-dim">
@@ -297,7 +297,7 @@ export function FieldRecord({ onComplete }: { onComplete: () => void }) {
       <button
         type="button"
         onClick={onBoxClick}
-        className="mt-8 block max-h-[62vh] w-full overflow-y-auto text-left"
+        className="mt-6 block w-full text-left"
       >
         <div className="space-y-5 pb-4">
           {log.map((item) => (
@@ -307,7 +307,7 @@ export function FieldRecord({ onComplete }: { onComplete: () => void }) {
           {indicator ? <TypingIndicator name={indicator} /> : null}
 
           {draft && !indicator ? (
-            <div className="font-sans text-[16px] leading-8 text-green">
+            <div className="font-sans text-[15px] leading-7 text-green">
               {DIALOGUE[index]?.kind === "line" && DIALOGUE[index].speaker ? (
                 <p className="phosphor-green mb-1 font-mono text-[11px] tracking-[0.18em]">
                   {nameOf(DIALOGUE[index].speaker)}
@@ -333,7 +333,7 @@ function LogLine({ item }: { item: LogItem }) {
   }
   if (item.kind === "msg") {
     return (
-      <div className="font-sans text-[16px] leading-8 text-green">
+      <div className="font-sans text-[15px] leading-7 text-green">
         {item.speaker ? (
           <p className="phosphor-green mb-1 font-mono text-[11px] tracking-[0.18em]">
             {item.speaker}

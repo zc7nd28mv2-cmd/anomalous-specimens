@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CONSTITUTION } from "@/lib/constitution";
 import { useAudio } from "@/context/AudioContext";
+import { SpecimenTag } from "@/components/system/SpecimenTag";
 
 export function ConstitutionCode() {
   const [open, setOpen] = useState(false);
@@ -18,7 +19,7 @@ export function ConstitutionCode() {
         }}
         className="text-left"
       >
-        <p className="font-sans text-[22px] font-bold text-ink">{CONSTITUTION.title}</p>
+        <SpecimenTag size="chapter">{CONSTITUTION.title}</SpecimenTag>
         <p className="mt-2 font-mono text-[11px] tracking-[0.18em] text-sys">
           {CONSTITUTION.en}
         </p>
@@ -37,7 +38,7 @@ export function ConstitutionCode() {
               <p className="mt-2 font-sans text-[15px] text-mute">【{group.zh}】</p>
               <ul className="mt-4 space-y-2">
                 {group.items.map((item) => (
-                  <li key={item} className="story-body text-[16px] sm:text-[18px]">
+                  <li key={item} className="story-body">
                     {item}
                   </li>
                 ))}

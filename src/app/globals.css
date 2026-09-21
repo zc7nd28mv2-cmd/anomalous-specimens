@@ -229,16 +229,45 @@ body {
 
 .story-body {
   font-family: var(--font-zh), "Noto Sans SC", sans-serif;
-  font-size: 18px;
-  line-height: 2;
-  color: rgba(232, 232, 229, 0.92);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.9;
+  color: rgba(232, 232, 229, 0.88);
 }
 
 @media (min-width: 640px) {
   .story-body {
-    font-size: 20px;
-    line-height: 2.05;
+    font-size: 16px;
+    line-height: 1.95;
   }
+}
+
+@keyframes veil-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.record-veil {
+  animation: veil-in 280ms ease-out both;
+}
+
+.record-panel {
+  animation: panel-in 360ms ease-out both;
 }
 
 .sys-meta {
@@ -263,7 +292,9 @@ body {
   .rise,
   .fade,
   .signal-ring,
-  .signal-ring.is-burst {
+  .signal-ring.is-burst,
+  .record-veil,
+  .record-panel {
     animation: none;
   }
 
