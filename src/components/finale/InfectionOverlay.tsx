@@ -6,6 +6,7 @@ import { useScaledMs } from "@/hooks/useTiming";
 import { useAudio } from "@/context/AudioContext";
 import { Cursor } from "@/components/system/Cursor";
 import { YumeProtocol } from "@/components/finale/YumeProtocol";
+import { cn } from "@/lib/cn";
 import {
   SOURCE_BIND,
   SOURCE_BOOT,
@@ -73,14 +74,22 @@ export function InfectionOverlay({ onDone }: { onDone: () => void }) {
   return <YumeProtocol onHoldDone={() => setGate("flash")} />;
 }
 
+type PromptPhase = "idle" | "leave" | "gone" | "enter";
+
+type CodeLog = { id: number };
+
 function StillThere({ onYes }: { onYes: () => void }) {
   const scale = useScaledMs();
   const audio = useAudio();
   const [chunk, setChunk] = useState(0);
   const [typed, setTyped] = useState("");
   const [choices, setChoices] = useState(false);
-  const [denyPlay, setDenyPlay] = useState(0);
+  const [codeLogs, setCodeLogs] = useState<CodeLog[]>([]);
+  const [activeLog, setActiveLog] = useState<number | null>(null);
+  const [promptPhase, setPromptPhase] = useState<PromptPhase>("idle");
+  const nextLog = useRef(1);
   const done = chunk >= PROMPT_CHUNKS.length;
+  const busy = promptPhase !== "idle";
 
   useEffect(() => {
     if (chunk >= PROMPT_CHUNKS.length) {
@@ -104,63 +113,169 @@ function StillThere({ onYes }: { onYes: () => void }) {
     return () => window.clearTimeout(id);
   }, [done, scale]);
 
+  useEffect(() => {
+    if (promptPhase !== "leave") {
+      return;
+    }
+    const id = window.setTimeout(() => {
+      const logId = nextLog.current;
+      nextLog.current += 1;
+      setCodeLogs((prev) => [...prev, { id: logId }]);
+      setActiveLog(logId);
+      setPromptPhase("gone");
+    }, scale(260));
+    return () => window.clearTimeout(id);
+  }, [promptPhase, scale]);
+
+  useEffect(() => {
+    if (promptPhase !== "enter") {
+      return;
+    }
+    const id = window.setTimeout(() => setPromptPhase("idle"), scale(380));
+    return () => window.clearTimeout(id);
+  }, [promptPhase, scale]);
+
+  function onLogDone(id: number) {
+    if (id !== activeLog) {
+      return;
+    }
+    const wait = irregular(400, 700);
+    window.setTimeout(() => setPromptPhase("enter"), scale(wait));
+  }
+
   return (
     <div className="still-overlay">
-      {denyPlay > 0 ? <DenyLog key={denyPlay} /> : null}
-      <div className="still-prompt">
-        <div className={done ? "still-ask" : undefined}>
-          <p className="font-mono text-[13px] tracking-[0.06em] text-ink">
-            {typed}
-            <Cursor />
-          </p>
-          {choices ? (
-            <div className="still-ask-actions">
-              <button
-                type="button"
-                onClick={() => {
-                  audio.click();
-                  onYes();
-                }}
-                className="act px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-green"
-              >
-                [ YES ]
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  audio.click();
-                  setDenyPlay((value) => value + 1);
-                }}
-                className="act px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-green"
-              >
-                [ NO ]
-              </button>
-            </div>
-          ) : null}
+      {codeLogs.length > 0 ? (
+        <DenyStream
+          logs={codeLogs}
+          activeId={activeLog}
+          onActiveDone={onLogDone}
+        />
+      ) : null}
+      {promptPhase !== "gone" ? (
+        <div className="still-prompt">
+          <div
+            className={cn(
+              done && "still-ask",
+              promptPhase === "leave" && "is-leave",
+              promptPhase === "enter" && "is-enter",
+            )}
+          >
+            <p className="font-mono text-[13px] tracking-[0.06em] text-ink">
+              {typed}
+              <Cursor />
+            </p>
+            {choices ? (
+              <div className="still-ask-actions">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (promptPhase === "leave") {
+                      return;
+                    }
+                    audio.click();
+                    onYes();
+                  }}
+                  className="act px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-green"
+                >
+                  [ YES ]
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (busy || !choices) {
+                      return;
+                    }
+                    audio.click();
+                    setPromptPhase("leave");
+                  }}
+                  className="act px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-green"
+                >
+                  [ NO ]
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }
 
-function DenyLog() {
-  const scale = useScaledMs();
-  const audio = useAudio();
-  const [shown, setShown] = useState(0);
+function DenyStream({
+  logs,
+  activeId,
+  onActiveDone,
+}: {
+  logs: CodeLog[];
+  activeId: number | null;
+  onActiveDone: (id: number) => void;
+}) {
+  const scroller = useRef<HTMLDivElement>(null);
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
+    const node = scroller.current;
+    if (!node) {
+      return;
+    }
+    node.scrollTop = node.scrollHeight;
+  }, [logs, tick]);
+
+  return (
+    <div ref={scroller} className="still-fault" aria-hidden>
+      {logs.map((log) => (
+        <DenyGroup
+          key={log.id}
+          live={log.id === activeId}
+          onLine={() => setTick((value) => value + 1)}
+          onDone={() => onActiveDone(log.id)}
+        />
+      ))}
+    </div>
+  );
+}
+
+function DenyGroup({
+  live,
+  onLine,
+  onDone,
+}: {
+  live: boolean;
+  onLine: () => void;
+  onDone: () => void;
+}) {
+  const scale = useScaledMs();
+  const audio = useAudio();
+  const [shown, setShown] = useState(live ? 0 : DENY_LINES.length);
+  const finished = useRef(!live);
+  const onLineRef = useRef(onLine);
+  const onDoneRef = useRef(onDone);
+
+  useEffect(() => {
+    onLineRef.current = onLine;
+    onDoneRef.current = onDone;
+  }, [onDone, onLine]);
+
+  useEffect(() => {
+    if (!live || finished.current) {
+      return;
+    }
     if (shown >= DENY_LINES.length) {
+      finished.current = true;
+      onDoneRef.current();
       return;
     }
     const id = window.setTimeout(() => {
       audio.tick();
       setShown((value) => value + 1);
+      onLineRef.current();
     }, scale(irregular(150, 300)));
     return () => window.clearTimeout(id);
-  }, [audio, scale, shown]);
+  }, [audio, live, scale, shown]);
 
   return (
-    <div className="still-fault" aria-hidden>
+    <div className="still-fault-group">
       {DENY_LINES.slice(0, shown).map((line, index) => (
         <p
           key={`${line.text}-${index}`}

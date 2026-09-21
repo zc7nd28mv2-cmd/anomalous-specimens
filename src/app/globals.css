@@ -204,6 +204,35 @@ body {
   margin-top: 36px;
 }
 
+@keyframes still-ask-leave {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes still-ask-enter {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.still-ask.is-leave {
+  animation: still-ask-leave 260ms ease-out forwards;
+  pointer-events: none;
+}
+
+.still-ask.is-enter {
+  animation: still-ask-enter 380ms ease-out both;
+}
+
 .still-fault {
   position: absolute;
   inset: 0 auto 0 0;
@@ -211,10 +240,15 @@ body {
   display: flex;
   width: min(38vw, 300px);
   flex-direction: column;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 28px 20px;
-  pointer-events: none;
+  pointer-events: auto;
   user-select: none;
+}
+
+.still-fault-group + .still-fault-group {
+  margin-top: 28px;
 }
 
 .still-fault-line {
@@ -1158,6 +1192,8 @@ body {
   .scan-panel.is-out,
   .sense-enter,
   .sense-leave,
+  .still-ask.is-leave,
+  .still-ask.is-enter,
   .invest-panel.is-enter,
   .invest-en,
   .invest-zh,
