@@ -287,7 +287,8 @@ body {
   height: 100%;
   overflow: hidden;
   margin: 0;
-  font-family: var(--font-code), "SFMono-Regular", Menlo, Monaco, Consolas, var(--font-sys),
+  font-family: var(--font-code), var(--font-zh), "Noto Sans SC", "WenQuanYi Micro Hei",
+    "Droid Sans Fallback", "PingFang SC", "Microsoft YaHei", "SFMono-Regular", Menlo,
     ui-monospace, monospace;
   font-size: clamp(8px, calc((100dvh - 96px) / 74), 13px);
   font-weight: 400;
