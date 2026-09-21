@@ -64,6 +64,13 @@ export function playClick() {
   tone({ freq: 168, dur: 0.045, type: "square", gain: 0.035 });
 }
 
+export function playDenied() {
+  tone({ freq: 92, dur: 0.052, type: "sawtooth", gain: 0.03 });
+  window.setTimeout(() => {
+    tone({ freq: 58, dur: 0.034, type: "square", gain: 0.018 });
+  }, 16);
+}
+
 export function playTick() {
   if (Math.random() > 0.62) {
     return;

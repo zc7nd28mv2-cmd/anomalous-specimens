@@ -1047,6 +1047,12 @@ body {
   }
 }
 
+.is-lock-deny,
+.is-lock-deny:hover,
+.is-lock-deny:focus-visible {
+  color: #8a3a36;
+}
+
 .act {
   background: rgba(89, 232, 120, 0.08);
   color: #59e878;

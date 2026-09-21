@@ -8,11 +8,13 @@ export function Command({
   onClick,
   disabled,
   className,
+  sound = "click",
 }: {
   children: string;
   onClick?: () => void;
   disabled?: boolean;
   className?: string;
+  sound?: "click" | "denied";
 }) {
   const audio = useAudio();
 
@@ -21,7 +23,11 @@ export function Command({
       type="button"
       disabled={disabled}
       onClick={() => {
-        audio.click();
+        if (sound === "denied") {
+          audio.denied();
+        } else {
+          audio.click();
+        }
         onClick?.();
       }}
       className={cn(

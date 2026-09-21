@@ -12,6 +12,7 @@ import {
   isAudioEnabled,
   playAlert,
   playClick,
+  playDenied,
   playMessage,
   playResult,
   playTick,
@@ -24,6 +25,7 @@ type AudioApi = {
   toggle: () => void;
   unlock: () => void;
   click: () => void;
+  denied: () => void;
   tick: () => void;
   message: () => void;
   alert: () => void;
@@ -54,6 +56,10 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       click: () => {
         unlockAudio();
         playClick();
+      },
+      denied: () => {
+        unlockAudio();
+        playDenied();
       },
       tick: playTick,
       message: playMessage,

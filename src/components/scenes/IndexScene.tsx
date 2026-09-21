@@ -8,6 +8,7 @@ import { useAudio } from "@/context/AudioContext";
 
 export function IndexScene({ onAccess }: { onAccess: () => void }) {
   const [denied, setDenied] = useState<string | null>(null);
+  const [flash, setFlash] = useState<string | null>(null);
   const audio = useAudio();
 
   return (
@@ -48,7 +49,15 @@ export function IndexScene({ onAccess }: { onAccess: () => void }) {
 
               {specimen.locked ? (
                 <div>
-                  <Command className="mt-5" onClick={() => setDenied(specimen.id)}>
+                  <Command
+                    className={flash === specimen.id ? "mt-5 is-lock-deny" : "mt-5"}
+                    sound="denied"
+                    onClick={() => {
+                      setDenied(specimen.id);
+                      setFlash(specimen.id);
+                      window.setTimeout(() => setFlash(null), 220);
+                    }}
+                  >
                     锁定
                   </Command>
                   {denied === specimen.id ? (
