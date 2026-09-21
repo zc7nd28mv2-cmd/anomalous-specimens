@@ -190,7 +190,9 @@ export function FieldRecord({
   const typedCount = useRef(saved.current.draft.length);
   const pinBottom = useRef(saved.current.pinBottom);
   const scroller = useRef<HTMLDivElement>(null);
-  const end = useRef<HTMLDivElement>(null);
+  const latest = useRef<HTMLDivElement>(null);
+  const breathTop = useRef<HTMLDivElement>(null);
+  const breathBottom = useRef<HTMLDivElement>(null);
   const restoring = useRef(false);
   const needScrollRestore = useRef(
     saved.current.scroll > 0 || saved.current.log.length > 0,
@@ -210,6 +212,7 @@ export function FieldRecord({
   const scrollbarTimerRef = useRef<number | null>(null);
   const scrollbarVisibleRef = useRef(false);
   const playRef = useRef<() => void>(() => undefined);
+  const centerLatestRef = useRef<(smooth: boolean) => void>(() => undefined);
 
   function persistProgress() {
     persistRef.current({
@@ -935,8 +938,12 @@ export function FieldRecord({
       if (restoring.current) {
         return;
       }
-      pinBottom.current =
-        node.scrollHeight - node.scrollTop - node.clientHeight < 56;
+      const mark = latest.current;
+      if (mark) {
+        const viewMid = node.getBoundingClientRect().top + node.clientHeight * 0.5;
+        const markMid = mark.getBoundingClientRect().top + mark.offsetHeight * 0.5;
+        pinBottom.current = Math.abs(markMid - viewMid) < 96;
+      }
       savedScroll.current = node.scrollTop;
       persistRef.current({
         scroll: node.scrollTop,
@@ -947,13 +954,36 @@ export function FieldRecord({
       }
     };
 
+    const takeOver = () => {
+      if (animationFrameRef.current != null) {
+        window.cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      restoring.current = false;
+      showBar();
+    };
+
+    const fitBreath = () => {
+      const room = Math.round(node.clientHeight * 0.42);
+      if (breathTop.current) {
+        breathTop.current.style.height = `${room}px`;
+      }
+      if (breathBottom.current) {
+        breathBottom.current.style.height = `${room}px`;
+      }
+    };
+    fitBreath();
+    const resize = new ResizeObserver(fitBreath);
+    resize.observe(node);
+
     node.addEventListener("scroll", handleScroll, { passive: true });
-    node.addEventListener("wheel", showBar, { passive: true });
-    node.addEventListener("touchmove", showBar, { passive: true });
+    node.addEventListener("wheel", takeOver, { passive: true });
+    node.addEventListener("touchmove", takeOver, { passive: true });
     return () => {
+      resize.disconnect();
       node.removeEventListener("scroll", handleScroll);
-      node.removeEventListener("wheel", showBar);
-      node.removeEventListener("touchmove", showBar);
+      node.removeEventListener("wheel", takeOver);
+      node.removeEventListener("touchmove", takeOver);
       clearTimer(scrollbarTimerRef);
     };
   }, []);
@@ -980,12 +1010,73 @@ export function FieldRecord({
     return () => window.cancelAnimationFrame(id);
   }, [active]);
 
-  useEffect(() => {
+  function sizeBreath() {
+    const view = scroller.current;
+    if (!view) {
+      return;
+    }
+    const room = Math.round(view.clientHeight * 0.42);
+    if (breathTop.current) {
+      breathTop.current.style.height = `${room}px`;
+    }
+    if (breathBottom.current) {
+      breathBottom.current.style.height = `${room}px`;
+    }
+  }
+
+  function centerLatest(smooth: boolean) {
+    const view = scroller.current;
+    const mark = latest.current;
+    if (!view || !mark || !pinBottom.current) {
+      return;
+    }
+    sizeBreath();
+    const viewMid = view.getBoundingClientRect().top + view.clientHeight * 0.5;
+    const markMid = mark.getBoundingClientRect().top + mark.offsetHeight * 0.5;
+    const max = Math.max(0, view.scrollHeight - view.clientHeight);
+    const next = Math.max(0, Math.min(max, view.scrollTop + (markMid - viewMid)));
+    if (Math.abs(next - view.scrollTop) < 2) {
+      return;
+    }
+    if (animationFrameRef.current != null) {
+      window.cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    if (!smooth) {
+      restoring.current = true;
+      view.scrollTop = next;
+      savedScroll.current = next;
+      window.requestAnimationFrame(() => {
+        restoring.current = false;
+      });
+      return;
+    }
+    const from = view.scrollTop;
+    const started = performance.now();
+    restoring.current = true;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - started) / 280);
+      const eased = 1 - (1 - t) * (1 - t);
+      view.scrollTop = from + (next - from) * eased;
+      if (t < 1) {
+        animationFrameRef.current = window.requestAnimationFrame(tick);
+        return;
+      }
+      animationFrameRef.current = null;
+      savedScroll.current = view.scrollTop;
+      restoring.current = false;
+    };
+    animationFrameRef.current = window.requestAnimationFrame(tick);
+  }
+
+  centerLatestRef.current = centerLatest;
+
+  useLayoutEffect(() => {
     if (!active || restoring.current || needScrollRestore.current || !pinBottom.current) {
       return;
     }
-    end.current?.scrollIntoView({ block: "end" });
-  }, [active, choice, draft, indicator, log]);
+    centerLatestRef.current(true);
+  }, [active, choice, indicator, log]);
 
   useEffect(() => {
     return () => {
@@ -1118,9 +1209,11 @@ export function FieldRecord({
       investStep: 4,
     });
     window.requestAnimationFrame(() => {
-      end.current?.scrollIntoView({ block: "nearest" });
+      centerLatestRef.current(true);
     });
   }
+
+  const lastItem = log[log.length - 1];
 
   return (
     <div className="field-record-shell">
@@ -1129,44 +1222,60 @@ export function FieldRecord({
         onClick={onBoxClick}
         className={cn("chat-content px-5 py-4", scrollbarVisible && "is-scrolling")}
       >
-        <div className="sys-meta space-y-1 text-green-dim">
-          <p>ARCHIVE LOG</p>
-          <p>ID: PD-001</p>
-          <p>STATUS: Recovered 91%</p>
-          <p>SOURCE: Unknown Neural Relay</p>
-        </div>
+        <div className="chat-stack">
+          <div ref={breathTop} className="chat-breath" aria-hidden="true" />
+          <div className="sys-meta space-y-1 text-green-dim">
+            <p>ARCHIVE LOG</p>
+            <p>ID: PD-001</p>
+            <p>STATUS: Recovered 91%</p>
+            <p>SOURCE: Unknown Neural Relay</p>
+          </div>
 
-        <div className="mt-6 space-y-5 pb-4">
-          {log.map((item) => (
-            <LogLine
-              key={item.id}
-              item={item}
-              active={active}
-              investigationOpen={investigationOpen}
-              firstReveal={investigationFirstReveal}
-              onOpenInvestigation={openInvestigation}
-              onLeave={requestLeave}
-            />
-          ))}
+          <div className="mt-6 space-y-5">
+            {log.slice(0, -1).map((item) => (
+              <LogLine
+                key={item.id}
+                item={item}
+                active={active}
+                investigationOpen={investigationOpen}
+                firstReveal={investigationFirstReveal}
+                onOpenInvestigation={openInvestigation}
+                onLeave={requestLeave}
+              />
+            ))}
 
-          {indicator ? <TypingIndicator name={indicator} /> : null}
-
-          {draft && !indicator ? (
-            <div className="font-sans text-[14px] leading-7 text-green">
-              {draftSpeaker ? (
-                <p className="mb-1 font-mono text-[11px] tracking-[0.18em] text-green">
-                  {draftSpeaker}
-                </p>
+            <div ref={latest} className="chat-latest space-y-5">
+              {lastItem ? (
+                <LogLine
+                  key={lastItem.id}
+                  item={lastItem}
+                  active={active}
+                  investigationOpen={investigationOpen}
+                  firstReveal={investigationFirstReveal}
+                  onOpenInvestigation={openInvestigation}
+                  onLeave={requestLeave}
+                />
               ) : null}
-              <p>{draft}</p>
+
+              {indicator ? <TypingIndicator name={indicator} /> : null}
+
+              {draft && !indicator ? (
+                <div className="font-sans text-[14px] leading-7 text-green">
+                  {draftSpeaker ? (
+                    <p className="mb-1 font-mono text-[11px] tracking-[0.18em] text-green">
+                      {draftSpeaker}
+                    </p>
+                  ) : null}
+                  <p>{draft}</p>
+                </div>
+              ) : null}
+
+              {choice ? (
+                <SensoryChoice id={choice} leaving={choiceLeaving} onPick={onPick} />
+              ) : null}
             </div>
-          ) : null}
-
-          {choice ? (
-            <SensoryChoice id={choice} leaving={choiceLeaving} onPick={onPick} />
-          ) : null}
-
-          <div ref={end} />
+          </div>
+          <div ref={breathBottom} className="chat-breath" aria-hidden="true" />
         </div>
       </div>
     </div>

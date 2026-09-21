@@ -1323,6 +1323,20 @@ body {
   scrollbar-color: #2d6638 transparent;
 }
 
+.chat-stack {
+  display: block;
+}
+
+.chat-breath {
+  pointer-events: none;
+  flex-shrink: 0;
+  height: 0;
+}
+
+.chat-latest {
+  display: block;
+}
+
 .chat-content:not(.is-scrolling) {
   scrollbar-width: none;
 }
