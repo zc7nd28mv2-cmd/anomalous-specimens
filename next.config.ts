@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   agentRules: false,
-  output: "standalone",
+  output: "export",
 };
 
 export default nextConfig;
