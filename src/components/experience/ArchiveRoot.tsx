@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ArchiveProvider, useArchive } from "@/context/ArchiveContext";
 import { AudioProvider, useAudio } from "@/context/AudioContext";
-import { TimingProvider } from "@/hooks/useTiming";
+import { TimingProvider, usePrefersReducedMotion, useScaledMs } from "@/hooks/useTiming";
 import { CRTOverlay } from "@/components/overlay/CRTOverlay";
+import { ArchiveCut } from "@/components/overlay/ArchiveCut";
 import { SystemChrome } from "@/components/system/SystemChrome";
 import { AudioToggle } from "@/components/system/AudioToggle";
 import { BootScene } from "@/components/scenes/BootScene";
@@ -29,6 +30,32 @@ function UnlockAudio() {
 function ArchiveInner() {
   const { phase, go, warningOverlayLive, warningOverlayRun, finishWarningOverlay } =
     useArchive();
+  const scale = useScaledMs();
+  const reduced = usePrefersReducedMotion();
+  const [cut, setCut] = useState(false);
+  const [hubReveal, setHubReveal] = useState(false);
+  const cutting = useRef(false);
+
+  const startReadCut = useCallback(() => {
+    if (cutting.current) {
+      return;
+    }
+    cutting.current = true;
+    setCut(true);
+    const wait = reduced ? 80 : 320;
+    window.setTimeout(() => {
+      go("specimen");
+      setHubReveal(true);
+      setCut(false);
+      cutting.current = false;
+    }, scale(wait));
+  }, [go, reduced, scale]);
+
+  useEffect(() => {
+    if (phase !== "specimen") {
+      setHubReveal(false);
+    }
+  }, [phase]);
 
   return (
     <div className="min-h-dvh bg-bg">
@@ -43,9 +70,9 @@ function ArchiveInner() {
 
       {phase === "boot" ? <BootScene onComplete={() => go("index")} /> : null}
       {phase === "index" || phase === "access" ? (
-        <IndexScene onComplete={() => go("specimen")} />
+        <IndexScene onComplete={startReadCut} />
       ) : null}
-      {phase === "specimen" ? <PeachDreamHub /> : null}
+      {phase === "specimen" ? <PeachDreamHub reveal={hubReveal} /> : null}
       {phase === "story" ||
       phase === "pd001" ||
       phase === "unknown" ||
@@ -60,6 +87,7 @@ function ArchiveInner() {
           onDone={finishWarningOverlay}
         />
       ) : null}
+      {cut ? <ArchiveCut /> : null}
     </div>
   );
 }

@@ -1765,6 +1765,63 @@ body {
   color: #8c8c88;
 }
 
+.archive-cut {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  pointer-events: auto;
+}
+
+.archive-cut-slice {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 20%;
+  background: #000;
+  transform: scaleY(0);
+  transform-origin: 50% 50%;
+  animation: archive-cut-slice 140ms ease-out forwards;
+}
+
+@keyframes archive-cut-slice {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.hub-build .hub-l1,
+.hub-build .hub-l2,
+.hub-build .hub-l3,
+.hub-build .hub-l4 {
+  animation: hub-layer-in 140ms ease-out both;
+}
+
+.hub-build .hub-l2 {
+  animation-delay: 50ms;
+}
+
+.hub-build .hub-l3 {
+  animation-delay: 100ms;
+}
+
+.hub-build .hub-l4 {
+  animation-delay: 150ms;
+}
+
+@keyframes hub-layer-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .boot-snap {
   animation: fade 120ms ease-out both;
 }
@@ -1981,6 +2038,11 @@ body {
   .grant-mark.is-breathe,
   .integrity-stuck,
   .boot-fault-in,
+  .archive-cut-slice,
+  .hub-build .hub-l1,
+  .hub-build .hub-l2,
+  .hub-build .hub-l3,
+  .hub-build .hub-l4,
   .compose-fade,
   .compose-code.is-run {
     animation: none;

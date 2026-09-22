@@ -38,12 +38,22 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
   const audio = useAudio();
   const scale = useScaledMs();
   const [alreadyApproved] = useState(sample001AccessApproved);
+  const [cutting, setCutting] = useState(false);
   const animating =
+    cutting ||
     read.kind === "accessing" ||
     read.kind === "verifying" ||
     read.kind === "integrity" ||
     (read.kind === "granted" && !alreadyApproved);
   const finish = useRef(onComplete);
+
+  function leaveToArchive() {
+    if (cutting) {
+      return;
+    }
+    setCutting(true);
+    finish.current();
+  }
 
   useEffect(() => {
     finish.current = onComplete;
@@ -83,7 +93,7 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
         return;
       }
       approveSample001();
-      later(() => finish.current(), 520);
+      later(() => leaveToArchive(), 60);
     }
 
     return () => {
@@ -160,7 +170,7 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
                       }
                       audio.click();
                       if (sample001AccessApproved || alreadyApproved) {
-                        finish.current();
+                        leaveToArchive();
                         return;
                       }
                       setRead({ kind: "accessing" });
