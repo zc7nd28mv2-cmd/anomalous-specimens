@@ -3,7 +3,7 @@ export function AsciiBackground() {
     <>
       <div
         data-aifx="ascii"
-        data-aifx-colors="#101010,#1C1C1C,#2E2E2E,#454545"
+        data-aifx-colors="#080808,#101010,#181818,#242424"
         data-aifx-bg="#000000"
         data-aifx-speed="0.12"
         data-aifx-cell-size="16"

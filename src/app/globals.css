@@ -5,15 +5,15 @@
   --color-bg-2: #080807;
   --color-term: #080807;
   --color-ink: #e8e8e5;
-  --color-mute: #8a8a86;
-  --color-dim: #4a4a47;
+  --color-mute: #a4a4a0;
+  --color-dim: #5e5e5a;
   --color-line: #202020;
   --color-danger: #ff3b30;
   --color-danger-dim: #681a17;
   --color-green: #59e878;
   --color-green-dim: #2d6638;
   --color-green-border: #1e4d29;
-  --color-sys: #62625f;
+  --color-sys: #8c8c88;
   --font-sans: var(--font-zh), "Noto Sans SC", sans-serif;
   --font-mono: var(--font-sys), "IBM Plex Mono", ui-monospace, monospace;
 }
@@ -297,7 +297,7 @@ body {
   font-size: 12px;
   letter-spacing: 0.04em;
   line-height: 1.75;
-  color: #8a8a86;
+  color: #a4a4a0;
 }
 
 .still-fault-line.is-err {
@@ -310,7 +310,7 @@ body {
 }
 
 .still-fault-line.is-sys {
-  color: #62625f;
+  color: #8c8c88;
 }
 
 .yume-view {
@@ -418,7 +418,7 @@ body {
   font-weight: 400;
   letter-spacing: 0.06em;
   line-height: 1.7;
-  color: #8a8a86;
+  color: #a4a4a0;
   overflow-wrap: anywhere;
 }
 
@@ -655,7 +655,7 @@ body {
   padding: 5px 10px;
   border: none;
   border-radius: 0;
-  background: rgba(89, 232, 120, 0.08);
+  background: rgba(45, 102, 56, 0.86);
   color: #59e878;
   font-family: var(--font-zh), "Noto Sans SC", sans-serif;
   font-size: 11px;
@@ -666,7 +666,7 @@ body {
 
 .read-tag:hover,
 .read-tag:focus-visible {
-  background: rgba(89, 232, 120, 0.14);
+  background: rgba(45, 102, 56, 0.96);
   color: #59e878;
   outline: none;
 }
@@ -711,7 +711,7 @@ body {
   font-weight: 400;
   letter-spacing: 0.08em;
   line-height: 1.7;
-  color: #62625f;
+  color: #8c8c88;
 }
 
 .field-node {
@@ -875,7 +875,7 @@ body {
   font-size: 14px;
   font-weight: 400;
   line-height: 1.6;
-  color: #62625f;
+  color: #8c8c88;
   filter: blur(0.35px);
 }
 
@@ -909,7 +909,7 @@ body {
   font-weight: 400;
   letter-spacing: 0.08em;
   line-height: 1.6;
-  color: #62625f;
+  color: #8c8c88;
 }
 
 @keyframes veil-in {
@@ -1557,7 +1557,7 @@ body {
   font-weight: 400;
   letter-spacing: 0.08em;
   line-height: 1.6;
-  color: #62625f;
+  color: #8c8c88;
 }
 
 .boot-snap {
