@@ -143,9 +143,8 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
                         audio.click();
                         selectSpecimen(specimen.id);
                         const approved =
-                          specimen.id === "001"
-                            ? sample001AccessApproved || alreadyApproved
-                            : isSpecimenApproved(specimen.id);
+                          isSpecimenApproved(specimen.id) ||
+                          (specimen.id === "001" && alreadyApproved);
                         if (approved) {
                           leaveToArchive();
                           return;
@@ -157,9 +156,10 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
                     >
                       读取档案
                     </button>
-                    {readingId === specimen.id ||
-                    (specimen.id === "001" && readingId == null && read.kind !== "off") ? (
+                    {readingId === specimen.id ? (
                       <ReadLine phase={read} id={specimen.id} />
+                    ) : isSpecimenApproved(specimen.id) ? (
+                      <ReadLine phase={{ kind: "granted" }} id={specimen.id} />
                     ) : null}
                   </div>
                 ) : specimen.state === "restricted" ? (
