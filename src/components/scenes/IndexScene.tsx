@@ -46,6 +46,7 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
   const scale = useScaledMs();
   const [alreadyApproved] = useState(sample001AccessApproved);
   const [cutting, setCutting] = useState(false);
+  const leaving = useRef(false);
   const animating =
     cutting ||
     read.kind === "accessing" ||
@@ -96,22 +97,22 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
         later(() => setRead({ kind: "granted" }), 180);
       }
     } else if (read.kind === "granted") {
-      const id = readingId ?? "001";
-      if (id === "001" && alreadyApproved) {
+      if (readingId == null && alreadyApproved) {
         return;
       }
-      if (id !== "001" && isSpecimenApproved(id)) {
+      if (leaving.current) {
         return;
       }
-      approveSpecimen(id);
-      later(() => leaveToArchive(), 60);
+      leaving.current = true;
+      approveSpecimen(readingId ?? "001");
+      window.setTimeout(() => leaveToArchive(), scale(60));
     }
 
     return () => {
       cancelled = true;
       timers.forEach((id) => window.clearTimeout(id));
     };
-  }, [alreadyApproved, approveSpecimen, isSpecimenApproved, read, readingId, scale]);
+  }, [alreadyApproved, approveSpecimen, read, readingId, scale]);
 
   return (
     <div className="relative min-h-dvh bg-bg px-5 py-16 sm:px-10 sm:py-20 md:px-16">
