@@ -153,7 +153,7 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
                         window.setTimeout(() => setFlash(null), 220);
                       }}
                     >
-                      锁定
+                      未知
                     </Command>
                     {denied === specimen.id ? (
                       <p className="fade mt-3 font-sans text-[13px] text-danger">
