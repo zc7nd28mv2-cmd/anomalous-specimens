@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Command } from "@/components/system/Command";
 import { Rule } from "@/components/system/Rule";
 import { SpecimenLock, SpecimenRow } from "@/components/archive/SpecimenRow";
 import { ACCESS, SPECIMENS, SYSTEM, integrityLine } from "@/lib/content";
@@ -30,6 +31,8 @@ function irregular(min: number, max: number) {
 
 export function IndexScene({ onComplete }: { onComplete: () => void }) {
   const { sample001AccessApproved, approveSample001 } = useArchive();
+  const [denied, setDenied] = useState<string | null>(null);
+  const [flash, setFlash] = useState<string | null>(null);
   const [read, setRead] = useState<ReadPhase>(() =>
     sample001AccessApproved ? { kind: "granted" } : { kind: "off" },
   );
@@ -138,6 +141,25 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
                       读取档案
                     </button>
                     <ReadLine phase={read} />
+                  </div>
+                ) : specimen.state === "restricted" ? (
+                  <div>
+                    <Command
+                      className={flash === specimen.id ? "mt-5 is-lock-deny" : "mt-5"}
+                      sound="denied"
+                      onClick={() => {
+                        setDenied(specimen.id);
+                        setFlash(specimen.id);
+                        window.setTimeout(() => setFlash(null), 220);
+                      }}
+                    >
+                      锁定
+                    </Command>
+                    {denied === specimen.id ? (
+                      <p className="fade mt-3 font-sans text-[13px] text-danger">
+                        访问被拒绝
+                      </p>
+                    ) : null}
                   </div>
                 ) : (
                   <SpecimenLock />

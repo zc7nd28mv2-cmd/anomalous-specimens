@@ -72,18 +72,11 @@ function SpecimenAction({ children }: { children: ReactNode }) {
 export function SpecimenLock() {
   return (
     <span className="specimen-lock" aria-hidden="true">
-      <svg
-        viewBox="0 0 24 24"
-        width="16"
-        height="16"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
+        <path
+          fillRule="evenodd"
+          d="M8.25 7.15A3.75 3.75 0 0 1 12 3.4a3.75 3.75 0 0 1 3.75 3.75V10H18a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3h2.25V7.15ZM12 5.4A1.75 1.75 0 0 0 10.25 7.15V10h3.5V7.15A1.75 1.75 0 0 0 12 5.4Zm0 9.1a1.6 1.6 0 0 0-.7 3.04V19h1.4v-1.46A1.6 1.6 0 0 0 12 14.5Z"
+        />
       </svg>
     </span>
   );
