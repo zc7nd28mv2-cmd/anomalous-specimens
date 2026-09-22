@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useAfter } from "@/hooks/useReveal";
 import { useScaledMs } from "@/hooks/useTiming";
 import { useAudio } from "@/context/AudioContext";
@@ -88,6 +88,8 @@ function StillThere({ onYes }: { onYes: () => void }) {
   const [activeLog, setActiveLog] = useState<number | null>(null);
   const [promptPhase, setPromptPhase] = useState<PromptPhase>("idle");
   const nextLog = useRef(1);
+  const yumeMomoPlaybackStarted = useRef(false);
+  const [yesLocked, setYesLocked] = useState(false);
   const done = chunk >= PROMPT_CHUNKS.length;
   const busy = promptPhase !== "idle";
 
@@ -174,10 +176,17 @@ function StillThere({ onYes }: { onYes: () => void }) {
               <div className="still-ask-actions">
                 <button
                   type="button"
+                  disabled={yesLocked}
                   onClick={() => {
-                    if (promptPhase === "leave") {
+                    if (
+                      yumeMomoPlaybackStarted.current ||
+                      yesLocked ||
+                      promptPhase === "leave"
+                    ) {
                       return;
                     }
+                    yumeMomoPlaybackStarted.current = true;
+                    setYesLocked(true);
                     audio.click();
                     onYes();
                   }}
@@ -216,13 +225,37 @@ function DenyStream({
   activeId: number | null;
   onActiveDone: (id: number) => void;
 }) {
+  const scroller = useRef<HTMLDivElement>(null);
+  const shouldAutoScroll = useRef(true);
+
+  function followLatest() {
+    const node = scroller.current;
+    if (!node || !shouldAutoScroll.current) {
+      return;
+    }
+    node.scrollTo({
+      top: node.scrollHeight,
+      behavior: "smooth",
+    });
+  }
+
   return (
-    <div className="still-fault" aria-hidden>
+    <div
+      ref={scroller}
+      className="still-fault"
+      aria-hidden
+      onWheel={() => {
+        shouldAutoScroll.current = false;
+      }}
+      onTouchMove={() => {
+        shouldAutoScroll.current = false;
+      }}
+    >
       {logs.map((log) => (
         <DenyGroup
           key={log.id}
           live={log.id === activeId}
-          onLine={() => undefined}
+          onLine={followLatest}
           onDone={() => onActiveDone(log.id)}
         />
       ))}
@@ -251,6 +284,13 @@ function DenyGroup({
     onDoneRef.current = onDone;
   }, [onDone, onLine]);
 
+  useLayoutEffect(() => {
+    if (!live || shown === 0) {
+      return;
+    }
+    onLineRef.current();
+  }, [live, shown]);
+
   useEffect(() => {
     if (!live || finished.current) {
       return;
@@ -263,7 +303,6 @@ function DenyGroup({
     const id = window.setTimeout(() => {
       audio.tick();
       setShown((value) => value + 1);
-      onLineRef.current();
     }, scale(irregular(150, 300)));
     return () => window.clearTimeout(id);
   }, [audio, live, scale, shown]);

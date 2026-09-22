@@ -40,11 +40,15 @@ function clearTimers() {
 
 function soundOnce(phase: WarningSequenceState) {
   const level = warningLevel(phase);
-  if (level < 2 || sounded.has(level)) {
+  if (level < 1 || sounded.has(level)) {
     return;
   }
   sounded.add(level);
-  playWarningSound(level as 2 | 3 | 4 | 5);
+  try {
+    playWarningSound(level);
+  } catch {
+    return;
+  }
 }
 
 function startRun(runId: number, onDone: () => void) {
@@ -62,6 +66,7 @@ function startRun(runId: number, onDone: () => void) {
     burst: "off" as const,
   };
   emit({ phase: first.phase, burst: first.burst ?? "off" });
+  soundOnce(first.phase);
   beats.slice(1).forEach((beat) => {
     timerIds.push(
       window.setTimeout(() => {
@@ -98,21 +103,15 @@ function WarningWindow({
       }}
     >
       <div className="fail-panel-copy">
-        <p className="font-mono text-[12px] tracking-[0.14em]">{screen.kicker}</p>
-        {screen.title ? (
-          <p className="mt-5 font-mono text-[14px] leading-7 tracking-[0.06em]">
-            {screen.title}
-          </p>
-        ) : null}
-        {screen.lines.length > 0 ? (
-          <div className="mt-2 font-mono text-[14px] leading-7 tracking-[0.06em]">
+        <p className="fail-head">{screen.kicker}</p>
+        {screen.title || screen.lines.length > 0 || screen.foot ? (
+          <div className="fail-body">
+            {screen.title ? <p>{screen.title}</p> : null}
             {screen.lines.map((line) => (
               <p key={line}>{line}</p>
             ))}
+            {screen.foot ? <p className="fail-foot">{screen.foot}</p> : null}
           </div>
-        ) : null}
-        {screen.foot ? (
-          <p className="mt-7 font-mono text-[11px] tracking-[0.1em]">{screen.foot}</p>
         ) : null}
       </div>
     </div>
@@ -162,7 +161,7 @@ export function WarningSequence({
         <WarningWindow
           key={screen.id}
           screen={screen}
-          shift={clusterNow[screen.anchor]}
+          shift={clusterNow[screen.id]}
         />
       ))}
       {view.burst !== "off" ? (

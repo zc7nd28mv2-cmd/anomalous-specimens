@@ -12,59 +12,95 @@ function irregular(min: number, max: number) {
   return min + Math.random() * (max - min);
 }
 
-function nextStep(index: number, kinds: readonly YumeLineKind[]) {
-  const kind = kinds[index] ?? "code";
-  if (kind === "blank") {
-    return { add: 1, wait: 20 };
-  }
+function lineWait(kind: YumeLineKind) {
   if (kind === "comment") {
-    return { add: 1, wait: irregular(90, 160) };
+    return irregular(100, 180);
   }
-  let add = 1;
-  if (Math.random() < 0.42) {
-    while (add < 3 && kinds[index + add] === "code") {
-      add += 1;
-    }
+  if (kind === "blank") {
+    return irregular(70, 110);
   }
-  return { add, wait: irregular(36, 80) };
+  return irregular(60, 120);
 }
 
-export function YumeProtocol({ onHoldDone }: { onHoldDone: () => void }) {
+let yumeMomoPlaybackStarted = false;
+let yumeShownCount = 0;
+const yumeListeners = new Set<(count: number) => void>();
+const yumeTimers: number[] = [];
+
+function emitYume(count: number) {
+  yumeShownCount = count;
+  yumeListeners.forEach((fn) => fn(count));
+}
+
+function startYumePlayback(kinds: readonly YumeLineKind[]) {
+  if (yumeMomoPlaybackStarted) {
+    return;
+  }
+  yumeMomoPlaybackStarted = true;
+  emitYume(1);
+
+  const playFrom = (index: number) => {
+    if (index >= YUME_LINES.length) {
+      return;
+    }
+    yumeTimers.push(
+      window.setTimeout(() => {
+        const next = index + 1;
+        emitYume(next);
+        playFrom(next);
+      }, lineWait(kinds[index] ?? "code")),
+    );
+  };
+
+  playFrom(1);
+}
+
+export function YumeProtocol({}: { onHoldDone?: () => void } = {}) {
   const kinds = useMemo(() => classifyYumeLines(YUME_LINES), []);
-  const hold = useRef(onHoldDone);
-  const [shown, setShown] = useState(1);
-  const finished = shown >= YUME_LINES.length;
+  const [shown, setShown] = useState(yumeShownCount);
+  const scroller = useRef<HTMLPreElement>(null);
 
   useEffect(() => {
-    hold.current = onHoldDone;
-  }, [onHoldDone]);
+    yumeListeners.add(setShown);
+    startYumePlayback(kinds);
+    return () => {
+      yumeListeners.delete(setShown);
+    };
+  }, [kinds]);
+
   const tokens = useMemo(
     () => highlightYumeLines(YUME_LINES.slice(0, shown)),
     [shown],
   );
 
   useEffect(() => {
-    if (shown >= YUME_LINES.length) {
+    const node = scroller.current;
+    if (!node) {
       return;
     }
-    const step = nextStep(shown, kinds);
-    const id = window.setTimeout(() => {
-      setShown((value) => Math.min(YUME_LINES.length, value + step.add));
-    }, step.wait);
-    return () => window.clearTimeout(id);
-  }, [kinds, shown]);
+    const id = window.requestAnimationFrame(() => {
+      node.scrollTo({
+        top: node.scrollHeight,
+        behavior: shown >= YUME_LINES.length ? "auto" : "smooth",
+      });
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [shown]);
 
   useEffect(() => {
-    if (!finished) {
+    if (shown < YUME_LINES.length) {
       return;
     }
-    const id = window.setTimeout(() => hold.current(), 4000);
-    return () => window.clearTimeout(id);
-  }, [finished]);
+    const node = scroller.current;
+    if (!node) {
+      return;
+    }
+    node.scrollTop = node.scrollHeight - node.clientHeight;
+  }, [shown]);
 
   return (
     <div className="yume-view">
-      <pre className="yume-code">
+      <pre ref={scroller} className="yume-code">
         {tokens.map((line, index) => (
           <span key={index} className="yume-line">
             {line.map((token, tokenIndex) => (

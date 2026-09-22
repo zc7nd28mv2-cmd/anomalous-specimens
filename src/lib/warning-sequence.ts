@@ -48,7 +48,7 @@ export const WARNING_SCREENS: readonly WarningScreen[] = [
     anchor: "center",
     size: "medium",
     kicker: "⚠ WARNING!",
-    title: "Host vital signs are declining.",
+    title: "HOST VITAL SIGNS ARE DECLINING.",
     lines: [],
     foot: "",
   },
@@ -104,9 +104,9 @@ export function randomRange(min: number, max: number) {
 
 export function buildWarningTimeline(): WarningBeat[] {
   const afterFirst = randomRange(700, 1200);
-  const gap03 = randomRange(70, 180);
-  const gap04 = randomRange(150, 300);
-  const gap05 = randomRange(80, 220);
+  const gap03 = randomRange(120, 280);
+  const gap04 = randomRange(70, 180);
+  const gap05 = randomRange(150, 300);
   const hold = randomRange(1800, 2200);
   const flicker02 = randomRange(40, 70);
   const flicker03 = randomRange(50, 85);
@@ -219,28 +219,24 @@ export function warningLevel(phase: WarningSequenceState): 1 | 2 | 3 | 4 | 5 | 0
   return 0;
 }
 
-export function buildWarningCluster(): Record<WarningAnchor, WarningShift> {
+export function buildWarningCluster(): Record<WarningScreen["id"], WarningShift> {
+  const vw = typeof window === "undefined" ? 1280 : window.innerWidth;
+  const vh = typeof window === "undefined" ? 800 : window.innerHeight;
+  const scale = Math.min(1, Math.max(0.58, Math.min(vw / 1100, vh / 720)));
+  const limitX = vw * 0.34;
+  const limitY = vh * 0.3;
+
+  const place = (x: number, y: number, z: number): WarningShift => ({
+    x: Math.max(-limitX, Math.min(limitX, x * scale)),
+    y: Math.max(-limitY, Math.min(limitY, y * scale)),
+    z,
+  });
+
   return {
-    center: { x: 0, y: 0, z: 310 },
-    tl: {
-      x: -142 + randomRange(-16, 18),
-      y: -78 + randomRange(-12, 14),
-      z: 314,
-    },
-    tr: {
-      x: 154 + randomRange(-14, 20),
-      y: -92 + randomRange(-10, 16),
-      z: 316,
-    },
-    bl: {
-      x: -128 + randomRange(-18, 12),
-      y: 86 + randomRange(-10, 14),
-      z: 313,
-    },
-    br: {
-      x: 162 + randomRange(-12, 16),
-      y: 98 + randomRange(-12, 14),
-      z: 317,
-    },
+    warning_01: place(0, 0, 10),
+    warning_02: place(-168 + randomRange(-14, 16), -162 + randomRange(-10, 12), 12),
+    warning_03: place(-178 + randomRange(-12, 14), 118 + randomRange(-10, 12), 11),
+    warning_04: place(258 + randomRange(-16, 18), -138 + randomRange(-12, 14), 13),
+    warning_05: place(118 + randomRange(-12, 14), 140 + randomRange(-10, 12), 14),
   };
 }
