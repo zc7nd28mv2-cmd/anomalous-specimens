@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Command } from "@/components/system/Command";
 import { Rule } from "@/components/system/Rule";
+import { SpecimenLock, SpecimenRow } from "@/components/archive/SpecimenRow";
 import { ACCESS, SPECIMENS, SYSTEM, integrityLine } from "@/lib/content";
 import { useAudio } from "@/context/AudioContext";
 import { useArchive } from "@/context/ArchiveContext";
@@ -30,8 +30,6 @@ function irregular(min: number, max: number) {
 
 export function IndexScene({ onComplete }: { onComplete: () => void }) {
   const { sample001AccessApproved, approveSample001 } = useArchive();
-  const [denied, setDenied] = useState<string | null>(null);
-  const [flash, setFlash] = useState<string | null>(null);
   const [read, setRead] = useState<ReadPhase>(() =>
     sample001AccessApproved ? { kind: "granted" } : { kind: "off" },
   );
@@ -115,79 +113,44 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
 
         <div className="mt-14 space-y-12">
           {SPECIMENS.map((specimen) => (
-            <section key={specimen.id} className="rise">
-              <Rule className="mb-7" />
-              <p className="sys-meta">{specimen.id}</p>
-              <div>
-                <h2
-                  className={
-                    specimen.locked
-                      ? "title-product mt-4 text-mute"
-                      : "title-product mt-4 text-ink"
-                  }
-                >
-                  {specimen.title}
-                </h2>
-                <p className="aux-en mt-2">{specimen.name}</p>
-              </div>
-              {specimen.kind ? (
-                <p className="aux-en mt-5">MEDICAL NEURAL PROGRAM</p>
-              ) : null}
-              <p className="aux-en mt-2">
-                {specimen.locked ? "RESTRICTED" : "RECOVERED 91%"}
-              </p>
-              <p className="mt-2 font-sans text-[13px] text-mute">
-                状态 / {specimen.status}
-              </p>
-
-              {specimen.locked ? (
-                <div>
-                  <Command
-                    className={flash === specimen.id ? "mt-5 is-lock-deny" : "mt-5"}
-                    sound="denied"
-                    onClick={() => {
-                      setDenied(specimen.id);
-                      setFlash(specimen.id);
-                      window.setTimeout(() => setFlash(null), 220);
-                    }}
-                  >
-                    锁定
-                  </Command>
-                  {denied === specimen.id ? (
-                    <p className="fade mt-3 font-sans text-[13px] text-danger">
-                      访问被拒绝
-                    </p>
-                  ) : null}
-                </div>
-              ) : (
-                <div>
-                  <button
-                    type="button"
-                    disabled={animating}
-                    onClick={() => {
-                      if (animating) {
-                        return;
-                      }
-                      audio.click();
-                      if (sample001AccessApproved || alreadyApproved) {
-                        leaveToArchive();
-                        return;
-                      }
-                      setRead({ kind: "accessing" });
-                    }}
-                    className="read-tag"
-                  >
-                    读取档案
-                  </button>
-                  <ReadLine phase={read} />
-                </div>
-              )}
-            </section>
+            <SpecimenRow
+              key={specimen.id}
+              specimen={specimen}
+              action={
+                specimen.state === "available" ? (
+                  <div>
+                    <button
+                      type="button"
+                      disabled={animating}
+                      onClick={() => {
+                        if (animating) {
+                          return;
+                        }
+                        audio.click();
+                        if (sample001AccessApproved || alreadyApproved) {
+                          leaveToArchive();
+                          return;
+                        }
+                        setRead({ kind: "accessing" });
+                      }}
+                      className="read-tag"
+                    >
+                      读取档案
+                    </button>
+                    <ReadLine phase={read} />
+                  </div>
+                ) : (
+                  <SpecimenLock />
+                )
+              }
+            />
           ))}
         </div>
 
         <Rule className="mt-12" />
-        <p className="mt-5 sys-meta">{SYSTEM.count}</p>
+        <p className="mt-5 sys-meta">
+          {SPECIMENS.length} / {SPECIMENS.length} 样本
+        </p>
       </div>
     </div>
   );

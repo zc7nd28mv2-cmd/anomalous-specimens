@@ -1794,6 +1794,61 @@ body {
   color: #8c8c88;
 }
 
+.specimen-name {
+  color: #e8e8e5;
+}
+
+.specimen-en {
+  margin-top: 0.5rem;
+  min-height: 1.6em;
+}
+
+.specimen-meta {
+  margin-top: 0.5rem;
+}
+
+.specimen-meta.has-lead {
+  margin-top: 1.25rem;
+}
+
+.specimen-meta-line {
+  min-height: 1.6em;
+}
+
+.specimen-meta-line + .specimen-meta-line {
+  margin-top: 0.5rem;
+}
+
+.specimen-status {
+  margin-top: 0.5rem;
+  font-family: var(--font-zh), "Noto Sans SC", sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: #a4a4a0;
+}
+
+.specimen-lock {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 20px;
+  color: #a4a4a0;
+  pointer-events: none;
+  cursor: default;
+}
+
+.specimen-row.is-restricted .specimen-name {
+  color: #a4a4a0;
+}
+
+.specimen-row.is-undeveloped,
+.specimen-row.is-undeveloped .sys-meta,
+.specimen-row.is-undeveloped .specimen-name,
+.specimen-row.is-undeveloped .aux-en,
+.specimen-row.is-undeveloped .specimen-status,
+.specimen-row.is-undeveloped .specimen-lock {
+  color: #5e5e5a;
+}
+
 .archive-cut {
   position: fixed;
   inset: 0;

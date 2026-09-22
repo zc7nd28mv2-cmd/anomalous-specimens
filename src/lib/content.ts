@@ -15,35 +15,83 @@ export const SYSTEM = {
   count: "3 / 3 样本",
 } as const;
 
-export const SPECIMENS = [
+export type SpecimenState = "available" | "restricted" | "locked";
+
+export type Specimen = {
+  id: string;
+  name: string;
+  englishName?: string;
+  metadata?: string[];
+  status: string;
+  state: SpecimenState;
+};
+
+export const SPECIMENS: Specimen[] = [
   {
     id: "001",
-    title: "仙桃夢",
-    name: "PEACH DREAM",
-    alias: "「仙桃夢」",
-    kind: "医疗神经程序",
-    status: "已泄露",
-    locked: false,
+    name: "仙桃夢",
+    englishName: "PEACH DREAM",
+    metadata: ["MEDICAL NEURAL PROGRAM", "RECOVERED 91%"],
+    status: "状态 / 已泄露",
+    state: "available",
   },
   {
     id: "002",
-    title: "晶蕊體",
-    name: "CRYSTAL BLOOM",
-    alias: "「晶蕊體」",
-    kind: null,
-    status: "受限访问",
-    locked: true,
+    name: "晶蕊體",
+    englishName: "CRYSTAL BLOOM",
+    metadata: ["RESTRICTED"],
+    status: "状态 / 受限访问",
+    state: "restricted",
   },
   {
     id: "003",
-    title: "複方咖啡",
-    name: "COMPOUND COFFEE",
-    alias: "「複方咖啡」",
-    kind: null,
-    status: "受限访问",
-    locked: true,
+    name: "複方咖啡",
+    englishName: "COMPOUND COFFEE",
+    metadata: ["RESTRICTED"],
+    status: "状态 / 受限访问",
+    state: "restricted",
   },
-] as const;
+  {
+    id: "004",
+    name: "梦幻邦尼",
+    englishName: "",
+    metadata: [],
+    status: "状态 / 未开发",
+    state: "locked",
+  },
+  {
+    id: "005",
+    name: "爬虫托管",
+    englishName: "",
+    metadata: [],
+    status: "状态 / 未开发",
+    state: "locked",
+  },
+  {
+    id: "006",
+    name: "预设黄昏",
+    englishName: "",
+    metadata: [],
+    status: "状态 / 未开发",
+    state: "locked",
+  },
+  {
+    id: "007",
+    name: "腐坏黑",
+    englishName: "",
+    metadata: [],
+    status: "状态 / 未开发",
+    state: "locked",
+  },
+  {
+    id: "008",
+    name: "锇菲配-7OS",
+    englishName: "Osphen-7OS",
+    metadata: [],
+    status: "状态 / 未开发",
+    state: "locked",
+  },
+];
 
 export const ACCESS = {
   accessing: "正在读取样本 001",
