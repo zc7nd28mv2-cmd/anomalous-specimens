@@ -90,13 +90,6 @@ export function StoryArchive() {
   }, [intrusion]);
 
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("warnseq") !== "1") {
-      return;
-    }
-    handleWarningSequence();
-  }, [handleWarningSequence]);
-
-  useEffect(() => {
     return () => {
       if (closeTimer.current != null) {
         window.clearTimeout(closeTimer.current);
@@ -162,6 +155,13 @@ export function StoryArchive() {
     setIntrusion("run");
     patchField({ warningSequence: "run" });
   }, [patchField]);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("warnseq") !== "1") {
+      return;
+    }
+    handleWarningSequence();
+  }, [handleWarningSequence]);
 
   const handleAnalysis = useCallback((lines: string[]) => {
     setScanLines(lines);
