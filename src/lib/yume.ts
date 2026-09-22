@@ -1,6 +1,6 @@
 export const YUME_MOMO_SOURCE = `/*============================================================
 
-    PROJECT            : YUME MOMO
+    PROJECT            : Peach Dream
     INTERNAL NAME      : 桃源神经重建协议
     ALIAS              : 「仙桃梦」
     VERSION            : 2.0.41-beta

@@ -59,7 +59,7 @@ export function integrityLine(pct: number) {
 export const DOSSIER = {
   heading: "项目档案",
   projectLabel: "项目：",
-  project: "YUME MOMO 2.0",
+  project: "Peach Dream 2.0",
   classLabel: "分类：",
   classification: "医疗神经程序",
   versionLabel: "版本：",

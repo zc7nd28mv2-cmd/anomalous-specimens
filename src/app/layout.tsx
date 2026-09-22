@@ -5,7 +5,7 @@ import "./globals.css";
 
 const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-sys",
   display: "swap",
 });
@@ -19,7 +19,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 const notoSansSC = Noto_Sans_SC({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-zh",
   display: "swap",
 });
