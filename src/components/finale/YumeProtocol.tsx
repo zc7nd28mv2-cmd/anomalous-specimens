@@ -90,11 +90,11 @@ function startYumeReturn(onDone: () => void) {
   yumeMomoCompleted = true;
   emitYumeReturn(10);
   yumeReturnTimer = window.setInterval(() => {
-    const next = yumeReturnLeft - 1;
-    emitYumeReturn(next);
-    if (next <= 0) {
+    if (yumeReturnLeft <= 0) {
       finishYumeReturn();
+      return;
     }
+    emitYumeReturn(yumeReturnLeft - 1);
   }, 1000);
 }
 
