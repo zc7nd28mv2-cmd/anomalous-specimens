@@ -468,7 +468,7 @@ body {
   display: inline-block;
   max-width: 100%;
   padding: 0 12px;
-  background: rgba(45, 102, 56, 0.5);
+  background: #2d6638;
   color: #59e878;
 }
 
@@ -714,7 +714,7 @@ body {
 .field-titlebar {
   margin: 0;
   border: none;
-  background: rgba(45, 102, 56, 0.5);
+  background: #2d6638;
   padding: 8px 14px;
   font-family: var(--font-zh), "Noto Sans SC", sans-serif;
   font-size: 14px;
@@ -871,7 +871,7 @@ body {
   display: inline-flex;
   align-items: center;
   border: none;
-  background: rgba(45, 102, 56, 0.5);
+  background: #2d6638;
   color: #59e878;
   font-family: var(--font-sys), "IBM Plex Mono", ui-monospace, monospace;
   font-size: 11px;
@@ -887,7 +887,7 @@ body {
 }
 
 .invest-exit:hover {
-  background: rgba(45, 102, 56, 0.5);
+  background: #2d6638;
   color: #59e878;
 }
 
