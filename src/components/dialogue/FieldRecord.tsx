@@ -176,9 +176,7 @@ export function FieldRecord({
   warningSequenceClearedRef.current = warningSequenceCleared;
   analysisClearedRef.current = analysisCleared;
 
-  const warningSequenceStartedRef = useRef(
-    saved.current.warningSequence === "run" || saved.current.warningSequence === "done",
-  );
+  const warningSequenceStartedRef = useRef(saved.current.warningSequence === "run");
   const force = useRef(false);
   const picked = useRef(saved.current.picked);
   const pickedOptionRef = useRef<SensoryBranchId | null>(saved.current.pickedOption);
@@ -322,12 +320,6 @@ export function FieldRecord({
 
   function startWarningSequence() {
     if (warningSequenceStartedRef.current) {
-      return false;
-    }
-    if (
-      saved.current.warningSequence === "run" ||
-      saved.current.warningSequence === "done"
-    ) {
       return false;
     }
     if (!onWarningSequenceRef.current) {

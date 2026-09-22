@@ -29,6 +29,7 @@ type SeqView = {
 
 let activeRun = 0;
 let crashRun = 0;
+let crashRaf = 0;
 let viewNow: SeqView = { phase: "warning_01", burst: "off" };
 let crashNow: CrashView = idleCrashView();
 let clusterNow = buildWarningCluster();
@@ -36,7 +37,6 @@ const sounded = new Set<number>();
 const listeners = new Set<(view: SeqView) => void>();
 const crashListeners = new Set<(view: CrashView) => void>();
 const timerIds: number[] = [];
-const crashTimerIds: number[] = [];
 
 function emit(next: SeqView) {
   viewNow = next;
@@ -54,8 +54,10 @@ function clearTimers() {
 }
 
 function clearCrash() {
-  crashTimerIds.forEach((id) => window.clearTimeout(id));
-  crashTimerIds.length = 0;
+  if (crashRaf) {
+    window.cancelAnimationFrame(crashRaf);
+    crashRaf = 0;
+  }
   crashRun = 0;
   stopCrashAudio();
   crashNow = idleCrashView();
@@ -84,12 +86,20 @@ function applyCrashEvent(event: CrashEvent) {
     emitCrash({ ...crashNow, flash: event.mode });
     return;
   }
-  if (event.kind === "tear") {
-    emitCrash({ ...crashNow, tear: event.tear });
+  if (event.kind === "slices") {
+    emitCrash({ ...crashNow, slices: event.slices });
+    return;
+  }
+  if (event.kind === "band") {
+    emitCrash({ ...crashNow, band: event.band });
     return;
   }
   if (event.kind === "noise") {
     emitCrash({ ...crashNow, noise: event.on });
+    return;
+  }
+  if (event.kind === "shake") {
+    emitCrash({ ...crashNow, shake: event.px });
     return;
   }
   if (event.kind === "window") {
@@ -118,22 +128,32 @@ function startCrash(runId: number, onDone: () => void) {
   clearCrash();
   crashRun = runId;
   emitCrash({ ...idleCrashView(), active: true, phase: 1 });
-  buildCrashScript().forEach((event) => {
-    crashTimerIds.push(
-      window.setTimeout(() => {
-        if (crashRun !== runId) {
-          return;
-        }
-        if (event.kind === "done") {
-          clearCrash();
-          emit({ phase: "complete", burst: "off" });
-          onDone();
-          return;
-        }
-        applyCrashEvent(event);
-      }, event.at),
-    );
-  });
+  const events = buildCrashScript();
+  const origin = performance.now();
+  let cursor = 0;
+
+  const tick = (now: number) => {
+    if (crashRun !== runId) {
+      return;
+    }
+    const elapsed = now - origin;
+    while (cursor < events.length && events[cursor].at <= elapsed) {
+      const event = events[cursor];
+      cursor += 1;
+      if (event.kind === "done") {
+        clearCrash();
+        emit({ phase: "complete", burst: "off" });
+        onDone();
+        return;
+      }
+      applyCrashEvent(event);
+    }
+    if (cursor < events.length) {
+      crashRaf = window.requestAnimationFrame(tick);
+    }
+  };
+
+  crashRaf = window.requestAnimationFrame(tick);
 }
 
 function startRun(runId: number, onDone: () => void) {
@@ -142,7 +162,6 @@ function startRun(runId: number, onDone: () => void) {
   }
   clearTimers();
   clearCrash();
-  crashRun = 0;
   activeRun = runId;
   sounded.clear();
   clusterNow = buildWarningCluster();
@@ -157,6 +176,9 @@ function startRun(runId: number, onDone: () => void) {
   beats.slice(1).forEach((beat) => {
     timerIds.push(
       window.setTimeout(() => {
+        if (activeRun !== runId) {
+          return;
+        }
         if (beat.phase === "complete") {
           clearCrash();
           emit({ phase: "complete", burst: "off" });
@@ -206,7 +228,14 @@ function WarningWindow({
     >
       <div className="fail-panel-copy">
         <p className={cn("fail-head", fault.headTear && "is-head-tear")}>
-          {screen.kicker}
+          {fault.headTear ? (
+            <>
+              <span className="fail-head-slice is-top">{screen.kicker}</span>
+              <span className="fail-head-slice is-bot">{screen.kicker}</span>
+            </>
+          ) : (
+            screen.kicker
+          )}
         </p>
         {screen.title || screen.lines.length > 0 || screen.foot ? (
           <div className="fail-body">
@@ -244,6 +273,13 @@ function WarningWorld({
   );
 }
 
+function firstView(runId: number): SeqView {
+  if (activeRun === runId && viewNow.phase !== "complete") {
+    return viewNow;
+  }
+  return { phase: "warning_01", burst: "off" };
+}
+
 export function WarningSequence({
   runId,
   onDone,
@@ -251,7 +287,7 @@ export function WarningSequence({
   runId: number;
   onDone: () => void;
 }) {
-  const [view, setView] = useState<SeqView>(viewNow);
+  const [view, setView] = useState<SeqView>(() => firstView(runId));
   const [crash, setCrash] = useState<CrashView>(crashNow);
   const done = useRef(onDone);
 
@@ -275,48 +311,53 @@ export function WarningSequence({
 
   const screens = visibleWarningScreens(view.phase);
   const crashing = isCrashPhase(view.phase) || crash.active;
+  const liveSlices = crash.slices.filter((slice) => slice.x !== 0);
 
   return (
     <div
-      className={cn(
-        "fail-root",
-        crashing && "is-crash",
-        crash.flash === "hot" && "is-crash-hot",
-        crash.flash === "void" && "is-crash-void",
-      )}
+      className={cn("fail-root", crashing && "is-crash")}
       aria-live="assertive"
     >
       {!crashing ? <div className="fail-dim" /> : null}
-      <div className="fail-crash-world">
-        <WarningWorld screens={screens} crash={crash} />
-      </div>
-      {crash.tear ? (
-        <div
-          className="fail-crash-world is-ghost"
-          style={{
-            clipPath: `inset(${crash.tear.y}% 0 ${Math.max(0, 100 - crash.tear.y - crash.tear.h)}% 0)`,
-            transform: `translateX(${crash.tear.x}px)`,
-          }}
-        >
+      <div
+        className={cn(
+          "fail-signal",
+          crashing && "is-live",
+          crash.flash === "hot" && "is-hot",
+          crash.flash === "void" && "is-void",
+        )}
+        style={{ ["--signal-shake" as string]: String(crash.shake) }}
+      >
+        <div className="fail-signal-plate" />
+        <div className="fail-crash-world">
           <WarningWorld screens={screens} crash={crash} />
         </div>
-      ) : null}
+        {liveSlices.map((slice, index) => (
+          <div
+            key={`${slice.y}-${index}`}
+            className="fail-crash-world is-ghost"
+            style={{
+              clipPath: `inset(${slice.y}% 0 ${Math.max(0, 100 - slice.y - slice.h)}% 0)`,
+              transform: `translateX(${slice.x}px)`,
+            }}
+          >
+            <WarningWorld screens={screens} crash={crash} />
+          </div>
+        ))}
+        {crash.noise ? <div className="fail-crash-noise" /> : null}
+        {crash.band ? (
+          <div
+            className="fail-crash-band"
+            style={{
+              top: `${crash.band.y}%`,
+              height: `${crash.band.h}%`,
+              transform: `translateX(${crash.band.x}px)`,
+            }}
+          />
+        ) : null}
+      </div>
       {view.burst !== "off" && !crashing ? (
         <div className={cn("fail-burst", `is-${view.burst}`)} />
-      ) : null}
-      {crashing && crash.flash !== "off" ? (
-        <div className={cn("fail-crash-flash", `is-${crash.flash}`)} />
-      ) : null}
-      {crash.noise ? <div className="fail-crash-noise" /> : null}
-      {crash.tear ? (
-        <div
-          className="fail-crash-band"
-          style={{
-            top: `${crash.tear.y}%`,
-            height: `${crash.tear.h}%`,
-            transform: `translateX(${crash.tear.x * 0.35}px)`,
-          }}
-        />
       ) : null}
     </div>
   );

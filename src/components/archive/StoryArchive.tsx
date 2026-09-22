@@ -39,6 +39,7 @@ export function StoryArchive() {
     field.warningSequence,
   );
   const [intrusionRun, setIntrusionRun] = useState(0);
+  const intrusionRef = useRef(intrusion);
   const [scan, setScan] = useState<"off" | "run" | "resume" | "done">(field.scan);
   const [scanLines, setScanLines] = useState<string[] | null>(field.scanLines);
   const [canLeave, setCanLeave] = useState(field.canLeave);
@@ -83,6 +84,10 @@ export function StoryArchive() {
       }
     };
   }, [archiveEnterTop, autoOpenPd001, startFinale]);
+
+  useEffect(() => {
+    intrusionRef.current = intrusion;
+  }, [intrusion]);
 
   useEffect(() => {
     return () => {
@@ -141,13 +146,13 @@ export function StoryArchive() {
   }, [patchField]);
 
   const handleWarningSequence = useCallback(() => {
-    if (intrusion === "run") {
+    if (intrusionRef.current === "run") {
       return;
     }
     setIntrusionRun((value) => value + 1);
     setIntrusion("run");
     patchField({ warningSequence: "run" });
-  }, [intrusion, patchField]);
+  }, [patchField]);
 
   const handleAnalysis = useCallback((lines: string[]) => {
     setScanLines(lines);

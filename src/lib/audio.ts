@@ -213,26 +213,34 @@ function noiseBurst(dur: number, gain: number, filterType: BiquadFilterType, fre
   }
 }
 
-export function playCrashSound(kind: "static" | "burst" | "cut") {
-  if (kind === "static") {
-    noiseBurst(0.07 + Math.random() * 0.05, 0.028, "highpass", 1400);
-    return;
-  }
-  if (kind === "burst") {
-    noiseBurst(0.09 + Math.random() * 0.05, 0.03, "bandpass", 2100);
+export function playCrashSound(kind: "static" | "burst" | "cut" | "crackle") {
+  try {
+    if (kind === "static") {
+      noiseBurst(0.045 + Math.random() * 0.06, 0.03, "highpass", 1200 + Math.random() * 600);
+      return;
+    }
+    if (kind === "burst") {
+      noiseBurst(0.07 + Math.random() * 0.07, 0.032, "bandpass", 1800 + Math.random() * 700);
+      tone({
+        freq: 680 + Math.random() * 320,
+        dur: 0.04 + Math.random() * 0.05,
+        type: "square",
+        gain: 0.016 + Math.random() * 0.008,
+      });
+      return;
+    }
+    if (kind === "crackle") {
+      noiseBurst(0.04 + Math.random() * 0.05, 0.024, "highpass", 2400 + Math.random() * 800);
+      return;
+    }
+    noiseBurst(0.08 + Math.random() * 0.07, 0.02, "lowpass", 220 + Math.random() * 120);
     tone({
-      freq: 740 + Math.random() * 220,
-      dur: 0.05 + Math.random() * 0.04,
-      type: "square",
-      gain: 0.018,
+      freq: 46 + Math.random() * 22,
+      dur: 0.06 + Math.random() * 0.04,
+      type: "sawtooth",
+      gain: 0.014,
     });
+  } catch {
     return;
   }
-  noiseBurst(0.11 + Math.random() * 0.05, 0.022, "lowpass", 280);
-  tone({
-    freq: 54 + Math.random() * 18,
-    dur: 0.08,
-    type: "sawtooth",
-    gain: 0.016,
-  });
 }

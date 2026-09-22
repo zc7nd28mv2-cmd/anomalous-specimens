@@ -1336,13 +1336,39 @@ body {
   z-index: 420;
 }
 
-.fail-root.is-cut,
-.fail-root.is-crash-void {
+.fail-root.is-cut {
   background: #000;
 }
 
-.fail-root.is-crash-hot {
-  background: #d4d4d2;
+.fail-signal {
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+  transform: translateX(calc(var(--signal-shake, 0) * 1px));
+}
+
+.fail-signal.is-hot {
+  background: #f2f2f2;
+  filter: brightness(1.42) contrast(1.04);
+}
+
+.fail-signal.is-void {
+  background: #000;
+  filter: brightness(0.16) contrast(1.08);
+}
+
+.fail-signal-plate {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+}
+
+.fail-signal.is-hot .fail-signal-plate {
+  background: #f2f2f2;
+}
+
+.fail-signal.is-void .fail-signal-plate {
+  background: #000;
 }
 
 .fail-crash-world {
@@ -1351,7 +1377,7 @@ body {
 }
 
 .fail-crash-world.is-ghost {
-  z-index: 425;
+  z-index: 2;
 }
 
 .fail-root.is-crash .fail-panel.is-cluster.is-in,
@@ -1372,62 +1398,57 @@ body {
 .fail-panel.is-cluster.is-crash-gone {
   opacity: 0;
   visibility: hidden;
+  filter: none;
 }
 
 .fail-head.is-head-tear {
-  clip-path: inset(0 0 0 30%);
-  transform: translateX(8px);
+  display: grid;
+  justify-items: center;
 }
 
-.fail-crash-flash {
-  pointer-events: none;
-  position: fixed;
-  inset: 0;
-  z-index: 428;
+.fail-head-slice {
+  grid-area: 1 / 1;
 }
 
-.fail-crash-flash.is-hot {
-  background: #f2f2f2;
-  mix-blend-mode: luminosity;
-  opacity: 0.46;
+.fail-head-slice.is-top {
+  clip-path: inset(0 0 48% 0);
 }
 
-.fail-crash-flash.is-void {
-  background: #000;
-  mix-blend-mode: multiply;
-  opacity: 0.62;
+.fail-head-slice.is-bot {
+  clip-path: inset(52% 0 0 0);
+  transform: translateX(9px);
 }
 
 .fail-crash-noise {
   pointer-events: none;
-  position: fixed;
+  position: absolute;
   inset: 0;
-  z-index: 429;
+  z-index: 3;
   background-image: repeating-linear-gradient(
       to right,
-      rgba(0, 0, 0, 0.16) 0,
-      rgba(0, 0, 0, 0.16) 1px,
+      rgba(0, 0, 0, 0.18) 0,
+      rgba(0, 0, 0, 0.18) 1px,
       transparent 1px,
-      transparent 4px
+      transparent 5px
     ),
     repeating-linear-gradient(
       to bottom,
-      rgba(0, 0, 0, 0.1) 0,
-      rgba(0, 0, 0, 0.1) 1px,
+      rgba(0, 0, 0, 0.12) 0,
+      rgba(0, 0, 0, 0.12) 1px,
       transparent 1px,
-      transparent 11px
+      transparent 13px
     );
   mix-blend-mode: multiply;
-  opacity: 0.22;
+  opacity: 0.28;
 }
 
 .fail-crash-band {
   pointer-events: none;
-  position: fixed;
-  left: -8%;
-  right: -8%;
-  z-index: 431;
-  background: rgba(0, 0, 0, 0.16);
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  z-index: 4;
+  background: rgba(0, 0, 0, 0.22);
 }
 
 .fail-panel-inner {
