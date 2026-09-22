@@ -332,18 +332,24 @@ export function FieldRecord({
     }
     if (warningSequenceStartedRef.current) {
       warningSequenceWaitingRef.current = true;
+      startWarningOverlay();
+      window.dispatchEvent(new Event("pd001-warning-sequence"));
       return true;
     }
     warningSequenceStartedRef.current = true;
     warningSequenceWaitingRef.current = true;
     warningSequenceArmedRef.current = false;
-    audioRef.current.alert();
     startWarningOverlay();
     (
       window as Window & { __pdStartWarning?: () => void }
     ).__pdStartWarning?.();
     window.dispatchEvent(new Event("pd001-warning-sequence"));
     onWarningSequenceRef.current?.();
+    try {
+      audioRef.current.alert();
+    } catch {
+      // Audio must not block the overlay.
+    }
     setStatusNow("time_21_18_02");
     persistProgress();
     playing.current = false;
