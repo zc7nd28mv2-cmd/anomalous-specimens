@@ -225,7 +225,10 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const host = window as Window & { __pdStartWarning?: () => void };
     host.__pdStartWarning = startWarningOverlay;
+    const onStart = () => startWarningOverlay();
+    window.addEventListener("pd001-warning-sequence", onStart);
     return () => {
+      window.removeEventListener("pd001-warning-sequence", onStart);
       if (host.__pdStartWarning === startWarningOverlay) {
         delete host.__pdStartWarning;
       }

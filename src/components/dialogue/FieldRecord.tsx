@@ -342,6 +342,7 @@ export function FieldRecord({
     (
       window as Window & { __pdStartWarning?: () => void }
     ).__pdStartWarning?.();
+    window.dispatchEvent(new Event("pd001-warning-sequence"));
     onWarningSequenceRef.current?.();
     setStatusNow("time_21_18_02");
     persistProgress();
