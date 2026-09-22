@@ -129,6 +129,11 @@ export function playBootReveal() {
   tone({ freq: 240, dur: 0.04, type: "triangle", gain: 0.012 });
 }
 
+export function playYumeStart() {
+  noiseBurst(0.18, 0.011, "highpass", 1500);
+  tone({ freq: 88, dur: 0.16, type: "sine", gain: 0.01 });
+}
+
 export function playSystemConfirm() {
   tone({ freq: 196, dur: 0.072, type: "triangle", gain: 0.046 });
   tone({ freq: 98, dur: 0.096, type: "sine", gain: 0.022 });

@@ -20,6 +20,7 @@ import {
   playBootReveal,
   playBootScan,
   playBootWarn,
+  playYumeStart,
   playSystemConfirm,
   playTerminalTick,
   playTick,
@@ -40,6 +41,7 @@ type AudioApi = {
   bootWarn: () => void;
   bootScan: () => void;
   bootReveal: () => void;
+  yumeStart: () => void;
   confirm: () => void;
   message: () => void;
   alert: () => void;
@@ -96,6 +98,10 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       bootReveal: () => {
         unlockAudio();
         playBootReveal();
+      },
+      yumeStart: () => {
+        unlockAudio();
+        playYumeStart();
       },
       confirm: () => {
         unlockAudio();

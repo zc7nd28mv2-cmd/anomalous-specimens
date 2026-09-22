@@ -189,6 +189,7 @@ function StillThere({ onYes }: { onYes: () => void }) {
                       yumeMomoPlaybackStarted.current = true;
                       setYesLocked(true);
                       audio.click();
+                      audio.yumeStart();
                       onYes();
                     }}
                     className="act px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-green"
