@@ -6,12 +6,7 @@ export type WarningSequenceState =
   | "warning_04"
   | "warning_05"
   | "hold"
-  | "flash_a"
-  | "cut_a"
-  | "flash_b"
-  | "cut_b"
-  | "flash_c"
-  | "black"
+  | "crash"
   | "complete";
 
 export type WarningAnchor = "center" | "tl" | "tr" | "bl" | "br";
@@ -118,12 +113,6 @@ export function buildWarningTimeline(): WarningBeat[] {
   const t05 = t04 + gap05;
   const holdAt = t05 + flicker05;
   const collapse = t05 + hold;
-  const flashA = randomRange(60, 100);
-  const cutA = randomRange(40, 80);
-  const flashB = randomRange(50, 120);
-  const cutB = randomRange(40, 80);
-  const flashC = randomRange(50, 100);
-  const black = randomRange(80, 120);
 
   const beats: WarningBeat[] = [
     { at: 0, phase: "warning_01", burst: "off" },
@@ -132,25 +121,7 @@ export function buildWarningTimeline(): WarningBeat[] {
     { at: t04, phase: "warning_04", burst: "soft" },
     { at: t05, phase: "warning_05", burst: "hard" },
     { at: holdAt, phase: "hold", burst: "off" },
-    { at: collapse, phase: "flash_a", burst: "off" },
-    { at: collapse + flashA, phase: "cut_a", burst: "off" },
-    { at: collapse + flashA + cutA, phase: "flash_b", burst: "off" },
-    { at: collapse + flashA + cutA + flashB, phase: "cut_b", burst: "off" },
-    {
-      at: collapse + flashA + cutA + flashB + cutB,
-      phase: "flash_c",
-      burst: "off",
-    },
-    {
-      at: collapse + flashA + cutA + flashB + cutB + flashC,
-      phase: "black",
-      burst: "off",
-    },
-    {
-      at: collapse + flashA + cutA + flashB + cutB + flashC + black,
-      phase: "complete",
-      burst: "off",
-    },
+    { at: collapse, phase: "crash", burst: "off" },
   ];
 
   if (t02 + flicker02 < t03) {
@@ -167,21 +138,10 @@ export function buildWarningTimeline(): WarningBeat[] {
 }
 
 export function visibleWarningScreens(phase: WarningSequenceState) {
-  if (
-    phase === "idle" ||
-    phase === "black" ||
-    phase === "complete"
-  ) {
+  if (phase === "idle" || phase === "complete") {
     return [];
   }
-  if (
-    phase === "flash_a" ||
-    phase === "cut_a" ||
-    phase === "flash_b" ||
-    phase === "cut_b" ||
-    phase === "flash_c" ||
-    phase === "hold"
-  ) {
+  if (phase === "hold" || phase === "crash") {
     return [...WARNING_SCREENS];
   }
   const current = phase;
@@ -192,12 +152,8 @@ export function visibleWarningScreens(phase: WarningSequenceState) {
   return WARNING_SCREENS.filter((_, index) => index <= end);
 }
 
-export function isCollapseFlash(phase: WarningSequenceState) {
-  return phase === "flash_a" || phase === "flash_b" || phase === "flash_c";
-}
-
-export function isCollapseCut(phase: WarningSequenceState) {
-  return phase === "cut_a" || phase === "cut_b" || phase === "black";
+export function isCrashPhase(phase: WarningSequenceState) {
+  return phase === "crash";
 }
 
 export function warningLevel(phase: WarningSequenceState): 1 | 2 | 3 | 4 | 5 | 0 {

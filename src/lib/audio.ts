@@ -139,3 +139,100 @@ export function playResult() {
     tone({ freq: 640, dur: 0.12, type: "sine", gain: 0.032 });
   }, 60);
 }
+
+const crashNodes: AudioNode[] = [];
+
+function releaseCrashNode(node: AudioNode) {
+  const index = crashNodes.indexOf(node);
+  if (index >= 0) {
+    crashNodes.splice(index, 1);
+  }
+  try {
+    node.disconnect();
+  } catch {
+    return;
+  }
+}
+
+export function stopCrashAudio() {
+  crashNodes.splice(0).forEach((node) => {
+    try {
+      if ("stop" in node && typeof node.stop === "function") {
+        node.stop();
+      }
+      node.disconnect();
+    } catch {
+      return;
+    }
+  });
+}
+
+function noiseBurst(dur: number, gain: number, filterType: BiquadFilterType, freq: number) {
+  try {
+    const audio = context();
+    if (!audio || !enabled) {
+      return;
+    }
+    const fire = () => {
+      if (!enabled || audio.state !== "running") {
+        return;
+      }
+      const length = Math.max(1, Math.floor(audio.sampleRate * dur));
+      const buffer = audio.createBuffer(1, length, audio.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < length; i += 1) {
+        data[i] = (Math.random() * 2 - 1) * (1 - i / length);
+      }
+      const source = audio.createBufferSource();
+      const filter = audio.createBiquadFilter();
+      const amp = audio.createGain();
+      source.buffer = buffer;
+      filter.type = filterType;
+      filter.frequency.value = freq;
+      amp.gain.setValueAtTime(gain, audio.currentTime);
+      amp.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + dur);
+      source.connect(filter);
+      filter.connect(amp);
+      amp.connect(audio.destination);
+      crashNodes.push(source, filter, amp);
+      source.onended = () => {
+        releaseCrashNode(source);
+        releaseCrashNode(filter);
+        releaseCrashNode(amp);
+      };
+      source.start();
+      source.stop(audio.currentTime + dur + 0.02);
+    };
+    if (audio.state === "suspended") {
+      void audio.resume().then(fire).catch(() => undefined);
+      return;
+    }
+    fire();
+  } catch {
+    return;
+  }
+}
+
+export function playCrashSound(kind: "static" | "burst" | "cut") {
+  if (kind === "static") {
+    noiseBurst(0.07 + Math.random() * 0.05, 0.028, "highpass", 1400);
+    return;
+  }
+  if (kind === "burst") {
+    noiseBurst(0.09 + Math.random() * 0.05, 0.03, "bandpass", 2100);
+    tone({
+      freq: 740 + Math.random() * 220,
+      dur: 0.05 + Math.random() * 0.04,
+      type: "square",
+      gain: 0.018,
+    });
+    return;
+  }
+  noiseBurst(0.11 + Math.random() * 0.05, 0.022, "lowpass", 280);
+  tone({
+    freq: 54 + Math.random() * 18,
+    dur: 0.08,
+    type: "sawtooth",
+    gain: 0.016,
+  });
+}

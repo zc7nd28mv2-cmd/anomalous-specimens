@@ -1331,12 +1331,103 @@ body {
 }
 
 .fail-root.is-flash,
-.fail-root.is-cut {
+.fail-root.is-cut,
+.fail-root.is-crash {
   z-index: 420;
 }
 
-.fail-root.is-cut {
+.fail-root.is-cut,
+.fail-root.is-crash-void {
   background: #000;
+}
+
+.fail-root.is-crash-hot {
+  background: #d4d4d2;
+}
+
+.fail-crash-world {
+  position: absolute;
+  inset: 0;
+}
+
+.fail-crash-world.is-ghost {
+  z-index: 425;
+}
+
+.fail-root.is-crash .fail-panel.is-cluster.is-in,
+.fail-root.is-crash .fail-panel.is-cluster.is-crash-live {
+  animation: none;
+}
+
+.fail-panel.is-cluster.is-fault {
+  opacity: var(--fault-opacity, 1);
+  filter: brightness(var(--fault-bright, 1));
+  clip-path: var(--fault-clip, none);
+  transform: translate(
+    calc(-50% + (var(--shift-x, 0) + var(--fault-x, 0)) * var(--cluster-scale, 1) * 1px),
+    calc(-50% + var(--shift-y, 0) * var(--cluster-scale, 1) * 1px)
+  );
+}
+
+.fail-panel.is-cluster.is-crash-gone {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.fail-head.is-head-tear {
+  clip-path: inset(0 0 0 30%);
+  transform: translateX(8px);
+}
+
+.fail-crash-flash {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 428;
+}
+
+.fail-crash-flash.is-hot {
+  background: #f2f2f2;
+  mix-blend-mode: luminosity;
+  opacity: 0.46;
+}
+
+.fail-crash-flash.is-void {
+  background: #000;
+  mix-blend-mode: multiply;
+  opacity: 0.62;
+}
+
+.fail-crash-noise {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 429;
+  background-image: repeating-linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.16) 0,
+      rgba(0, 0, 0, 0.16) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.1) 0,
+      rgba(0, 0, 0, 0.1) 1px,
+      transparent 1px,
+      transparent 11px
+    );
+  mix-blend-mode: multiply;
+  opacity: 0.22;
+}
+
+.fail-crash-band {
+  pointer-events: none;
+  position: fixed;
+  left: -8%;
+  right: -8%;
+  z-index: 431;
+  background: rgba(0, 0, 0, 0.16);
 }
 
 .fail-panel-inner {
