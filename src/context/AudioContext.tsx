@@ -15,6 +15,11 @@ import {
   playDenied,
   playMessage,
   playResult,
+  playBootLine,
+  playBootOk,
+  playBootReveal,
+  playBootScan,
+  playBootWarn,
   playSystemConfirm,
   playTerminalTick,
   playTick,
@@ -30,6 +35,11 @@ type AudioApi = {
   denied: () => void;
   tick: () => void;
   terminalTick: () => void;
+  bootLine: () => void;
+  bootOk: () => void;
+  bootWarn: () => void;
+  bootScan: () => void;
+  bootReveal: () => void;
   confirm: () => void;
   message: () => void;
   alert: () => void;
@@ -67,6 +77,26 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       },
       tick: playTick,
       terminalTick: playTerminalTick,
+      bootLine: () => {
+        unlockAudio();
+        playBootLine();
+      },
+      bootOk: () => {
+        unlockAudio();
+        playBootOk();
+      },
+      bootWarn: () => {
+        unlockAudio();
+        playBootWarn();
+      },
+      bootScan: () => {
+        unlockAudio();
+        playBootScan();
+      },
+      bootReveal: () => {
+        unlockAudio();
+        playBootReveal();
+      },
       confirm: () => {
         unlockAudio();
         playSystemConfirm();

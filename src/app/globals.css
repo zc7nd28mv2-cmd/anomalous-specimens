@@ -1769,6 +1769,28 @@ body {
   animation: fade 120ms ease-out both;
 }
 
+.boot-ok {
+  color: #59e878;
+}
+
+.boot-fault-in {
+  animation: fade 280ms ease-out both;
+}
+
+.integrity-stuck {
+  animation: integrity-stuck 2.4s linear infinite;
+}
+
+@keyframes integrity-stuck {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
 .boot-bar {
   width: min(78%, 360px);
   height: 4px;
@@ -1957,6 +1979,8 @@ body {
   .invest-open.is-enter,
   .grant-breathe,
   .grant-mark.is-breathe,
+  .integrity-stuck,
+  .boot-fault-in,
   .compose-fade,
   .compose-code.is-run {
     animation: none;

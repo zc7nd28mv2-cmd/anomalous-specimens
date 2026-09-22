@@ -8,138 +8,134 @@ import { Cursor } from "@/components/system/Cursor";
 import { UnstableEnglishTitle } from "@/components/system/useTitleFault";
 import { Stage, SysLine } from "@/components/system/Stage";
 import { SYSTEM } from "@/lib/content";
+import { cn } from "@/lib/cn";
 
 const INTRO_DELAYS = [900, 800, 700, 900] as const;
-const AFTER_DELAYS = [80, 120, 100, 60] as const;
-const EMPTY_DELAYS = [] as const;
-
-const INIT_LINES = [
-  SYSTEM.initializing,
-  SYSTEM.memoryOk,
-  SYSTEM.neuralOk,
-  SYSTEM.specimenOk,
-  SYSTEM.integrity47,
+const OK_MARK = "[OK]";
+const INTEGRITY_CAP = 47;
+const SCAN_LINES = [
+  "检测到.份样本",
+  "检测到..份样本",
+  "检测到...份样本",
+  SYSTEM.detected,
 ] as const;
 
-const LINE_PACE = [18, 16, 20, 17, 19] as const;
+const OK_LINES = [SYSTEM.memoryOk, SYSTEM.neuralOk, SYSTEM.specimenOk] as const;
 
-function nextGap(base: number) {
-  return Math.min(25, Math.max(12, base + (Math.random() - 0.5) * 8));
-}
-
-function planStamps(lines: readonly string[], scale: (ms: number) => number) {
-  return lines.map((line, index) => {
-    const base = LINE_PACE[index] ?? 17;
-    const stamps = [0];
-    let t = 0;
-    for (let i = 1; i < line.length; i += 1) {
-      t += scale(nextGap(base));
-      stamps.push(t);
-    }
-    return stamps;
-  });
-}
-
-function countVisible(stamps: number[], elapsed: number) {
-  let count = 0;
-  while (count < stamps.length && stamps[count] <= elapsed) {
-    count += 1;
+function splitOk(line: string) {
+  const at = line.lastIndexOf(OK_MARK);
+  if (at < 0) {
+    return { label: line, ok: "" };
   }
-  return count;
+  return { label: line.slice(0, at), ok: OK_MARK };
 }
 
-function addedChars(prev: readonly string[], next: readonly string[]) {
-  let extra = "";
-  for (let i = 0; i < next.length; i += 1) {
-    const before = prev[i] ?? "";
-    if (next[i].length > before.length) {
-      extra += next[i].slice(before.length);
-    }
-  }
-  return extra;
-}
-
-function useParallelType(
-  lines: readonly string[],
-  enabled: boolean,
-  onChars?: (chars: string) => void,
-) {
-  const scale = useScaledMs();
-  const reduced = usePrefersReducedMotion();
-  const [parts, setParts] = useState<string[]>(() => lines.map(() => ""));
-  const [finished, setFinished] = useState(false);
-  const frame = useRef<number | null>(null);
-  const onCharsRef = useRef(onChars);
-  onCharsRef.current = onChars;
-
-  useEffect(() => {
-    if (!enabled) {
-      return;
-    }
-
-    if (reduced) {
-      setParts([...lines]);
-      setFinished(true);
-      return;
-    }
-
-    const stamps = planStamps(lines, scale);
-    const start = performance.now();
-    let cancelled = false;
-    let last = "";
-    let lastParts = lines.map(() => "");
-
-    const tick = (now: number) => {
-      if (cancelled) {
-        return;
-      }
-      const elapsed = now - start;
-      const next = lines.map((line, index) =>
-        line.slice(0, countVisible(stamps[index], elapsed)),
-      );
-      const key = next.join("\n");
-      if (key !== last) {
-        const fresh = addedChars(lastParts, next);
-        last = key;
-        lastParts = next;
-        setParts(next);
-        if (fresh) {
-          onCharsRef.current?.(fresh);
-        }
-      }
-      if (next.every((part, index) => part.length >= lines[index].length)) {
-        setFinished(true);
-        return;
-      }
-      frame.current = window.requestAnimationFrame(tick);
-    };
-
-    frame.current = window.requestAnimationFrame(tick);
-
-    return () => {
-      cancelled = true;
-      if (frame.current != null) {
-        window.cancelAnimationFrame(frame.current);
-        frame.current = null;
-      }
-    };
-  }, [enabled, lines, reduced, scale]);
-
-  return { parts, finished };
+function integrityPrefix() {
+  return SYSTEM.integrity47.replace(/\d+%$/, "");
 }
 
 export function BootScene({ onComplete }: { onComplete: () => void }) {
   const intro = useReveal(INTRO_DELAYS);
-  const typing = intro >= 4;
+  const ready = intro >= 4;
   const audio = useAudio();
-  const init = useParallelType(INIT_LINES, typing, (chars) => {
-    for (const ch of chars) {
-      if (ch.trim()) {
-        audio.terminalTick();
-      }
+  const scale = useScaledMs();
+  const reduced = usePrefersReducedMotion();
+  const audioRef = useRef(audio);
+  const [phase, setPhase] = useState(0);
+  const [percent, setPercent] = useState(0);
+
+  useEffect(() => {
+    audioRef.current = audio;
+  }, [audio]);
+
+  useEffect(() => {
+    if (!ready) {
+      return;
     }
-  });
-  const after = useReveal(init.finished ? AFTER_DELAYS : EMPTY_DELAYS);
+    if (reduced) {
+      setPercent(INTEGRITY_CAP);
+      setPhase(13);
+      return;
+    }
+
+    let timer = 0;
+    let counter = 0;
+    const later = (ms: number, run: () => void) => {
+      timer = window.setTimeout(run, scale(ms));
+    };
+
+    if (phase === 0) {
+      later(180, () => {
+        audioRef.current.bootLine();
+        setPhase(1);
+      });
+    } else if (phase === 1) {
+      later(760, () => {
+        audioRef.current.bootOk();
+        setPhase(2);
+      });
+    } else if (phase === 2) {
+      later(680, () => {
+        audioRef.current.bootOk();
+        setPhase(3);
+      });
+    } else if (phase === 3) {
+      later(680, () => {
+        audioRef.current.bootOk();
+        setPhase(4);
+      });
+    } else if (phase === 4) {
+      later(720, () => {
+        audioRef.current.bootLine();
+        setPercent(0);
+        setPhase(5);
+      });
+    } else if (phase === 5) {
+      let value = 0;
+      counter = window.setInterval(() => {
+        value += 1;
+        if (value >= INTEGRITY_CAP) {
+          window.clearInterval(counter);
+          counter = 0;
+          setPercent(INTEGRITY_CAP);
+          setPhase(6);
+          return;
+        }
+        setPercent(value);
+      }, scale(72));
+    } else if (phase === 6) {
+      later(1200, () => {
+        audioRef.current.bootWarn();
+        setPhase(7);
+      });
+    } else if (phase === 7) {
+      later(820, () => setPhase(8));
+    } else if (phase === 8) {
+      later(700, () => {
+        audioRef.current.bootScan();
+        setPhase(9);
+      });
+    } else if (phase === 9 || phase === 10 || phase === 11) {
+      later(480, () => {
+        audioRef.current.bootScan();
+        setPhase(phase + 1);
+      });
+    } else if (phase === 12) {
+      later(640, () => {
+        audioRef.current.bootReveal();
+        setPhase(13);
+      });
+    }
+
+    return () => {
+      window.clearTimeout(timer);
+      if (counter) {
+        window.clearInterval(counter);
+      }
+    };
+  }, [phase, ready, reduced, scale]);
+
+  const scanIndex = Math.min(SCAN_LINES.length - 1, Math.max(0, phase - 9));
 
   return (
     <Stage className="overflow-hidden">
@@ -161,30 +157,44 @@ export function BootScene({ onComplete }: { onComplete: () => void }) {
       ) : null}
 
       <div className="mt-10 space-y-1">
-        {init.parts.map((line, index) =>
-          line ? <SysLine key={INIT_LINES[index]}>{line}</SysLine> : null,
+        {phase >= 1 ? <SysLine>{SYSTEM.initializing}</SysLine> : null}
+        {OK_LINES.map((line, index) =>
+          phase >= index + 2 ? <OkLine key={line} line={line} /> : null,
         )}
+        {phase >= 5 ? (
+          <SysLine>
+            {integrityPrefix()}
+            <span
+              className={cn(
+                "inline-block min-w-[4ch] tabular-nums",
+                phase >= 6 && "integrity-stuck",
+              )}
+            >
+              {percent}%
+            </span>
+          </SysLine>
+        ) : null}
       </div>
 
-      {after >= 1 ? (
+      {phase >= 7 ? (
         <p className="boot-snap mt-12 font-mono text-[12px] tracking-[0.28em] text-danger">
           {SYSTEM.warning}
         </p>
       ) : null}
 
-      {after >= 2 ? (
-        <p className="boot-snap mt-3 font-mono text-[12px] tracking-[0.08em] text-danger">
+      {phase >= 8 ? (
+        <p className="boot-fault-in mt-3 font-mono text-[12px] tracking-[0.08em] text-danger">
           {SYSTEM.corrupted}
         </p>
       ) : null}
 
-      {after >= 3 ? (
+      {phase >= 9 ? (
         <p className="boot-snap mt-3 font-mono text-[12px] tracking-[0.08em] text-mute">
-          {SYSTEM.detected}
+          {SCAN_LINES[scanIndex]}
         </p>
       ) : null}
 
-      {after >= 4 ? (
+      {phase >= 13 ? (
         <button
           type="button"
           onClick={() => {
@@ -197,5 +207,15 @@ export function BootScene({ onComplete }: { onComplete: () => void }) {
         </button>
       ) : null}
     </Stage>
+  );
+}
+
+function OkLine({ line }: { line: string }) {
+  const parts = splitOk(line);
+  return (
+    <SysLine>
+      {parts.label}
+      {parts.ok ? <span className="boot-ok">{parts.ok}</span> : null}
+    </SysLine>
   );
 }

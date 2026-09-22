@@ -106,6 +106,29 @@ export function playTerminalTick() {
   });
 }
 
+export function playBootLine() {
+  tone({ freq: 214, dur: 0.022, type: "square", gain: 0.01 });
+}
+
+export function playBootOk() {
+  tone({ freq: 312, dur: 0.034, type: "triangle", gain: 0.014 });
+}
+
+export function playBootWarn() {
+  tone({ freq: 86, dur: 0.14, type: "triangle", gain: 0.022 });
+  window.setTimeout(() => {
+    tone({ freq: 64, dur: 0.1, type: "sine", gain: 0.012 });
+  }, 64);
+}
+
+export function playBootScan() {
+  tone({ freq: 168, dur: 0.016, type: "square", gain: 0.007 });
+}
+
+export function playBootReveal() {
+  tone({ freq: 240, dur: 0.04, type: "triangle", gain: 0.012 });
+}
+
 export function playSystemConfirm() {
   tone({ freq: 196, dur: 0.072, type: "triangle", gain: 0.046 });
   tone({ freq: 98, dur: 0.096, type: "sine", gain: 0.022 });
