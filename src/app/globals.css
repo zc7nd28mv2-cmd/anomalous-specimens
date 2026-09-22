@@ -832,6 +832,21 @@ body {
   font-size: 15px;
 }
 
+.story-hit {
+  background: #2d6638;
+  color: #59e878;
+  padding: 0.05em 0.28em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  text-decoration: none;
+}
+
+.story-strike {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  text-decoration-color: currentColor;
+}
+
 .story-divider {
   width: 100%;
   height: 1px;

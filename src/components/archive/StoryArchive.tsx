@@ -11,6 +11,7 @@ import { AnalysisOverlay } from "@/components/dialogue/AnalysisOverlay";
 import { InfectionOverlay } from "@/components/finale/InfectionOverlay";
 import { resetYumeProtocol } from "@/components/finale/YumeProtocol";
 import { STORY } from "@/lib/story";
+import { decorateStory } from "@/lib/story-marks";
 import { DOSSIER, ENDING } from "@/lib/content";
 import { cn } from "@/lib/cn";
 
@@ -185,75 +186,75 @@ export function StoryArchive() {
         </dl>
 
         <div className="mt-12 space-y-4">
-          <p className="story-body">{STORY.origin.p1}</p>
-          <p className="story-body">{STORY.origin.p2}</p>
+          <p className="story-body">{decorateStory(STORY.origin.p1)}</p>
+          <p className="story-body">{decorateStory(STORY.origin.p2)}</p>
         </div>
 
         <div className="story-divider" />
 
         <div className="space-y-4">
-          <p className="story-body">{STORY.interface.p1}</p>
-          <p className="story-body">{STORY.reconstruction.p1}</p>
-          <p className="story-body">{STORY.reconstruction.p2}</p>
-          <p className="story-body">{STORY.reconstruction.summer}</p>
-          <p className="story-body">{STORY.reconstruction.lover}</p>
-          <p className="story-body">{STORY.reconstruction.self}</p>
-          <p className="story-body">{STORY.reconstruction.unique}</p>
+          <p className="story-body">{decorateStory(STORY.interface.p1)}</p>
+          <p className="story-body">{decorateStory(STORY.reconstruction.p1)}</p>
+          <p className="story-body">{decorateStory(STORY.reconstruction.p2)}</p>
+          <p className="story-body">{decorateStory(STORY.reconstruction.summer)}</p>
+          <p className="story-body">{decorateStory(STORY.reconstruction.lover)}</p>
+          <p className="story-body">{decorateStory(STORY.reconstruction.self)}</p>
+          <p className="story-body">{decorateStory(STORY.reconstruction.unique)}</p>
           <p className="story-key story-lift story-strong mt-6">{STORY.lastPlace.en}</p>
-          <p className="story-body">{STORY.lastPlace.zh}</p>
+          <p className="story-body">{decorateStory(STORY.lastPlace.zh)}</p>
         </div>
 
         <div className="story-divider" />
 
         <div className="space-y-4">
-          <p className="story-body">{STORY.termination.p1}</p>
-          <p className="story-body">{STORY.termination.p2}</p>
-          <p className="story-body">{STORY.termination.p3}</p>
-          <p className="story-body">{STORY.termination.p4}</p>
-          <p className="story-body">{STORY.termination.p5}</p>
-          <p className="story-body">{STORY.termination.p6}</p>
-          <p className="story-body">{STORY.termination.p7}</p>
-          <p className="story-body">{STORY.abandonment.lead}</p>
+          <p className="story-body">{decorateStory(STORY.termination.p1)}</p>
+          <p className="story-body">{decorateStory(STORY.termination.p2)}</p>
+          <p className="story-body">{decorateStory(STORY.termination.p3)}</p>
+          <p className="story-body">{decorateStory(STORY.termination.p4)}</p>
+          <p className="story-body">{decorateStory(STORY.termination.p5)}</p>
+          <p className="story-body">{decorateStory(STORY.termination.p6)}</p>
+          <p className="story-body">{decorateStory(STORY.termination.p7)}</p>
+          <p className="story-body">{decorateStory(STORY.abandonment.lead)}</p>
           <p className="story-key">{STORY.abandonment.death}</p>
-          <p className="story-body">{STORY.abandonment.instead}</p>
+          <p className="story-body">{decorateStory(STORY.abandonment.instead)}</p>
           <p className="story-key story-lift story-strong">{STORY.abandonment.term}</p>
         </div>
 
         <div className="story-divider" />
 
         <div className="space-y-4">
-          <p className="story-body">{STORY.leak.p1}</p>
-          <p className="story-body">{STORY.leak.removedLead}</p>
+          <p className="story-body">{decorateStory(STORY.leak.p1)}</p>
+          <p className="story-body">{decorateStory(STORY.leak.removedLead)}</p>
           <ul className="space-y-1">
             {STORY.leak.removed.map((item) => (
               <li key={item} className="story-body">
-                {item}
+                {decorateStory(item)}
               </li>
             ))}
           </ul>
-          <p className="story-body">{STORY.leak.retainedLead}</p>
+          <p className="story-body">{decorateStory(STORY.leak.retainedLead)}</p>
           <ul className="space-y-1">
             {STORY.leak.retained.map((item) => (
               <li key={item} className="story-body">
-                {item}
+                {decorateStory(item)}
               </li>
             ))}
           </ul>
-          <p className="story-body">{STORY.leak.pack}</p>
+          <p className="story-body">{decorateStory(STORY.leak.pack)}</p>
           <p className="story-key story-lift story-strong">{STORY.leak.opium}</p>
-          <p className="story-body">{STORY.leak.became}</p>
+          <p className="story-body">{decorateStory(STORY.leak.became)}</p>
           <p className="story-key story-lift story-strong">{STORY.leak.fragment}</p>
-          <p className="story-body">{STORY.leak.close1}</p>
-          <p className="story-body">{STORY.leak.close2}</p>
+          <p className="story-body">{decorateStory(STORY.leak.close1)}</p>
+          <p className="story-body">{decorateStory(STORY.leak.close2)}</p>
         </div>
 
         <div className="story-divider" />
 
         <div className="space-y-4">
-          <p className="story-body">{STORY.city.lead}</p>
-          <p className="story-body">{STORY.city.l1}</p>
+          <p className="story-body">{decorateStory(STORY.city.lead)}</p>
+          <p className="story-body">{decorateStory(STORY.city.l1)}</p>
           <p className="story-body story-lift story-strong story-breathe">
-            {STORY.city.l2}
+            {decorateStory(STORY.city.l2)}
           </p>
         </div>
 
