@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useReveal } from "@/hooks/useReveal";
 import { usePrefersReducedMotion, useScaledMs } from "@/hooks/useTiming";
 import { useAudio } from "@/context/AudioContext";
@@ -34,22 +34,57 @@ function integrityPrefix() {
   return SYSTEM.integrity47.replace(/\d+%$/, "");
 }
 
+const BOOT_DONE_KEY = "archiveBootCompleted";
+
+function readBootDone() {
+  try {
+    return sessionStorage.getItem(BOOT_DONE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function markBootDone() {
+  try {
+    sessionStorage.setItem(BOOT_DONE_KEY, "true");
+  } catch {
+    return;
+  }
+}
+
 export function BootScene({ onComplete }: { onComplete: () => void }) {
   const intro = useReveal(INTRO_DELAYS);
-  const ready = intro >= 4;
   const audio = useAudio();
   const scale = useScaledMs();
   const reduced = usePrefersReducedMotion();
   const audioRef = useRef(audio);
+  const [skip, setSkip] = useState(false);
   const [phase, setPhase] = useState(0);
   const [percent, setPercent] = useState(0);
+  const shownIntro = skip ? 4 : intro;
+  const ready = shownIntro >= 4;
 
   useEffect(() => {
     audioRef.current = audio;
   }, [audio]);
 
+  useLayoutEffect(() => {
+    if (readBootDone()) {
+      setSkip(true);
+      setPercent(INTEGRITY_CAP);
+      setPhase(13);
+    }
+  }, []);
+
   useEffect(() => {
-    if (!ready) {
+    if (phase < 13) {
+      return;
+    }
+    markBootDone();
+  }, [phase]);
+
+  useEffect(() => {
+    if (!ready || skip) {
       return;
     }
     if (reduced) {
@@ -133,26 +168,26 @@ export function BootScene({ onComplete }: { onComplete: () => void }) {
         window.clearInterval(counter);
       }
     };
-  }, [phase, ready, reduced, scale]);
+  }, [phase, ready, reduced, scale, skip]);
 
   const scanIndex = Math.min(SCAN_LINES.length - 1, Math.max(0, phase - 9));
 
   return (
     <Stage className="overflow-hidden">
-      {intro >= 1 ? (
+      {shownIntro >= 1 ? (
         <p className="title-system text-ink">{SYSTEM.titleZh}</p>
       ) : null}
 
-      {intro >= 2 ? (
+      {shownIntro >= 2 ? (
         <UnstableEnglishTitle className="phosphor mt-3 font-mono text-[11px] tracking-[0.26em] text-sys">
           {SYSTEM.title}
         </UnstableEnglishTitle>
       ) : null}
 
-      {intro >= 3 ? (
+      {shownIntro >= 3 ? (
         <p className="mt-8 font-mono text-[13px] text-mute">
           {"> "}
-          {intro < 4 ? <Cursor /> : null}
+          {shownIntro < 4 ? <Cursor /> : null}
         </p>
       ) : null}
 
@@ -177,19 +212,34 @@ export function BootScene({ onComplete }: { onComplete: () => void }) {
       </div>
 
       {phase >= 7 ? (
-        <p className="boot-snap mt-12 font-mono text-[12px] tracking-[0.28em] text-danger">
+        <p
+          className={cn(
+            "mt-12 font-mono text-[12px] tracking-[0.28em] text-danger",
+            !skip && "boot-snap",
+          )}
+        >
           {SYSTEM.warning}
         </p>
       ) : null}
 
       {phase >= 8 ? (
-        <p className="boot-fault-in mt-3 font-mono text-[12px] tracking-[0.08em] text-danger">
+        <p
+          className={cn(
+            "mt-3 font-mono text-[12px] tracking-[0.08em] text-danger",
+            !skip && "boot-fault-in",
+          )}
+        >
           {SYSTEM.corrupted}
         </p>
       ) : null}
 
       {phase >= 9 ? (
-        <p className="boot-snap mt-3 font-mono text-[12px] tracking-[0.08em] text-mute">
+        <p
+          className={cn(
+            "mt-3 font-mono text-[12px] tracking-[0.08em] text-mute",
+            !skip && "boot-snap",
+          )}
+        >
           {SCAN_LINES[scanIndex]}
         </p>
       ) : null}
@@ -201,7 +251,7 @@ export function BootScene({ onComplete }: { onComplete: () => void }) {
             audio.confirm();
             onComplete();
           }}
-          className="read-tag boot-snap"
+          className={cn("read-tag", !skip && "boot-snap")}
         >
           {SYSTEM.enter}
         </button>
