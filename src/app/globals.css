@@ -677,7 +677,7 @@ body {
   padding: 5px 10px;
   border: none;
   border-radius: 0;
-  background: rgba(45, 102, 56, 0.86);
+  background: #163226;
   color: #59e878;
   font-family: var(--font-zh), "Noto Sans SC", sans-serif;
   font-size: 11px;
@@ -688,7 +688,7 @@ body {
 
 .read-tag:hover,
 .read-tag:focus-visible {
-  background: rgba(45, 102, 56, 0.96);
+  background: #1c3e2e;
   color: #59e878;
   outline: none;
 }
