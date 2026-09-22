@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -117,21 +118,25 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
   const [file, setFile] = useState<FileId | null>(null);
   const [pd001Done, setPd001Done] = useState(false);
   const [sample001AccessApproved, setSample001AccessApproved] = useState(false);
-  const [fieldOpen, setFieldOpen] = useState(autoOpenPd001);
+  const [fieldGate, setFieldGate] = useState<"auto" | "open" | "shut">("auto");
   const [field, setField] = useState<FieldState>(emptyField);
   const [fieldEpoch, setFieldEpoch] = useState(0);
   const [archiveEnterTop, setArchiveEnterTop] = useState(false);
   const fieldRef = useRef<FieldState>(field);
+  const fieldOpen = fieldGate === "open" || (fieldGate === "auto" && autoOpenPd001);
 
   const current = phase ?? urlPhase ?? "boot";
   const currentRef = useRef(current);
-  currentRef.current = current;
+
+  useEffect(() => {
+    currentRef.current = current;
+  }, [current]);
 
   const resetYumeMomoStory = useCallback(() => {
     const next = emptyField();
     fieldRef.current = next;
     setField(next);
-    setFieldOpen(false);
+    setFieldGate("shut");
     setPd001Done(false);
     setFieldEpoch((value) => value + 1);
   }, []);
@@ -179,11 +184,11 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const openField = useCallback(() => {
-    setFieldOpen(true);
+    setFieldGate("open");
   }, []);
 
   const closeField = useCallback(() => {
-    setFieldOpen(false);
+    setFieldGate("shut");
   }, []);
 
   const readField = useCallback(() => fieldRef.current, []);
