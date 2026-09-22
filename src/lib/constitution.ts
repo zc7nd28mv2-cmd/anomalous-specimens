@@ -66,7 +66,7 @@ export const CONSTITUTION = {
   ],
 } as const;
 
-const CONSTITUTION_002_RESERVED = {
+const CONSTITUTION_002 = {
   title: CONSTITUTION.title,
   en: CONSTITUTION.en,
   record: CONSTITUTION.record,
@@ -74,20 +74,65 @@ const CONSTITUTION_002_RESERVED = {
   scan: "ANALYZE(SAMPLE_002::COMPOSITION)",
   traces: CONSTITUTION.traces,
   streams: {
-    top: ["TRACE::TOP_NOTE", "SCAN::PENDING", "ANALYZE::HOLD"],
-    heart: ["TRACE::HEART_NOTE", "SCAN::PENDING", "ANALYZE::HOLD"],
-    base: ["TRACE::BASE_NOTE", "SCAN::PENDING", "ANALYZE::HOLD"],
+    top: [
+      "TRACE::TOP_NOTE",
+      "SCAN::NONANAL",
+      "MATERIAL::04",
+      "MATCH::86.2%",
+      "FILM::CONDENSATE",
+      "ANALYZE::LEAF",
+      "RATIO::0.69",
+      "TRACE::TOP_NOTE",
+      "MATCH::92%",
+    ],
+    heart: [
+      "TRACE::HEART_NOTE",
+      "SCAN::TUBEROSE",
+      "MATERIAL::08",
+      "MATCH::84.7%",
+      "SKIN::BIOMIMETIC",
+      "ANALYZE::ENDOCRINE",
+      "RATIO::0.58",
+      "TRACE::HEART_NOTE",
+      "MATCH::95%",
+    ],
+    base: [
+      "TRACE::BASE_NOTE",
+      "SCAN::LABDANUM",
+      "MATERIAL::13",
+      "MATCH::81.6%",
+      "MUSK::CLONE",
+      "ANALYZE::CIVET",
+      "RATIO::0.84",
+      "TRACE::BASE_NOTE",
+      "MATCH::97%",
+    ],
   },
   groups: [
-    { id: "01", zh: "前調", en: "TOP", items: [] as string[] },
-    { id: "02", zh: "中調", en: "HEART", items: [] as string[] },
-    { id: "03", zh: "後調", en: "BASE", items: [] as string[] },
+    {
+      id: "01",
+      zh: "前調",
+      en: "TOP",
+      items: ["壬醛", "冷凝气膜", "生物叶相", "硅基润滑介质"],
+    },
+    {
+      id: "02",
+      zh: "中調",
+      en: "HEART",
+      items: ["晚香玉2026 [ 天然 ]", "纯白花序", "仿生皮肤", "合成内分泌介质"],
+    },
+    {
+      id: "03",
+      zh: "後調",
+      en: "BASE",
+      items: ["劳丹脂", "矿物硅胶", "克隆麝香", "硅介", "工业树脂", "灵猫信息素"],
+    },
   ],
-};
+} as const;
 
 export const CONSTITUTION_BY_SPECIMEN = {
   "001": CONSTITUTION,
-  "002": CONSTITUTION_002_RESERVED,
+  "002": CONSTITUTION_002,
 } as const;
 
 export function constitutionFor(id: string) {

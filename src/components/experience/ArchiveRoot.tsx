@@ -90,7 +90,9 @@ function ArchiveInner() {
           <StoryArchive />
         )
       ) : null}
-      {phase === "constitution" ? <ConstitutionArchive /> : null}
+      {phase === "constitution" ? (
+        <ConstitutionArchive key={activeSpecimenId} />
+      ) : null}
       {warningOverlayLive ? (
         <WarningSequence
           key={warningOverlayRun}
