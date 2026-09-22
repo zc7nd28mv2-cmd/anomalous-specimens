@@ -172,43 +172,45 @@ function StillThere({ onYes }: { onYes: () => void }) {
               {typed}
               <Cursor />
             </p>
-            {choices ? (
-              <div className="still-ask-actions">
-                <button
-                  type="button"
-                  disabled={yesLocked}
-                  onClick={() => {
-                    if (
-                      yumeMomoPlaybackStarted.current ||
-                      yesLocked ||
-                      promptPhase === "leave"
-                    ) {
-                      return;
-                    }
-                    yumeMomoPlaybackStarted.current = true;
-                    setYesLocked(true);
-                    audio.click();
-                    onYes();
-                  }}
-                  className="act px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-green"
-                >
-                  [ YES ]
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (busy || !choices) {
-                      return;
-                    }
-                    audio.click();
-                    setPromptPhase("leave");
-                  }}
-                  className="act px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-green"
-                >
-                  [ NO ]
-                </button>
-              </div>
-            ) : null}
+            <div className="still-ask-actions">
+              {choices ? (
+                <>
+                  <button
+                    type="button"
+                    disabled={yesLocked}
+                    onClick={() => {
+                      if (
+                        yumeMomoPlaybackStarted.current ||
+                        yesLocked ||
+                        promptPhase === "leave"
+                      ) {
+                        return;
+                      }
+                      yumeMomoPlaybackStarted.current = true;
+                      setYesLocked(true);
+                      audio.click();
+                      onYes();
+                    }}
+                    className="act px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-green"
+                  >
+                    [ YES ]
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (busy || !choices) {
+                        return;
+                      }
+                      audio.click();
+                      setPromptPhase("leave");
+                    }}
+                    className="act px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-green"
+                  >
+                    [ NO ]
+                  </button>
+                </>
+              ) : null}
+            </div>
           </div>
         </div>
       ) : null}
