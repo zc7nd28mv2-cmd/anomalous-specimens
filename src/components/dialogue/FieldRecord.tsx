@@ -1346,9 +1346,6 @@ export function FieldRecord({
             <p>ID: PD-001</p>
             <p>STATUS: Recovered 91%</p>
             <p>SOURCE: Unknown Neural Relay</p>
-            {log.some((item) => item.kind === "time" && item.text === "21:18:02") ? (
-              <p>SIGNAL / WARNING SEQUENCE</p>
-            ) : null}
           </div>
 
           <div className="mt-6 space-y-5">
