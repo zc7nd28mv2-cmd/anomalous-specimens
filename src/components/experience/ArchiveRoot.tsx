@@ -54,11 +54,16 @@ function ArchiveInner() {
       ) : null}
       {phase === "constitution" ? <ConstitutionArchive /> : null}
       {warningOverlayLive ? (
-        <WarningSequence
-          key={warningOverlayRun}
-          runId={warningOverlayRun}
-          onDone={finishWarningOverlay}
-        />
+        <>
+          <div className="fail-root" aria-hidden>
+            <div className="fail-dim" />
+          </div>
+          <WarningSequence
+            key={warningOverlayRun}
+            runId={warningOverlayRun}
+            onDone={finishWarningOverlay}
+          />
+        </>
       ) : null}
     </div>
   );

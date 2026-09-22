@@ -339,6 +339,9 @@ export function FieldRecord({
     warningSequenceArmedRef.current = false;
     audioRef.current.alert();
     startWarningOverlay();
+    (
+      window as Window & { __pdStartWarning?: () => void }
+    ).__pdStartWarning?.();
     onWarningSequenceRef.current?.();
     setStatusNow("time_21_18_02");
     persistProgress();

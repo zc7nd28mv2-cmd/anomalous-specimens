@@ -222,6 +222,16 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
     setWarningOverlayRun((value) => value + 1);
   }, []);
 
+  useEffect(() => {
+    const host = window as Window & { __pdStartWarning?: () => void };
+    host.__pdStartWarning = startWarningOverlay;
+    return () => {
+      if (host.__pdStartWarning === startWarningOverlay) {
+        delete host.__pdStartWarning;
+      }
+    };
+  }, [startWarningOverlay]);
+
   const finishWarningOverlay = useCallback(() => {
     setWarningOverlayLive(false);
   }, []);
