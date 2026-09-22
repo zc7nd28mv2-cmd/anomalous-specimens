@@ -179,6 +179,7 @@ export function FieldRecord({
   const warningSequenceStartedRef = useRef(false);
   const warningSequenceWaitingRef = useRef(false);
   const warningSequenceDoneRef = useRef(false);
+  const warningSequenceArmedRef = useRef(false);
   const force = useRef(false);
   const picked = useRef(saved.current.picked);
   const pickedOptionRef = useRef<SensoryBranchId | null>(saved.current.pickedOption);
@@ -333,6 +334,7 @@ export function FieldRecord({
     }
     warningSequenceStartedRef.current = true;
     warningSequenceWaitingRef.current = true;
+    warningSequenceArmedRef.current = false;
     audioRef.current.alert();
     onWarningSequenceRef.current?.();
     window.dispatchEvent(new Event("pd001-warning-sequence"));
@@ -367,7 +369,8 @@ export function FieldRecord({
       if (beat.kind === "time") {
         pushOnce({ id: beatId(next), kind: "time", text: beat.text });
         markTimeStatus(beat.text);
-        if (beat.text === "21:18:02" && startWarningSequence()) {
+        if (beat.text === "21:18:02") {
+          startWarningSequence();
           resetLineUi();
           setIndexNow(next);
           return;
@@ -808,7 +811,8 @@ export function FieldRecord({
         pushOnce({ id: beatId(beatIndex), kind: "time", text: beat.text });
         markTimeStatus(beat.text);
         playing.current = false;
-        if (beat.text === "21:18:02" && startWarningSequence()) {
+        if (beat.text === "21:18:02") {
+          startWarningSequence();
           return;
         }
         advanceAndPlay();
@@ -915,16 +919,19 @@ export function FieldRecord({
     if (statusRef.current === "warn" && warningCleared) {
       playRef.current();
     }
-    if (
-      warningSequenceStartedRef.current &&
-      !warningSequenceDoneRef.current &&
-      warningSequenceCleared
-    ) {
-      warningSequenceDoneRef.current = true;
-      warningSequenceWaitingRef.current = false;
+    if (statusRef.current === "matching_result" && analysisCleared) {
       playRef.current();
     }
-    if (statusRef.current === "matching_result" && analysisCleared) {
+    if (!warningSequenceStartedRef.current || warningSequenceDoneRef.current) {
+      return;
+    }
+    if (!warningSequenceCleared) {
+      warningSequenceArmedRef.current = true;
+      return;
+    }
+    if (warningSequenceArmedRef.current) {
+      warningSequenceDoneRef.current = true;
+      warningSequenceWaitingRef.current = false;
       playRef.current();
     }
   }, [active, analysisCleared, warningCleared, warningSequenceCleared]);
