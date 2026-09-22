@@ -178,6 +178,7 @@ export function FieldRecord({
 
   const warningSequenceStartedRef = useRef(false);
   const warningSequenceWaitingRef = useRef(false);
+  const warningSequenceDoneRef = useRef(false);
   const force = useRef(false);
   const picked = useRef(saved.current.picked);
   const pickedOptionRef = useRef<SensoryBranchId | null>(saved.current.pickedOption);
@@ -323,20 +324,17 @@ export function FieldRecord({
   }
 
   function startWarningSequence() {
-    if (warningSequenceWaitingRef.current) {
-      return true;
+    if (warningSequenceDoneRef.current) {
+      return false;
     }
     if (warningSequenceStartedRef.current) {
-      return false;
+      warningSequenceWaitingRef.current = true;
+      return true;
     }
     warningSequenceStartedRef.current = true;
     warningSequenceWaitingRef.current = true;
     audioRef.current.alert();
-    try {
-      onWarningSequenceRef.current?.();
-    } catch {
-      warningSequenceWaitingRef.current = false;
-    }
+    onWarningSequenceRef.current?.();
     window.dispatchEvent(new Event("pd001-warning-sequence"));
     setStatusNow("time_21_18_02");
     persistProgress();
@@ -636,7 +634,20 @@ export function FieldRecord({
   }
 
   function playCurrentBeat() {
-    if (!activeRef.current || playing.current) {
+    if (!activeRef.current) {
+      return;
+    }
+
+    const reachedWarning = logRef.current.some(
+      (item) => item.kind === "time" && item.text === "21:18:02",
+    );
+    if (reachedWarning && !warningSequenceDoneRef.current) {
+      startWarningSequence();
+      playing.current = false;
+      return;
+    }
+
+    if (playing.current) {
       return;
     }
 
@@ -904,7 +915,12 @@ export function FieldRecord({
     if (statusRef.current === "warn" && warningCleared) {
       playRef.current();
     }
-    if (warningSequenceWaitingRef.current && warningSequenceCleared) {
+    if (
+      warningSequenceStartedRef.current &&
+      !warningSequenceDoneRef.current &&
+      warningSequenceCleared
+    ) {
+      warningSequenceDoneRef.current = true;
       warningSequenceWaitingRef.current = false;
       playRef.current();
     }
