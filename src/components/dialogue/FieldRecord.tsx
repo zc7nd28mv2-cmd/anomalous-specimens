@@ -302,6 +302,9 @@ export function FieldRecord({
     logRef.current = next;
     setLog(next);
     persistProgress();
+    if (item.kind === "time" && item.text === "21:18:02") {
+      startWarningSequence();
+    }
     return true;
   }
 
@@ -819,19 +822,13 @@ export function FieldRecord({
 
     if (beat.kind === "warn") {
       scheduleDialogue(() => {
-        if (!warningSequenceStartedRef.current && startWarningSequence()) {
+        if (startWarningSequence()) {
           return;
         }
         if (warningSequenceWaitingRef.current) {
           playing.current = false;
           return;
         }
-        pushOnce({
-          id: beatId(beatIndex),
-          kind: "note",
-          text: "⚠ WARNING! Host vital signs are declining.",
-          danger: true,
-        });
         playing.current = false;
         advanceAndPlay();
       }, scaleRef.current(40));
