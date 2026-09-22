@@ -697,7 +697,10 @@ export function FieldRecord({
       return;
     }
 
-    if (currentStatus === "time_21_18_02" && warningSequenceWaitingRef.current) {
+    if (
+      warningSequenceWaitingRef.current ||
+      (currentStatus === "time_21_18_02" && !warningSequenceClearedRef.current)
+    ) {
       return;
     }
 

@@ -35,11 +35,8 @@ export function StoryArchive() {
     startFinale ? "run" : pd001Done ? "done" : "off",
   );
   const [fail, setFail] = useState<"off" | "run" | "done">(field.warning);
-  const [intrusion, setIntrusion] = useState<"off" | "run" | "done">(
-    field.warningSequence === "run" ? "run" : "off",
-  );
-  const [intrusionRun, setIntrusionRun] = useState(1);
-  const intrusionRef = useRef(intrusion === "run" ? "run" : "off");
+  const [intrusion, setIntrusion] = useState<"off" | "run" | "done">("off");
+  const [intrusionRun, setIntrusionRun] = useState(0);
   const [scan, setScan] = useState<"off" | "run" | "resume" | "done">(field.scan);
   const [scanLines, setScanLines] = useState<string[] | null>(field.scanLines);
   const [canLeave, setCanLeave] = useState(field.canLeave);
@@ -86,10 +83,6 @@ export function StoryArchive() {
   }, [archiveEnterTop, autoOpenPd001, startFinale]);
 
   useEffect(() => {
-    intrusionRef.current = intrusion;
-  }, [intrusion]);
-
-  useEffect(() => {
     return () => {
       if (closeTimer.current != null) {
         window.clearTimeout(closeTimer.current);
@@ -106,7 +99,6 @@ export function StoryArchive() {
       patchField({ scan: "done" });
     }
     if (intrusion === "run") {
-      intrusionRef.current = "done";
       setIntrusion("done");
       patchField({ warningSequence: "done" });
     }
@@ -147,12 +139,8 @@ export function StoryArchive() {
   }, [patchField]);
 
   const handleWarningSequence = useCallback(() => {
-    if (intrusionRef.current === "run") {
-      return;
-    }
-    intrusionRef.current = "run";
-    setIntrusionRun((value) => value + 1);
     setIntrusion("run");
+    setIntrusionRun((value) => value + 1);
     patchField({ warningSequence: "run" });
   }, [patchField]);
 
@@ -368,7 +356,6 @@ export function StoryArchive() {
           key={intrusionRun}
           runId={intrusionRun}
           onDone={() => {
-            intrusionRef.current = "done";
             setIntrusion("done");
             patchField({ warningSequence: "done" });
           }}
