@@ -37,17 +37,25 @@ export function SimpleFieldLog({
   const latest = useRef<HTMLDivElement>(null);
   const readyRef = useRef(initialDone);
   const running = useRef(false);
+  const scaleRef = useRef(scale);
+  const onReadyRef = useRef(onReadyToLeave);
+  scaleRef.current = scale;
+  onReadyRef.current = onReadyToLeave;
 
   useEffect(() => {
     if (!active || readyRef.current || running.current) {
       return;
     }
     running.current = true;
+    setShown([]);
+    setIndicator("");
+    setDraft("");
+    setDraftSpeaker("");
     let cancelled = false;
     const timers: number[] = [];
     const later = (ms: number) =>
       new Promise<void>((resolve) => {
-        timers.push(window.setTimeout(resolve, scale(ms)));
+        timers.push(window.setTimeout(resolve, scaleRef.current(ms)));
       });
 
     const typeLine = async (text: string) => {
@@ -116,7 +124,7 @@ export function SimpleFieldLog({
       }
       if (!cancelled) {
         readyRef.current = true;
-        onReadyToLeave();
+        onReadyRef.current();
       }
     };
 
@@ -126,7 +134,7 @@ export function SimpleFieldLog({
       running.current = false;
       timers.forEach((id) => window.clearTimeout(id));
     };
-  }, [active, onReadyToLeave, scale]);
+  }, [active]);
 
   useEffect(() => {
     latest.current?.scrollIntoView({ block: "nearest" });
