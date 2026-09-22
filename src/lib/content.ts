@@ -24,7 +24,13 @@ export type Specimen = {
   metadata?: string[];
   status: string;
   state: SpecimenState;
+  readable?: boolean;
+  hasInvestigation?: boolean;
 };
+
+export function getSpecimen(id: string) {
+  return SPECIMENS.find((item) => item.id === id) ?? SPECIMENS[0];
+}
 
 export const SPECIMENS: Specimen[] = [
   {
@@ -34,6 +40,8 @@ export const SPECIMENS: Specimen[] = [
     metadata: ["MEDICAL NEURAL PROGRAM", "RECOVERED 91%"],
     status: "状态 / 已泄露",
     state: "available",
+    readable: true,
+    hasInvestigation: true,
   },
   {
     id: "002",
@@ -42,6 +50,8 @@ export const SPECIMENS: Specimen[] = [
     metadata: ["RESTRICTED"],
     status: "状态 / 受限访问",
     state: "restricted",
+    readable: true,
+    hasInvestigation: false,
   },
   {
     id: "003",

@@ -65,3 +65,31 @@ export const CONSTITUTION = {
     },
   ],
 } as const;
+
+const CONSTITUTION_002_RESERVED = {
+  title: CONSTITUTION.title,
+  en: CONSTITUTION.en,
+  record: CONSTITUTION.record,
+  result: CONSTITUTION.result,
+  scan: "ANALYZE(SAMPLE_002::COMPOSITION)",
+  traces: CONSTITUTION.traces,
+  streams: {
+    top: ["TRACE::TOP_NOTE", "SCAN::PENDING", "ANALYZE::HOLD"],
+    heart: ["TRACE::HEART_NOTE", "SCAN::PENDING", "ANALYZE::HOLD"],
+    base: ["TRACE::BASE_NOTE", "SCAN::PENDING", "ANALYZE::HOLD"],
+  },
+  groups: [
+    { id: "01", zh: "前調", en: "TOP", items: [] as string[] },
+    { id: "02", zh: "中調", en: "HEART", items: [] as string[] },
+    { id: "03", zh: "後調", en: "BASE", items: [] as string[] },
+  ],
+};
+
+export const CONSTITUTION_BY_SPECIMEN = {
+  "001": CONSTITUTION,
+  "002": CONSTITUTION_002_RESERVED,
+} as const;
+
+export function constitutionFor(id: string) {
+  return CONSTITUTION_BY_SPECIMEN[id as keyof typeof CONSTITUTION_BY_SPECIMEN] ?? CONSTITUTION;
+}

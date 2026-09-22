@@ -12,6 +12,7 @@ import { BootScene } from "@/components/scenes/BootScene";
 import { IndexScene } from "@/components/scenes/IndexScene";
 import { PeachDreamHub } from "@/components/archive/PeachDreamHub";
 import { StoryArchive } from "@/components/archive/StoryArchive";
+import { CrystalBloomArchive } from "@/components/archive/CrystalBloomArchive";
 import { ConstitutionArchive } from "@/components/archive/ConstitutionArchive";
 import { WarningSequence } from "@/components/dialogue/WarningSequence";
 
@@ -28,8 +29,14 @@ function UnlockAudio() {
 }
 
 function ArchiveInner() {
-  const { phase, go, warningOverlayLive, warningOverlayRun, finishWarningOverlay } =
-    useArchive();
+  const {
+    phase,
+    go,
+    activeSpecimenId,
+    warningOverlayLive,
+    warningOverlayRun,
+    finishWarningOverlay,
+  } = useArchive();
   const scale = useScaledMs();
   const reduced = usePrefersReducedMotion();
   const [cut, setCut] = useState(false);
@@ -77,7 +84,11 @@ function ArchiveInner() {
       phase === "pd001" ||
       phase === "unknown" ||
       phase === "ending" ? (
-        <StoryArchive />
+        activeSpecimenId === "002" ? (
+          <CrystalBloomArchive />
+        ) : (
+          <StoryArchive />
+        )
       ) : null}
       {phase === "constitution" ? <ConstitutionArchive /> : null}
       {warningOverlayLive ? (

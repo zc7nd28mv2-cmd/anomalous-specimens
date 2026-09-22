@@ -30,9 +30,13 @@ type ArchiveContextValue = {
   phase: Phase;
   folder: FolderId | null;
   file: FileId | null;
+  activeSpecimenId: string;
+  selectSpecimen: (id: string) => void;
   pd001Done: boolean;
   sample001AccessApproved: boolean;
   approveSample001: () => void;
+  approveSpecimen: (id: string) => void;
+  isSpecimenApproved: (id: string) => boolean;
   autoOpenPd001: boolean;
   startFinale: boolean;
   archiveEnterTop: boolean;
@@ -122,8 +126,10 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
   const [phase, setPhase] = useState<Phase | null>(null);
   const [folder, setFolder] = useState<FolderId | null>(null);
   const [file, setFile] = useState<FileId | null>(null);
+  const [activeSpecimenId, setActiveSpecimenId] = useState("001");
   const [pd001Done, setPd001Done] = useState(false);
   const [sample001AccessApproved, setSample001AccessApproved] = useState(false);
+  const [accessById, setAccessById] = useState<Record<string, boolean>>({});
   const [fieldGate, setFieldGate] = useState<"auto" | "open" | "shut">("auto");
   const [field, setField] = useState<FieldState>(emptyField);
   const [fieldEpoch, setFieldEpoch] = useState(0);
@@ -131,6 +137,8 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
   const [warningOverlayRun, setWarningOverlayRun] = useState(0);
   const [archiveEnterTop, setArchiveEnterTop] = useState(false);
   const fieldRef = useRef<FieldState>(field);
+  const fieldsRef = useRef<Record<string, FieldState>>({ "001": emptyField() });
+  const activeSpecimenRef = useRef("001");
   const fieldOpen = fieldGate === "open" || (fieldGate === "auto" && autoOpenPd001);
 
   const current = phase ?? urlPhase ?? "boot";
@@ -142,16 +150,51 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
 
   const resetYumeMomoStory = useCallback(() => {
     const next = emptyField();
+    const id = activeSpecimenRef.current;
+    fieldsRef.current[id] = next;
     fieldRef.current = next;
     setField(next);
     setFieldGate("shut");
-    setPd001Done(false);
+    if (id === "001") {
+      setPd001Done(false);
+      resetYumeProtocol();
+    }
     setFieldEpoch((value) => value + 1);
-    resetYumeProtocol();
   }, []);
+
+  const selectSpecimen = useCallback((id: string) => {
+    fieldsRef.current[activeSpecimenRef.current] = { ...fieldRef.current };
+    if (!fieldsRef.current[id]) {
+      fieldsRef.current[id] = emptyField();
+    }
+    activeSpecimenRef.current = id;
+    fieldRef.current = fieldsRef.current[id];
+    setActiveSpecimenId(id);
+    setField({ ...fieldRef.current });
+    setFieldGate("shut");
+    setFieldEpoch((value) => value + 1);
+  }, []);
+
+  const approveSpecimen = useCallback((id: string) => {
+    if (id === "001") {
+      setSample001AccessApproved(true);
+    }
+    setAccessById((current) => ({ ...current, [id]: true }));
+  }, []);
+
+  const isSpecimenApproved = useCallback(
+    (id: string) => {
+      if (id === "001") {
+        return sample001AccessApproved;
+      }
+      return Boolean(accessById[id]);
+    },
+    [accessById, sample001AccessApproved],
+  );
 
   const reopenFieldFresh = useCallback(() => {
     const next = emptyField();
+    fieldsRef.current[activeSpecimenRef.current] = next;
     fieldRef.current = next;
     setField(next);
     setFieldGate("open");
@@ -212,10 +255,12 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
 
   const persistField = useCallback((patch: Partial<FieldState>) => {
     fieldRef.current = { ...fieldRef.current, ...patch };
+    fieldsRef.current[activeSpecimenRef.current] = fieldRef.current;
   }, []);
 
   const patchField = useCallback((patch: Partial<FieldState>) => {
     fieldRef.current = { ...fieldRef.current, ...patch };
+    fieldsRef.current[activeSpecimenRef.current] = fieldRef.current;
     setField({ ...fieldRef.current });
   }, []);
 
@@ -246,9 +291,13 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       phase: current,
       folder,
       file,
+      activeSpecimenId,
+      selectSpecimen,
       pd001Done,
       sample001AccessApproved,
       approveSample001,
+      approveSpecimen,
+      isSpecimenApproved,
       autoOpenPd001,
       startFinale,
       archiveEnterTop,
@@ -273,7 +322,9 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       finishWarningOverlay,
     }),
     [
+      activeSpecimenId,
       approveSample001,
+      approveSpecimen,
       archiveEnterTop,
       autoOpenPd001,
       closeField,
@@ -286,6 +337,7 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       finishPd001,
       folder,
       go,
+      isSpecimenApproved,
       openField,
       openFile,
       openFolder,
@@ -296,6 +348,7 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       reopenFieldFresh,
       resetYumeMomoStory,
       sample001AccessApproved,
+      selectSpecimen,
       startFinale,
       startWarningOverlay,
       finishWarningOverlay,

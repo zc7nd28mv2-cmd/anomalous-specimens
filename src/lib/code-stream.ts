@@ -2,13 +2,12 @@ import { CONSTITUTION } from "@/lib/constitution";
 
 export type NoteStreamId = "top" | "heart" | "base";
 
-const STREAM_WAITS = [55, 90, 130, 70, 180, 95, 140, 60, 160, 75, 110, 200] as const;
-
-const SETTLE: Record<NoteStreamId, string> = {
-  top: CONSTITUTION.traces["01"],
-  heart: CONSTITUTION.traces["02"],
-  base: CONSTITUTION.traces["03"],
+type StreamSource = {
+  traces: { "01": string; "02": string; "03": string };
+  streams: { top: readonly string[]; heart: readonly string[]; base: readonly string[] };
 };
+
+const STREAM_WAITS = [55, 90, 130, 70, 180, 95, 140, 60, 160, 75, 110, 200] as const;
 
 let streamRun = 0;
 let revealRun = 0;
@@ -20,11 +19,17 @@ function irregularWait() {
 export function startNoteStreams(
   onFrame: (id: NoteStreamId, text: string) => void,
   onAllSettled?: () => void,
+  source: StreamSource = CONSTITUTION,
 ) {
   const run = ++streamRun;
   const timers: number[] = [];
   const duration = 1800 + Math.random() * 400;
   let ended = false;
+  const settle = {
+    top: source.traces["01"],
+    heart: source.traces["02"],
+    base: source.traces["03"],
+  };
 
   const clear = () => {
     timers.forEach((id) => window.clearTimeout(id));
@@ -32,7 +37,7 @@ export function startNoteStreams(
   };
 
   (["top", "heart", "base"] as const).forEach((id) => {
-    const frames = CONSTITUTION.streams[id];
+    const frames = source.streams[id];
     let index = 0;
 
     const step = () => {
@@ -59,9 +64,9 @@ export function startNoteStreams(
       }
       ended = true;
       clear();
-      onFrame("top", SETTLE.top);
-      onFrame("heart", SETTLE.heart);
-      onFrame("base", SETTLE.base);
+      onFrame("top", settle.top);
+      onFrame("heart", settle.heart);
+      onFrame("base", settle.base);
       onAllSettled?.();
     }, duration),
   );

@@ -2,13 +2,16 @@
 
 import { useArchive } from "@/context/ArchiveContext";
 import { useAudio } from "@/context/AudioContext";
+import { getSpecimen } from "@/lib/content";
 import { BackLink } from "@/components/system/BackLink";
 import { Rule } from "@/components/system/Rule";
 import { cn } from "@/lib/cn";
 
 export function PeachDreamHub({ reveal = false }: { reveal?: boolean }) {
-  const { go } = useArchive();
+  const { go, activeSpecimenId } = useArchive();
   const audio = useAudio();
+  const specimen = getSpecimen(activeSpecimenId);
+  const meta = specimen.metadata ?? [];
 
   return (
     <div
@@ -18,11 +21,11 @@ export function PeachDreamHub({ reveal = false }: { reveal?: boolean }) {
       )}
     >
       <div className="story-content mx-auto md:ml-[6vw]">
-        <p className="sys-meta hub-l2">ARCHIVE / 001</p>
-        <h1 className="title-product mt-4 text-ink hub-l2">仙桃夢</h1>
-        <p className="aux-en mt-2 hub-l1">PEACH DREAM</p>
-        <p className="aux-en mt-6 hub-l3">MEDICAL NEURAL PROGRAM</p>
-        <p className="aux-en mt-1 hub-l3">RECOVERED 91%</p>
+        <p className="sys-meta hub-l2">ARCHIVE / {specimen.id}</p>
+        <h1 className="title-product mt-4 text-ink hub-l2">{specimen.name}</h1>
+        <p className="aux-en mt-2 hub-l1">{specimen.englishName || "\u00a0"}</p>
+        {meta[0] ? <p className="aux-en mt-6 hub-l3">{meta[0]}</p> : null}
+        {meta[1] ? <p className="aux-en mt-1 hub-l3">{meta[1]}</p> : null}
 
         <div className="mt-16 space-y-4">
           <Entry

@@ -30,9 +30,15 @@ function irregular(min: number, max: number) {
 }
 
 export function IndexScene({ onComplete }: { onComplete: () => void }) {
-  const { sample001AccessApproved, approveSample001 } = useArchive();
+  const {
+    sample001AccessApproved,
+    approveSpecimen,
+    isSpecimenApproved,
+    selectSpecimen,
+  } = useArchive();
   const [denied, setDenied] = useState<string | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
+  const [readingId, setReadingId] = useState<string | null>(null);
   const [read, setRead] = useState<ReadPhase>(() =>
     sample001AccessApproved ? { kind: "granted" } : { kind: "off" },
   );
@@ -90,10 +96,14 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
         later(() => setRead({ kind: "granted" }), 180);
       }
     } else if (read.kind === "granted") {
-      if (alreadyApproved) {
+      const id = readingId ?? "001";
+      if (id === "001" && alreadyApproved) {
         return;
       }
-      approveSample001();
+      if (id !== "001" && isSpecimenApproved(id)) {
+        return;
+      }
+      approveSpecimen(id);
       later(() => leaveToArchive(), 60);
     }
 
@@ -101,7 +111,7 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
       cancelled = true;
       timers.forEach((id) => window.clearTimeout(id));
     };
-  }, [alreadyApproved, approveSample001, read, scale]);
+  }, [alreadyApproved, approveSpecimen, isSpecimenApproved, read, readingId, scale]);
 
   return (
     <div className="relative min-h-dvh bg-bg px-5 py-16 sm:px-10 sm:py-20 md:px-16">
@@ -120,7 +130,7 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
               key={specimen.id}
               specimen={specimen}
               action={
-                specimen.state === "available" ? (
+                specimen.readable ? (
                   <div>
                     <button
                       type="button"
@@ -130,17 +140,26 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
                           return;
                         }
                         audio.click();
-                        if (sample001AccessApproved || alreadyApproved) {
+                        selectSpecimen(specimen.id);
+                        const approved =
+                          specimen.id === "001"
+                            ? sample001AccessApproved || alreadyApproved
+                            : isSpecimenApproved(specimen.id);
+                        if (approved) {
                           leaveToArchive();
                           return;
                         }
+                        setReadingId(specimen.id);
                         setRead({ kind: "accessing" });
                       }}
                       className="read-tag"
                     >
                       读取档案
                     </button>
-                    <ReadLine phase={read} />
+                    {readingId === specimen.id ||
+                    (specimen.id === "001" && readingId == null && read.kind !== "off") ? (
+                      <ReadLine phase={read} id={specimen.id} />
+                    ) : null}
                   </div>
                 ) : specimen.state === "restricted" ? (
                   <div>
@@ -178,13 +197,15 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
   );
 }
 
-function ReadLine({ phase }: { phase: ReadPhase }) {
+function ReadLine({ phase, id }: { phase: ReadPhase; id: string }) {
   if (phase.kind === "off") {
     return null;
   }
   const text =
     phase.kind === "accessing"
-      ? ACCESS.accessing
+      ? id === "001"
+        ? ACCESS.accessing
+        : `正在读取样本 ${id}`
       : phase.kind === "verifying"
         ? ACCESS.verifying
         : phase.kind === "granted"
