@@ -36,14 +36,17 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
   );
   const audio = useAudio();
   const scale = useScaledMs();
-  const alreadyApproved = useRef(sample001AccessApproved);
+  const [alreadyApproved] = useState(sample001AccessApproved);
   const animating =
     read.kind === "accessing" ||
     read.kind === "verifying" ||
     read.kind === "integrity" ||
-    (read.kind === "granted" && !alreadyApproved.current);
+    (read.kind === "granted" && !alreadyApproved);
   const finish = useRef(onComplete);
-  finish.current = onComplete;
+
+  useEffect(() => {
+    finish.current = onComplete;
+  }, [onComplete]);
 
   useEffect(() => {
     if (read.kind === "off") {
@@ -75,7 +78,7 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
         later(() => setRead({ kind: "granted" }), 180);
       }
     } else if (read.kind === "granted") {
-      if (alreadyApproved.current) {
+      if (alreadyApproved) {
         return;
       }
       approveSample001();
@@ -86,7 +89,7 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
       cancelled = true;
       timers.forEach((id) => window.clearTimeout(id));
     };
-  }, [approveSample001, read, scale]);
+  }, [alreadyApproved, approveSample001, read, scale]);
 
   return (
     <div className="relative min-h-dvh bg-bg px-5 py-16 sm:px-10 sm:py-20 md:px-16">
@@ -153,7 +156,7 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
                         return;
                       }
                       audio.click();
-                      if (sample001AccessApproved || alreadyApproved.current) {
+                      if (sample001AccessApproved || alreadyApproved) {
                         finish.current();
                         return;
                       }

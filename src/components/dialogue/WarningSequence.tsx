@@ -67,7 +67,7 @@ function clearCrash() {
 
 function soundOnce(phase: WarningSequenceState) {
   const level = warningLevel(phase);
-  if (level < 1 || sounded.has(level)) {
+  if (level === 0 || sounded.has(level)) {
     return;
   }
   sounded.add(level);
@@ -297,6 +297,11 @@ export function WarningSequence({
     return () => {
       listeners.delete(setView);
       crashListeners.delete(setCrash);
+      if (activeRun === runId) {
+        clearTimers();
+        clearCrash();
+        activeRun = 0;
+      }
     };
   }, [runId]);
 

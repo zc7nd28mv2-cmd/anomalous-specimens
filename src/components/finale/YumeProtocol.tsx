@@ -73,13 +73,27 @@ function clearYumeReturn() {
   }
 }
 
+export function resetYumeProtocol() {
+  yumeTimers.forEach((id) => window.clearTimeout(id));
+  yumeTimers.length = 0;
+  clearYumeReturn();
+  yumeMomoPlaybackStarted = false;
+  yumeMomoCompleted = false;
+  yumeReturnFinished = false;
+  yumeShownCount = 0;
+  yumeReturnLeft = 10;
+  yumeReturnOnDone = null;
+}
+
 function finishYumeReturn() {
   if (yumeReturnFinished) {
     return;
   }
   yumeReturnFinished = true;
   clearYumeReturn();
-  yumeReturnOnDone?.();
+  const done = yumeReturnOnDone;
+  yumeReturnOnDone = null;
+  done?.();
 }
 
 function startYumeReturn(onDone: () => void) {

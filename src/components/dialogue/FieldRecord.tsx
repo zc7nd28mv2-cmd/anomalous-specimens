@@ -215,9 +215,9 @@ export function FieldRecord({
   const scrollbarVisibleRef = useRef(false);
   const playRef = useRef<() => void>(() => undefined);
   const centerLatestRef = useRef<(smooth: boolean) => void>(() => undefined);
-  const isShortContentRef = useRef(() => true);
-  const sizeBreathRef = useRef(() => undefined);
-  const pinLatestToTopRef = useRef(() => undefined);
+  const isShortContentRef = useRef<() => boolean>(() => true);
+  const sizeBreathRef = useRef<() => void>(() => undefined);
+  const pinLatestToTopRef = useRef<() => void>(() => undefined);
 
   function persistProgress() {
     persistRef.current({
@@ -333,17 +333,12 @@ export function FieldRecord({
     if (warningSequenceStartedRef.current) {
       warningSequenceWaitingRef.current = true;
       startWarningOverlay();
-      window.dispatchEvent(new Event("pd001-warning-sequence"));
       return true;
     }
     warningSequenceStartedRef.current = true;
     warningSequenceWaitingRef.current = true;
     warningSequenceArmedRef.current = false;
     startWarningOverlay();
-    (
-      window as Window & { __pdStartWarning?: () => void }
-    ).__pdStartWarning?.();
-    window.dispatchEvent(new Event("pd001-warning-sequence"));
     onWarningSequenceRef.current?.();
     try {
       audioRef.current.alert();

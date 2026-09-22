@@ -13,6 +13,7 @@ import {
 } from "react";
 import { FOLDER_FILES, type FileId, type FolderId } from "@/lib/folders";
 import { emptyField, type FieldState } from "@/lib/field-state";
+import { resetYumeProtocol } from "@/components/finale/YumeProtocol";
 
 export type Phase =
   | "boot"
@@ -146,6 +147,7 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
     setFieldGate("shut");
     setPd001Done(false);
     setFieldEpoch((value) => value + 1);
+    resetYumeProtocol();
   }, []);
 
   const reopenFieldFresh = useCallback(() => {

@@ -9,6 +9,7 @@ import { FieldRecord } from "@/components/dialogue/FieldRecord";
 import { WarningOverlay } from "@/components/dialogue/WarningOverlay";
 import { AnalysisOverlay } from "@/components/dialogue/AnalysisOverlay";
 import { InfectionOverlay } from "@/components/finale/InfectionOverlay";
+import { resetYumeProtocol } from "@/components/finale/YumeProtocol";
 import { STORY } from "@/lib/story";
 import { DOSSIER, ENDING } from "@/lib/content";
 import { cn } from "@/lib/cn";
@@ -20,6 +21,7 @@ export function StoryArchive() {
     startFinale,
     archiveEnterTop,
     pd001Done,
+    finishPd001,
     fieldOpen,
     field,
     fieldEpoch,
@@ -33,7 +35,7 @@ export function StoryArchive() {
   const [closing, setClosing] = useState(false);
   const [fieldMounted, setFieldMounted] = useState(fieldOpen);
   const [finale, setFinale] = useState<"off" | "run" | "done">(
-    startFinale ? "run" : pd001Done ? "done" : "off",
+    startFinale && !pd001Done ? "run" : pd001Done ? "done" : "off",
   );
   const [fail, setFail] = useState<"off" | "run" | "done">(field.warning);
   const [scan, setScan] = useState<"off" | "run" | "resume" | "done">(field.scan);
@@ -277,7 +279,15 @@ export function StoryArchive() {
           <p className="font-sans text-[13px] text-mute">{ENDING.attr}</p>
         </section>
 
-        <BackLink label="返回 仙桃夢" onClick={() => go("specimen")} />
+        <BackLink
+          label="返回 仙桃夢"
+          onClick={() => {
+            if (finale === "run") {
+              return;
+            }
+            go("specimen");
+          }}
+        />
       </div>
 
       {fieldMounted && finale !== "run" ? (
@@ -350,7 +360,9 @@ export function StoryArchive() {
       {finale === "run" ? (
         <InfectionOverlay
           onDone={() => {
-            setFinale("off");
+            resetYumeProtocol();
+            setFinale("done");
+            finishPd001();
             closeField();
             go("specimen");
           }}
