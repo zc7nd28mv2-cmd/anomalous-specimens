@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useArchive } from "@/context/ArchiveContext";
 import { useAudio } from "@/context/AudioContext";
 import { BackLink } from "@/components/system/BackLink";
@@ -186,7 +193,8 @@ export function StoryArchive() {
 
         <div className="mt-12 space-y-4">
           <p className="story-body">{STORY.origin.p1}</p>
-          <p className="story-body">{STORY.origin.p2}</p>
+          <p className="story-body">{withMark(STORY.origin.p2, "Elysium Initiative")}</p>
+          <ArchiveScar>████ ████ ████████</ArchiveScar>
         </div>
 
         <div className="story-divider" />
@@ -199,30 +207,39 @@ export function StoryArchive() {
           <p className="story-body">{STORY.reconstruction.lover}</p>
           <p className="story-body">{STORY.reconstruction.self}</p>
           <p className="story-body">{STORY.reconstruction.unique}</p>
-          <p className="story-key story-lift story-strong mt-6">{STORY.lastPlace.en}</p>
+          <p className="story-key story-lift story-strong mt-6">
+            <ArchiveMark>{STORY.lastPlace.en}</ArchiveMark>
+          </p>
           <p className="story-body">{STORY.lastPlace.zh}</p>
+          <ArchiveScar>[ UNREADABLE ]</ArchiveScar>
         </div>
 
         <div className="story-divider" />
 
         <div className="space-y-4">
-          <p className="story-body">{STORY.termination.p1}</p>
+          <p className="story-body">{withMark(STORY.termination.p1, "Beta 0.94")}</p>
           <p className="story-body">{STORY.termination.p2}</p>
           <p className="story-body">{STORY.termination.p3}</p>
           <p className="story-body">{STORY.termination.p4}</p>
           <p className="story-body">{STORY.termination.p5}</p>
           <p className="story-body">{STORY.termination.p6}</p>
           <p className="story-body">{STORY.termination.p7}</p>
+          <ArchiveScar>ERR_0x19A7 / DATA CORRUPTED</ArchiveScar>
           <p className="story-body">{STORY.abandonment.lead}</p>
-          <p className="story-key">{STORY.abandonment.death}</p>
+          <p className="story-key">
+            <ArchiveMark>{STORY.abandonment.death}</ArchiveMark>
+          </p>
           <p className="story-body">{STORY.abandonment.instead}</p>
-          <p className="story-key story-lift story-strong">{STORY.abandonment.term}</p>
+          <p className="story-key story-lift story-strong">
+            <ArchiveMark>{STORY.abandonment.term}</ArchiveMark>
+          </p>
         </div>
 
         <div className="story-divider" />
 
         <div className="space-y-4">
           <p className="story-body">{STORY.leak.p1}</p>
+          <ArchiveScar>{"< MEMORY BLOCK DAMAGED >"}</ArchiveScar>
           <p className="story-body">{STORY.leak.removedLead}</p>
           <ul className="space-y-1">
             {STORY.leak.removed.map((item) => (
@@ -240,11 +257,16 @@ export function StoryArchive() {
             ))}
           </ul>
           <p className="story-body">{STORY.leak.pack}</p>
-          <p className="story-key story-lift story-strong">{STORY.leak.opium}</p>
+          <p className="story-key story-lift story-strong">
+            <ArchiveMark>{STORY.leak.opium}</ArchiveMark>
+          </p>
           <p className="story-body">{STORY.leak.became}</p>
-          <p className="story-key story-lift story-strong">{STORY.leak.fragment}</p>
+          <p className="story-key story-lift story-strong">
+            <ArchiveMark accent>{STORY.leak.fragment}</ArchiveMark>
+          </p>
           <p className="story-body">{STORY.leak.close1}</p>
           <p className="story-body">{STORY.leak.close2}</p>
+          <ArchiveScar>DATA_FRAGMENT_██████</ArchiveScar>
         </div>
 
         <div className="story-divider" />
@@ -369,5 +391,37 @@ export function StoryArchive() {
         />
       ) : null}
     </div>
+  );
+}
+
+function ArchiveMark({
+  children,
+  accent = false,
+}: {
+  children: ReactNode;
+  accent?: boolean;
+}) {
+  return (
+    <span className={accent ? "archive-mark is-accent" : "archive-mark"}>
+      {children}
+    </span>
+  );
+}
+
+function ArchiveScar({ children }: { children: string }) {
+  return <p className="archive-scar">{children}</p>;
+}
+
+function withMark(text: string, phrase: string) {
+  const at = text.indexOf(phrase);
+  if (at < 0) {
+    return text;
+  }
+  return (
+    <>
+      {text.slice(0, at)}
+      <ArchiveMark>{phrase}</ArchiveMark>
+      {text.slice(at + phrase.length)}
+    </>
   );
 }
