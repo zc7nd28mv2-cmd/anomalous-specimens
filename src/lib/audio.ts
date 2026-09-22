@@ -130,8 +130,8 @@ export function playBootReveal() {
 }
 
 export function playYumeStart() {
-  noiseBurst(0.18, 0.011, "highpass", 1500);
-  tone({ freq: 88, dur: 0.16, type: "sine", gain: 0.01 });
+  noiseBurst(0.05, 0.009, "highpass", 1500);
+  tone({ freq: 88, dur: 0.038, type: "sine", gain: 0.008 });
 }
 
 export function playSystemConfirm() {

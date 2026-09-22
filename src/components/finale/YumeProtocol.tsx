@@ -7,6 +7,7 @@ import {
   highlightYumeLines,
   type YumeLineKind,
 } from "@/lib/yume";
+import { playYumeStart } from "@/lib/audio";
 
 function irregular(min: number, max: number) {
   return min + Math.random() * (max - min);
@@ -35,6 +36,11 @@ const yumeTimers: number[] = [];
 
 function emitYume(count: number) {
   yumeShownCount = count;
+  try {
+    playYumeStart();
+  } catch {
+    // Sound must not block the dump.
+  }
   yumeListeners.forEach((fn) => fn(count));
 }
 
