@@ -100,6 +100,32 @@ export const CRYSTAL_BLOOM_BLOCKS = CRYSTAL_BLOOM_ARCHIVE.slice(
   HEADER_END >= 0 ? HEADER_END : 0,
 ).split(/\n{2,}/);
 
+const SECTION_ENDS = [
+  "而是负责分泌神经递质、模拟荷尔蒙波动，并维持亲密行为中的情绪反馈。",
+  "她开始越来越像人。",
+  "产品已完成生命周期。",
+  "整个 MO 系列最昂贵、也是唯一无法量产的生物器官。",
+] as const;
+
+function sectionCrystalBloom(blocks: readonly string[]): string[][] {
+  const sections: string[][] = [];
+  let current: string[] = [];
+  const ends = new Set<string>(SECTION_ENDS);
+  for (const block of blocks) {
+    current.push(block);
+    if (ends.has(block)) {
+      sections.push(current);
+      current = [];
+    }
+  }
+  if (current.length) {
+    sections.push(current);
+  }
+  return sections;
+}
+
+export const CRYSTAL_BLOOM_SECTIONS = sectionCrystalBloom(CRYSTAL_BLOOM_BLOCKS);
+
 export const CRYSTAL_BLOOM_LOG_META = {
   title: "ARCHIVE LOG",
   id: "MO-808-C01",

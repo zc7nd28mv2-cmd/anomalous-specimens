@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useArchive } from "@/context/ArchiveContext";
 import { useAudio } from "@/context/AudioContext";
 import { BackLink } from "@/components/system/BackLink";
@@ -9,9 +9,9 @@ import { SimpleFieldLog } from "@/components/dialogue/SimpleFieldLog";
 import { InfectionOverlay } from "@/components/finale/InfectionOverlay";
 import { resetYumeProtocol } from "@/components/finale/YumeProtocol";
 import {
-  CRYSTAL_BLOOM_BLOCKS,
   CRYSTAL_BLOOM_DOSSIER,
   CRYSTAL_BLOOM_LOG_META,
+  CRYSTAL_BLOOM_SECTIONS,
 } from "@/lib/crystal-bloom";
 import { cn } from "@/lib/cn";
 
@@ -93,7 +93,7 @@ export function CrystalBloomArchive() {
 
   const visible = fieldOpen || closing;
   const fieldActive = fieldOpen && !closing && finale !== "run";
-  const lastIndex = CRYSTAL_BLOOM_BLOCKS.length - 1;
+  const lastSectionIndex = CRYSTAL_BLOOM_SECTIONS.length - 1;
 
   return (
     <div className="relative min-h-dvh bg-bg px-5 py-16 sm:px-10 sm:py-20 md:px-16">
@@ -112,24 +112,34 @@ export function CrystalBloomArchive() {
           ))}
         </dl>
 
-        <div className="mt-12 space-y-4">
-          {CRYSTAL_BLOOM_BLOCKS.map((block, index) => (
-            <p
-              key={`${index}-${block.slice(0, 12)}`}
-              className={cn(
-                "story-body",
-                index === lastIndex && "story-lift story-strong story-breathe",
-              )}
-            >
-              {block.split("\n").map((line, lineIndex) => (
-                <span key={`${index}-${lineIndex}`}>
-                  {lineIndex > 0 ? <br /> : null}
-                  {line}
-                </span>
-              ))}
-            </p>
-          ))}
-        </div>
+        {CRYSTAL_BLOOM_SECTIONS.map((section, sectionIndex) => (
+          <Fragment key={`crystal-section-${sectionIndex}`}>
+            {sectionIndex > 0 ? <div className="story-divider" /> : null}
+            <div className={cn("space-y-4", sectionIndex === 0 && "mt-12")}>
+              {section.map((block, index) => {
+                const isLast =
+                  sectionIndex === lastSectionIndex &&
+                  index === section.length - 1;
+                return (
+                  <p
+                    key={`${sectionIndex}-${index}-${block.slice(0, 12)}`}
+                    className={cn(
+                      "story-body",
+                      isLast && "story-lift story-strong story-breathe",
+                    )}
+                  >
+                    {block.split("\n").map((line, lineIndex) => (
+                      <span key={`${sectionIndex}-${index}-${lineIndex}`}>
+                        {lineIndex > 0 ? <br /> : null}
+                        {line}
+                      </span>
+                    ))}
+                  </p>
+                );
+              })}
+            </div>
+          </Fragment>
+        ))}
 
         <section id="sec-mo808" className="mt-16">
           <div className="field-module">
