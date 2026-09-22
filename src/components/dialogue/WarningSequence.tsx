@@ -284,12 +284,7 @@ export function WarningSequence({
 }) {
   const [view, setView] = useState<SeqView>(() => firstView());
   const [crash, setCrash] = useState<CrashView>(crashNow);
-  const [mounted, setMounted] = useState(false);
   const done = useRef(onDone);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     done.current = onDone;
@@ -305,7 +300,7 @@ export function WarningSequence({
     };
   }, [runId]);
 
-  if (view.phase === "complete" || !mounted) {
+  if (view.phase === "complete" || typeof document === "undefined") {
     return null;
   }
 

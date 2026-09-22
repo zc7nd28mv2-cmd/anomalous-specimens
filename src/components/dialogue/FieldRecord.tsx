@@ -6,7 +6,6 @@ import { useAudio } from "@/context/AudioContext";
 import { useArchive } from "@/context/ArchiveContext";
 import { TypingIndicator } from "@/components/dialogue/TypingIndicator";
 import { SensoryChoice } from "@/components/dialogue/SensoryChoice";
-import { WarningSequence } from "@/components/dialogue/WarningSequence";
 import {
   ANALYSIS,
   INVESTIGATION,
@@ -179,8 +178,6 @@ export function FieldRecord({
 
   const warningSequenceStartedRef = useRef(false);
   const warningSequenceWaitingRef = useRef(false);
-  const [warningLive, setWarningLive] = useState(false);
-  const [warningRun, setWarningRun] = useState(0);
   const force = useRef(false);
   const picked = useRef(saved.current.picked);
   const pickedOptionRef = useRef<SensoryBranchId | null>(saved.current.pickedOption);
@@ -335,8 +332,12 @@ export function FieldRecord({
     warningSequenceStartedRef.current = true;
     warningSequenceWaitingRef.current = true;
     audioRef.current.alert();
-    setWarningRun((value) => value + 1);
-    setWarningLive(true);
+    try {
+      onWarningSequenceRef.current?.();
+    } catch {
+      warningSequenceWaitingRef.current = false;
+    }
+    window.dispatchEvent(new Event("pd001-warning-sequence"));
     setStatusNow("time_21_18_02");
     persistProgress();
     playing.current = false;
@@ -1359,17 +1360,6 @@ export function FieldRecord({
           <div ref={breathBottom} className="chat-breath" aria-hidden="true" />
         </div>
       </div>
-      {warningLive ? (
-        <WarningSequence
-          key={warningRun}
-          runId={warningRun}
-          onDone={() => {
-            warningSequenceWaitingRef.current = false;
-            setWarningLive(false);
-            playRef.current();
-          }}
-        />
-      ) : null}
     </div>
   );
 }
