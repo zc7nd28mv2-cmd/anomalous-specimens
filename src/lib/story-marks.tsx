@@ -5,9 +5,6 @@ export const STORY_HIT_TERMS = [
   "神经退行性疾病",
   "意识护理",
   "长期记忆",
-  "生命维持",
-  "终止机制",
-  "梦境生成",
 ] as const;
 
 export const STORY_STRIKE_TERMS = ["黑市", "受试者"] as const;
