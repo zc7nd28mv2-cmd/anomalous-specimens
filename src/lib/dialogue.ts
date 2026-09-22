@@ -83,7 +83,7 @@ export const INVESTIGATION = {
   recovering: "RECOVERING DATA...",
   en: "FOLLOW-UP INVESTIGATION",
   zh: "後續調查",
-  prompt: "后续调查",
+  prompt: "展开",
   title: "后续调查：",
   close: "关闭",
   foundNote: "现场发现非法神经模组一枚。",
