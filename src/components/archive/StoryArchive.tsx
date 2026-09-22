@@ -352,7 +352,7 @@ export function StoryArchive() {
           onDone={() => {
             setFinale("off");
             closeField();
-            go("index");
+            go("specimen");
           }}
         />
       ) : null}

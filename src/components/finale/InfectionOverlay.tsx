@@ -71,7 +71,7 @@ export function InfectionOverlay({ onDone }: { onDone: () => void }) {
     return <FlashOut onDone={onDone} />;
   }
 
-  return <YumeProtocol onHoldDone={() => setGate("flash")} />;
+  return <YumeProtocol onHoldDone={onDone} />;
 }
 
 type PromptPhase = "idle" | "leave" | "gone" | "enter";

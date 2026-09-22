@@ -23,8 +23,14 @@ function lineWait(kind: YumeLineKind) {
 }
 
 let yumeMomoPlaybackStarted = false;
+let yumeMomoCompleted = false;
+let yumeReturnFinished = false;
 let yumeShownCount = 0;
+let yumeReturnLeft = 10;
+let yumeReturnTimer = 0;
+let yumeReturnOnDone: (() => void) | null = null;
 const yumeListeners = new Set<(count: number) => void>();
+const yumeReturnListeners = new Set<(count: number) => void>();
 const yumeTimers: number[] = [];
 
 function emitYume(count: number) {
@@ -55,16 +61,63 @@ function startYumePlayback(kinds: readonly YumeLineKind[]) {
   playFrom(1);
 }
 
-export function YumeProtocol({}: { onHoldDone?: () => void } = {}) {
+function emitYumeReturn(count: number) {
+  yumeReturnLeft = count;
+  yumeReturnListeners.forEach((fn) => fn(count));
+}
+
+function clearYumeReturn() {
+  if (yumeReturnTimer) {
+    window.clearInterval(yumeReturnTimer);
+    yumeReturnTimer = 0;
+  }
+}
+
+function finishYumeReturn() {
+  if (yumeReturnFinished) {
+    return;
+  }
+  yumeReturnFinished = true;
+  clearYumeReturn();
+  yumeReturnOnDone?.();
+}
+
+function startYumeReturn(onDone: () => void) {
+  yumeReturnOnDone = onDone;
+  if (yumeMomoCompleted || yumeReturnFinished || yumeReturnTimer) {
+    return;
+  }
+  yumeMomoCompleted = true;
+  emitYumeReturn(10);
+  yumeReturnTimer = window.setInterval(() => {
+    const next = yumeReturnLeft - 1;
+    emitYumeReturn(next);
+    if (next <= 0) {
+      finishYumeReturn();
+    }
+  }, 1000);
+}
+
+export function YumeProtocol({
+  onHoldDone,
+}: { onHoldDone?: () => void } = {}) {
   const kinds = useMemo(() => classifyYumeLines(YUME_LINES), []);
   const [shown, setShown] = useState(yumeShownCount);
+  const [returnLeft, setReturnLeft] = useState(yumeReturnLeft);
   const scroller = useRef<HTMLPreElement>(null);
+  const done = useRef(onHoldDone);
+
+  useEffect(() => {
+    done.current = onHoldDone;
+  }, [onHoldDone]);
 
   useEffect(() => {
     yumeListeners.add(setShown);
+    yumeReturnListeners.add(setReturnLeft);
     startYumePlayback(kinds);
     return () => {
       yumeListeners.delete(setShown);
+      yumeReturnListeners.delete(setReturnLeft);
     };
   }, [kinds]);
 
@@ -96,7 +149,25 @@ export function YumeProtocol({}: { onHoldDone?: () => void } = {}) {
       return;
     }
     node.scrollTop = node.scrollHeight - node.clientHeight;
-  }, [shown]);
+  }, [shown, returnLeft]);
+
+  const completed = shown >= YUME_LINES.length;
+
+  useEffect(() => {
+    if (!completed) {
+      return;
+    }
+    startYumeReturn(() => done.current?.());
+  }, [completed]);
+
+  useEffect(() => {
+    if (!completed) {
+      return;
+    }
+    const onPointer = () => finishYumeReturn();
+    window.addEventListener("pointerdown", onPointer, true);
+    return () => window.removeEventListener("pointerdown", onPointer, true);
+  }, [completed]);
 
   return (
     <div className="yume-view">
@@ -120,6 +191,14 @@ export function YumeProtocol({}: { onHoldDone?: () => void } = {}) {
             {index < tokens.length - 1 ? "\n" : null}
           </span>
         ))}
+        {completed ? (
+          <>
+            {"\n\n"}
+            <span className="yume-return">
+              RETURNING TO ARCHIVE... {returnLeft}
+            </span>
+          </>
+        ) : null}
       </pre>
     </div>
   );
