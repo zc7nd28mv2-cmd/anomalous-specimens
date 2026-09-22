@@ -38,7 +38,6 @@ export function StoryArchive() {
   const [intrusion, setIntrusion] = useState<"off" | "run" | "done">(
     field.warningSequence,
   );
-  const intrusionLock = useRef(field.warningSequence !== "off");
   const [intrusionRun, setIntrusionRun] = useState(0);
   const [scan, setScan] = useState<"off" | "run" | "resume" | "done">(field.scan);
   const [scanLines, setScanLines] = useState<string[] | null>(field.scanLines);
@@ -47,11 +46,9 @@ export function StoryArchive() {
   const closeTimer = useRef<number | null>(null);
   const scrollTimer = useRef<number | null>(null);
 
-  useEffect(() => {
-    if (fieldOpen) {
-      setFieldMounted(true);
-    }
-  }, [fieldOpen]);
+  if (fieldOpen && !fieldMounted) {
+    setFieldMounted(true);
+  }
 
   useLayoutEffect(() => {
     if (!archiveEnterTop) {
@@ -144,14 +141,13 @@ export function StoryArchive() {
   }, [patchField]);
 
   const handleWarningSequence = useCallback(() => {
-    if (intrusionLock.current) {
+    if (intrusion === "run") {
       return;
     }
-    intrusionLock.current = true;
     setIntrusionRun((value) => value + 1);
     setIntrusion("run");
     patchField({ warningSequence: "run" });
-  }, [patchField]);
+  }, [intrusion, patchField]);
 
   const handleAnalysis = useCallback((lines: string[]) => {
     setScanLines(lines);

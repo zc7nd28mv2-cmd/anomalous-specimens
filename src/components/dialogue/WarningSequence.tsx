@@ -56,6 +56,7 @@ function clearTimers() {
 function clearCrash() {
   crashTimerIds.forEach((id) => window.clearTimeout(id));
   crashTimerIds.length = 0;
+  crashRun = 0;
   stopCrashAudio();
   crashNow = idleCrashView();
   crashListeners.forEach((fn) => fn(crashNow));
@@ -136,7 +137,7 @@ function startCrash(runId: number, onDone: () => void) {
 }
 
 function startRun(runId: number, onDone: () => void) {
-  if (activeRun === runId) {
+  if (activeRun === runId && viewNow.phase !== "complete") {
     return;
   }
   clearTimers();

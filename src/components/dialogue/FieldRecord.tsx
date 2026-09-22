@@ -100,8 +100,8 @@ export function FieldRecord({
 }) {
   const scale = useScaledMs();
   const audio = useAudio();
-  const { persistField, readField } = useArchive();
-  const saved = useRef(readField());
+  const { persistField, field } = useArchive();
+  const saved = useRef(field);
   const resumeTyping =
     saved.current.status === "kai_typing_before_choice" ||
     saved.current.status === "sensory_choice";
@@ -321,7 +321,13 @@ export function FieldRecord({
   }
 
   function startWarningSequence() {
-    if (warningSequenceStartedRef.current || warningSequenceClearedRef.current) {
+    if (warningSequenceStartedRef.current) {
+      return false;
+    }
+    if (
+      saved.current.warningSequence === "run" ||
+      saved.current.warningSequence === "done"
+    ) {
       return false;
     }
     if (!onWarningSequenceRef.current) {

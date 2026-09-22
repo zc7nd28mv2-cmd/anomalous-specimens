@@ -49,6 +49,7 @@ type ArchiveContextValue = {
   persistField: (patch: Partial<FieldState>) => void;
   patchField: (patch: Partial<FieldState>) => void;
   resetYumeMomoStory: () => void;
+  reopenFieldFresh: () => void;
 };
 
 const ArchiveContext = createContext<ArchiveContextValue | null>(null);
@@ -141,6 +142,14 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
     setFieldEpoch((value) => value + 1);
   }, []);
 
+  const reopenFieldFresh = useCallback(() => {
+    const next = emptyField();
+    fieldRef.current = next;
+    setField(next);
+    setFieldGate("open");
+    setFieldEpoch((value) => value + 1);
+  }, []);
+
   const go = useCallback(
     (next: Phase) => {
       const dest =
@@ -227,6 +236,7 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       persistField,
       patchField,
       resetYumeMomoStory,
+      reopenFieldFresh,
     }),
     [
       approveSample001,
@@ -249,6 +259,7 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       persistField,
       pd001Done,
       readField,
+      reopenFieldFresh,
       resetYumeMomoStory,
       sample001AccessApproved,
       startFinale,
