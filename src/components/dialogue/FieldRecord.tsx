@@ -332,7 +332,6 @@ export function FieldRecord({
     }
     if (warningSequenceStartedRef.current) {
       warningSequenceWaitingRef.current = true;
-      startWarningOverlay();
       return true;
     }
     warningSequenceStartedRef.current = true;
@@ -847,12 +846,22 @@ export function FieldRecord({
 
     if (beat.kind === "warn") {
       scheduleDialogue(() => {
-        if (startWarningSequence()) {
-          return;
-        }
-        if (warningSequenceWaitingRef.current) {
+        if (!warningSequenceDoneRef.current && startWarningSequence()) {
           playing.current = false;
           return;
+        }
+        if (warningSequenceWaitingRef.current && !warningSequenceDoneRef.current) {
+          playing.current = false;
+          return;
+        }
+        const warnId = beatId(beatIndex);
+        if (!logHas(logRef.current, warnId)) {
+          pushOnce({
+            id: warnId,
+            kind: "warn",
+            title: beat.title,
+            body: beat.body,
+          });
         }
         playing.current = false;
         advanceAndPlay();
@@ -932,16 +941,16 @@ export function FieldRecord({
     if (!warningSequenceStartedRef.current || warningSequenceDoneRef.current) {
       return;
     }
-    if (!overlayCleared) {
+    if (warningOverlayLive) {
       warningSequenceArmedRef.current = true;
       return;
     }
-    if (warningSequenceArmedRef.current) {
+    if (overlayCleared && warningSequenceArmedRef.current) {
       warningSequenceDoneRef.current = true;
       warningSequenceWaitingRef.current = false;
       playRef.current();
     }
-  }, [active, analysisCleared, warningCleared, overlayCleared]);
+  }, [active, analysisCleared, overlayCleared, warningCleared, warningOverlayLive]);
 
   useEffect(() => {
     if (!active) {
@@ -1563,7 +1572,16 @@ function LogLine({
     return <p className="font-mono text-[12px] text-sys">{item.text}</p>;
   }
   if (item.kind === "warn") {
-    return null;
+    return (
+      <div className="warn-panel space-y-4">
+        <p className="font-mono text-[12px] tracking-[0.12em]">{item.title}</p>
+        <div className="font-mono text-[13px] leading-6 tracking-[0.06em]">
+          <p>HOST VITAL SIGNS</p>
+          <p>ARE DECLINING</p>
+        </div>
+        <p className="font-mono text-[11px] tracking-[0.1em]">SYSTEM STATUS: CRITICAL</p>
+      </div>
+    );
   }
   if (item.kind === "analysis") {
     return (
