@@ -12,6 +12,7 @@ import { IndexScene } from "@/components/scenes/IndexScene";
 import { PeachDreamHub } from "@/components/archive/PeachDreamHub";
 import { StoryArchive } from "@/components/archive/StoryArchive";
 import { ConstitutionArchive } from "@/components/archive/ConstitutionArchive";
+import { WarningSequence } from "@/components/dialogue/WarningSequence";
 
 function UnlockAudio() {
   const audio = useAudio();
@@ -26,7 +27,8 @@ function UnlockAudio() {
 }
 
 function ArchiveInner() {
-  const { phase, go } = useArchive();
+  const { phase, go, warningOverlayLive, warningOverlayRun, finishWarningOverlay } =
+    useArchive();
 
   return (
     <div className="min-h-dvh bg-bg">
@@ -51,6 +53,13 @@ function ArchiveInner() {
         <StoryArchive />
       ) : null}
       {phase === "constitution" ? <ConstitutionArchive /> : null}
+      {warningOverlayLive ? (
+        <WarningSequence
+          key={warningOverlayRun}
+          runId={warningOverlayRun}
+          onDone={finishWarningOverlay}
+        />
+      ) : null}
     </div>
   );
 }

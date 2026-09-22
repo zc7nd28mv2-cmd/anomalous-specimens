@@ -50,6 +50,10 @@ type ArchiveContextValue = {
   patchField: (patch: Partial<FieldState>) => void;
   resetYumeMomoStory: () => void;
   reopenFieldFresh: () => void;
+  warningOverlayLive: boolean;
+  warningOverlayRun: number;
+  startWarningOverlay: () => void;
+  finishWarningOverlay: () => void;
 };
 
 const ArchiveContext = createContext<ArchiveContextValue | null>(null);
@@ -122,6 +126,8 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
   const [fieldGate, setFieldGate] = useState<"auto" | "open" | "shut">("auto");
   const [field, setField] = useState<FieldState>(emptyField);
   const [fieldEpoch, setFieldEpoch] = useState(0);
+  const [warningOverlayLive, setWarningOverlayLive] = useState(false);
+  const [warningOverlayRun, setWarningOverlayRun] = useState(0);
   const [archiveEnterTop, setArchiveEnterTop] = useState(false);
   const fieldRef = useRef<FieldState>(field);
   const fieldOpen = fieldGate === "open" || (fieldGate === "auto" && autoOpenPd001);
@@ -211,6 +217,15 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
     setField({ ...fieldRef.current });
   }, []);
 
+  const startWarningOverlay = useCallback(() => {
+    setWarningOverlayLive(true);
+    setWarningOverlayRun((value) => value + 1);
+  }, []);
+
+  const finishWarningOverlay = useCallback(() => {
+    setWarningOverlayLive(false);
+  }, []);
+
   const value = useMemo(
     () => ({
       phase: current,
@@ -237,6 +252,10 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       patchField,
       resetYumeMomoStory,
       reopenFieldFresh,
+      warningOverlayLive,
+      warningOverlayRun,
+      startWarningOverlay,
+      finishWarningOverlay,
     }),
     [
       approveSample001,
@@ -263,6 +282,10 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       resetYumeMomoStory,
       sample001AccessApproved,
       startFinale,
+      startWarningOverlay,
+      finishWarningOverlay,
+      warningOverlayLive,
+      warningOverlayRun,
     ],
   );
 

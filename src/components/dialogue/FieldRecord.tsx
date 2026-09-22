@@ -100,7 +100,9 @@ export function FieldRecord({
 }) {
   const scale = useScaledMs();
   const audio = useAudio();
-  const { persistField, field } = useArchive();
+  const { persistField, field, startWarningOverlay, warningOverlayLive, warningOverlayRun } =
+    useArchive();
+  const overlayCleared = !warningOverlayLive && warningOverlayRun > 0;
   const saved = useRef(field);
   const resumeTyping =
     saved.current.status === "kai_typing_before_choice" ||
@@ -173,7 +175,7 @@ export function FieldRecord({
   onWarningSequenceRef.current = onWarningSequence;
   onAnalysisRef.current = onAnalysis;
   warningClearedRef.current = warningCleared;
-  warningSequenceClearedRef.current = warningSequenceCleared;
+  warningSequenceClearedRef.current = overlayCleared;
   analysisClearedRef.current = analysisCleared;
 
   const warningSequenceStartedRef = useRef(false);
@@ -336,8 +338,8 @@ export function FieldRecord({
     warningSequenceWaitingRef.current = true;
     warningSequenceArmedRef.current = false;
     audioRef.current.alert();
+    startWarningOverlay();
     onWarningSequenceRef.current?.();
-    window.dispatchEvent(new Event("pd001-warning-sequence"));
     setStatusNow("time_21_18_02");
     persistProgress();
     playing.current = false;
@@ -925,7 +927,7 @@ export function FieldRecord({
     if (!warningSequenceStartedRef.current || warningSequenceDoneRef.current) {
       return;
     }
-    if (!warningSequenceCleared) {
+    if (!overlayCleared) {
       warningSequenceArmedRef.current = true;
       return;
     }
@@ -934,7 +936,7 @@ export function FieldRecord({
       warningSequenceWaitingRef.current = false;
       playRef.current();
     }
-  }, [active, analysisCleared, warningCleared, warningSequenceCleared]);
+  }, [active, analysisCleared, warningCleared, overlayCleared]);
 
   useEffect(() => {
     if (!active) {

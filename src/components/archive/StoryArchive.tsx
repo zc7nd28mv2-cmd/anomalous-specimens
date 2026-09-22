@@ -7,7 +7,6 @@ import { BackLink } from "@/components/system/BackLink";
 import { PulseNode } from "@/components/dialogue/PulseNode";
 import { FieldRecord } from "@/components/dialogue/FieldRecord";
 import { WarningOverlay } from "@/components/dialogue/WarningOverlay";
-import { WarningSequence } from "@/components/dialogue/WarningSequence";
 import { AnalysisOverlay } from "@/components/dialogue/AnalysisOverlay";
 import { InfectionOverlay } from "@/components/finale/InfectionOverlay";
 import { STORY } from "@/lib/story";
@@ -27,6 +26,8 @@ export function StoryArchive() {
     openField,
     closeField,
     patchField,
+    startWarningOverlay,
+    warningOverlayLive,
   } = useArchive();
   const audio = useAudio();
   const [closing, setClosing] = useState(false);
@@ -35,8 +36,6 @@ export function StoryArchive() {
     startFinale ? "run" : pd001Done ? "done" : "off",
   );
   const [fail, setFail] = useState<"off" | "run" | "done">(field.warning);
-  const [intrusion, setIntrusion] = useState<"off" | "run" | "done">("off");
-  const [intrusionRun, setIntrusionRun] = useState(0);
   const [scan, setScan] = useState<"off" | "run" | "resume" | "done">(field.scan);
   const [scanLines, setScanLines] = useState<string[] | null>(field.scanLines);
   const [canLeave, setCanLeave] = useState(field.canLeave);
@@ -98,10 +97,6 @@ export function StoryArchive() {
       setScan("done");
       patchField({ scan: "done" });
     }
-    if (intrusion === "run") {
-      setIntrusion("done");
-      patchField({ warningSequence: "done" });
-    }
     setClosing(true);
     if (closeTimer.current != null) {
       window.clearTimeout(closeTimer.current);
@@ -111,7 +106,7 @@ export function StoryArchive() {
       closeField();
       setClosing(false);
     }, 240);
-  }, [closeField, finale, intrusion, patchField, scan]);
+  }, [closeField, finale, patchField, scan]);
 
   const leaveArchive = useCallback(() => {
     if (finale !== "off") {
@@ -122,7 +117,7 @@ export function StoryArchive() {
   }, [audio, finale]);
 
   const handleRecordClose = useCallback(() => {
-    if (fail === "run" || intrusion === "run") {
+    if (fail === "run" || warningOverlayLive) {
       return;
     }
     if (canLeaveRef.current || canLeave) {
@@ -131,7 +126,7 @@ export function StoryArchive() {
     }
     audio.click();
     closeModal();
-  }, [audio, canLeave, closeModal, fail, intrusion, leaveArchive]);
+  }, [audio, canLeave, closeModal, fail, leaveArchive, warningOverlayLive]);
 
   const handleWarning = useCallback(() => {
     setFail("run");
@@ -139,23 +134,16 @@ export function StoryArchive() {
   }, [patchField]);
 
   const handleWarningSequence = useCallback(() => {
-    setIntrusion("run");
-    setIntrusionRun((value) => value + 1);
+    startWarningOverlay();
     patchField({ warningSequence: "run" });
-  }, [patchField]);
+  }, [patchField, startWarningOverlay]);
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("warnseq") !== "1") {
       return;
     }
-    handleWarningSequence();
-  }, [handleWarningSequence]);
-
-  useEffect(() => {
-    const start = () => handleWarningSequence();
-    window.addEventListener("pd001-warning-sequence", start);
-    return () => window.removeEventListener("pd001-warning-sequence", start);
-  }, [handleWarningSequence]);
+    startWarningOverlay();
+  }, [startWarningOverlay]);
 
   const handleAnalysis = useCallback((lines: string[]) => {
     setScanLines(lines);
@@ -327,7 +315,6 @@ export function StoryArchive() {
               onWarning={handleWarning}
               warningCleared={fail === "done"}
               onWarningSequence={handleWarningSequence}
-              warningSequenceCleared={intrusion === "done"}
               onAnalysis={handleAnalysis}
               analysisCleared={scan === "done"}
               onReadyToLeave={handleReadyToLeave}
@@ -347,17 +334,6 @@ export function StoryArchive() {
           onDone={() => {
             setScan("done");
             patchField({ scan: "done" });
-          }}
-        />
-      ) : null}
-
-      {intrusion === "run" ? (
-        <WarningSequence
-          key={intrusionRun}
-          runId={intrusionRun}
-          onDone={() => {
-            setIntrusion("done");
-            patchField({ warningSequence: "done" });
           }}
         />
       ) : null}
