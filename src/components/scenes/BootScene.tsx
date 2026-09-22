@@ -5,6 +5,7 @@ import { useReveal } from "@/hooks/useReveal";
 import { usePrefersReducedMotion, useScaledMs } from "@/hooks/useTiming";
 import { useAudio } from "@/context/AudioContext";
 import { Cursor } from "@/components/system/Cursor";
+import { UnstableEnglishTitle } from "@/components/system/useTitleFault";
 import { Stage, SysLine } from "@/components/system/Stage";
 import { SYSTEM } from "@/lib/content";
 
@@ -147,9 +148,9 @@ export function BootScene({ onComplete }: { onComplete: () => void }) {
       ) : null}
 
       {intro >= 2 ? (
-        <p className="phosphor micro-flicker mt-3 font-mono text-[11px] tracking-[0.26em] text-sys">
+        <UnstableEnglishTitle className="phosphor mt-3 font-mono text-[11px] tracking-[0.26em] text-sys">
           {SYSTEM.title}
-        </p>
+        </UnstableEnglishTitle>
       ) : null}
 
       {intro >= 3 ? (

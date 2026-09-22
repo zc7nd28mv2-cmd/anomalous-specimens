@@ -7,6 +7,7 @@ import { ACCESS, SPECIMENS, SYSTEM, integrityLine } from "@/lib/content";
 import { useAudio } from "@/context/AudioContext";
 import { useArchive } from "@/context/ArchiveContext";
 import { useScaledMs } from "@/hooks/useTiming";
+import { UnstableEnglishTitle } from "@/components/system/useTitleFault";
 
 type ReadPhase =
   | { kind: "off" }
@@ -96,7 +97,9 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
       <div className="story-content mx-auto md:ml-[6vw]">
         <div className="rise">
           <h1 className="title-system text-ink">{SYSTEM.titleZh}</h1>
-          <p className="aux-en title-flicker mt-3">{SYSTEM.title}</p>
+          <UnstableEnglishTitle className="aux-en mt-3">
+            {SYSTEM.title}
+          </UnstableEnglishTitle>
           <p className="mt-8 font-sans text-[13px] text-mute">{SYSTEM.index}</p>
         </div>
 
