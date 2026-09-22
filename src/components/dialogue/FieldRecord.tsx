@@ -176,7 +176,8 @@ export function FieldRecord({
   warningSequenceClearedRef.current = warningSequenceCleared;
   analysisClearedRef.current = analysisCleared;
 
-  const warningSequenceStartedRef = useRef(saved.current.warningSequence === "run");
+  const warningSequenceStartedRef = useRef(false);
+  const warningSequenceWaitingRef = useRef(false);
   const force = useRef(false);
   const picked = useRef(saved.current.picked);
   const pickedOptionRef = useRef<SensoryBranchId | null>(saved.current.pickedOption);
@@ -326,6 +327,7 @@ export function FieldRecord({
       return false;
     }
     warningSequenceStartedRef.current = true;
+    warningSequenceWaitingRef.current = true;
     audioRef.current.alert();
     onWarningSequenceRef.current();
     setStatusNow("time_21_18_02");
@@ -687,7 +689,7 @@ export function FieldRecord({
       return;
     }
 
-    if (currentStatus === "time_21_18_02" && !warningSequenceClearedRef.current) {
+    if (currentStatus === "time_21_18_02" && warningSequenceWaitingRef.current) {
       return;
     }
 
@@ -812,27 +814,21 @@ export function FieldRecord({
 
     if (beat.kind === "warn") {
       scheduleDialogue(() => {
-        if (warningSequenceClearedRef.current) {
-          pushOnce({
-            id: beatId(beatIndex),
-            kind: "note",
-            text: "⚠ WARNING! Host vital signs are declining.",
-            danger: true,
-          });
-          playing.current = false;
-          advanceAndPlay();
+        if (!warningSequenceStartedRef.current && startWarningSequence()) {
           return;
         }
-        audioRef.current.alert();
-        if (!onWarningRef.current) {
+        if (warningSequenceWaitingRef.current) {
           playing.current = false;
-          advanceAndPlay();
           return;
         }
-        onWarningRef.current();
-        setStatusNow("warn");
+        pushOnce({
+          id: beatId(beatIndex),
+          kind: "note",
+          text: "⚠ WARNING! Host vital signs are declining.",
+          danger: true,
+        });
         playing.current = false;
-        persistProgress();
+        advanceAndPlay();
       }, scaleRef.current(40));
       return;
     }
@@ -903,7 +899,8 @@ export function FieldRecord({
     if (statusRef.current === "warn" && warningCleared) {
       playRef.current();
     }
-    if (statusRef.current === "time_21_18_02" && warningSequenceCleared) {
+    if (warningSequenceWaitingRef.current && warningSequenceCleared) {
+      warningSequenceWaitingRef.current = false;
       playRef.current();
     }
     if (statusRef.current === "matching_result" && analysisCleared) {

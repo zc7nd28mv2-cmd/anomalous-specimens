@@ -36,10 +36,10 @@ export function StoryArchive() {
   );
   const [fail, setFail] = useState<"off" | "run" | "done">(field.warning);
   const [intrusion, setIntrusion] = useState<"off" | "run" | "done">(
-    field.warningSequence,
+    field.warningSequence === "run" ? "run" : "off",
   );
-  const [intrusionRun, setIntrusionRun] = useState(0);
-  const intrusionRef = useRef(intrusion);
+  const [intrusionRun, setIntrusionRun] = useState(1);
+  const intrusionRef = useRef(intrusion === "run" ? "run" : "off");
   const [scan, setScan] = useState<"off" | "run" | "resume" | "done">(field.scan);
   const [scanLines, setScanLines] = useState<string[] | null>(field.scanLines);
   const [canLeave, setCanLeave] = useState(field.canLeave);
@@ -90,6 +90,13 @@ export function StoryArchive() {
   }, [intrusion]);
 
   useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("warnseq") !== "1") {
+      return;
+    }
+    handleWarningSequence();
+  }, [handleWarningSequence]);
+
+  useEffect(() => {
     return () => {
       if (closeTimer.current != null) {
         window.clearTimeout(closeTimer.current);
@@ -106,6 +113,7 @@ export function StoryArchive() {
       patchField({ scan: "done" });
     }
     if (intrusion === "run") {
+      intrusionRef.current = "done";
       setIntrusion("done");
       patchField({ warningSequence: "done" });
     }
@@ -149,6 +157,7 @@ export function StoryArchive() {
     if (intrusionRef.current === "run") {
       return;
     }
+    intrusionRef.current = "run";
     setIntrusionRun((value) => value + 1);
     setIntrusion("run");
     patchField({ warningSequence: "run" });
@@ -350,8 +359,10 @@ export function StoryArchive() {
 
       {intrusion === "run" ? (
         <WarningSequence
+          key={intrusionRun}
           runId={intrusionRun}
           onDone={() => {
+            intrusionRef.current = "done";
             setIntrusion("done");
             patchField({ warningSequence: "done" });
           }}

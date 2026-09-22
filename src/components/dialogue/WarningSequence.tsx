@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { playCrashSound, playWarningSound, stopCrashAudio } from "@/lib/audio";
 import {
   buildCrashScript,
@@ -157,9 +158,6 @@ function startCrash(runId: number, onDone: () => void) {
 }
 
 function startRun(runId: number, onDone: () => void) {
-  if (activeRun === runId && viewNow.phase !== "complete") {
-    return;
-  }
   clearTimers();
   clearCrash();
   activeRun = runId;
@@ -273,10 +271,7 @@ function WarningWorld({
   );
 }
 
-function firstView(runId: number): SeqView {
-  if (activeRun === runId && viewNow.phase !== "complete") {
-    return viewNow;
-  }
+function firstView(): SeqView {
   return { phase: "warning_01", burst: "off" };
 }
 
@@ -287,9 +282,14 @@ export function WarningSequence({
   runId: number;
   onDone: () => void;
 }) {
-  const [view, setView] = useState<SeqView>(() => firstView(runId));
+  const [view, setView] = useState<SeqView>(() => firstView());
   const [crash, setCrash] = useState<CrashView>(crashNow);
+  const [mounted, setMounted] = useState(false);
   const done = useRef(onDone);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     done.current = onDone;
@@ -305,7 +305,7 @@ export function WarningSequence({
     };
   }, [runId]);
 
-  if (view.phase === "complete") {
+  if (view.phase === "complete" || !mounted) {
     return null;
   }
 
@@ -313,7 +313,7 @@ export function WarningSequence({
   const crashing = isCrashPhase(view.phase) || crash.active;
   const liveSlices = crash.slices.filter((slice) => slice.x !== 0);
 
-  return (
+  return createPortal(
     <div
       className={cn("fail-root", crashing && "is-crash")}
       aria-live="assertive"
@@ -359,7 +359,8 @@ export function WarningSequence({
       {view.burst !== "off" && !crashing ? (
         <div className={cn("fail-burst", `is-${view.burst}`)} />
       ) : null}
-    </div>
+    </div>,
+    document.body,
   );
 }
 

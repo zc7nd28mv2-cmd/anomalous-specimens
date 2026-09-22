@@ -1043,7 +1043,7 @@ body {
   pointer-events: none;
   position: fixed;
   inset: 0;
-  z-index: 300;
+  z-index: 800;
 }
 
 .fail-glitch {
@@ -1174,6 +1174,7 @@ body {
 }
 
 .fail-panel.is-cluster.is-in {
+  opacity: 1;
   animation: warn-cluster-in 90ms ease-out forwards;
 }
 
@@ -1333,7 +1334,7 @@ body {
 .fail-root.is-flash,
 .fail-root.is-cut,
 .fail-root.is-crash {
-  z-index: 420;
+  z-index: 820;
 }
 
 .fail-root.is-cut {
