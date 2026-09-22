@@ -320,16 +320,21 @@ export function FieldRecord({
   }
 
   function startWarningSequence() {
-    if (warningSequenceStartedRef.current) {
-      return false;
+    if (warningSequenceWaitingRef.current) {
+      return true;
     }
-    if (!onWarningSequenceRef.current) {
+    if (warningSequenceStartedRef.current) {
       return false;
     }
     warningSequenceStartedRef.current = true;
     warningSequenceWaitingRef.current = true;
     audioRef.current.alert();
-    onWarningSequenceRef.current();
+    try {
+      onWarningSequenceRef.current?.();
+    } catch {
+      // Overlay start must not block the field record.
+    }
+    window.dispatchEvent(new Event("pd001-warning-sequence"));
     setStatusNow("time_21_18_02");
     persistProgress();
     playing.current = false;
@@ -907,6 +912,19 @@ export function FieldRecord({
       playRef.current();
     }
   }, [active, analysisCleared, warningCleared, warningSequenceCleared]);
+
+  useEffect(() => {
+    if (!active) {
+      return;
+    }
+    const reached = log.some(
+      (item) => item.kind === "time" && item.text === "21:18:02",
+    );
+    if (!reached || warningSequenceStartedRef.current) {
+      return;
+    }
+    startWarningSequence();
+  }, [active, log]);
 
   useEffect(() => {
     const node = scroller.current;

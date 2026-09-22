@@ -163,6 +163,12 @@ export function StoryArchive() {
     handleWarningSequence();
   }, [handleWarningSequence]);
 
+  useEffect(() => {
+    const start = () => handleWarningSequence();
+    window.addEventListener("pd001-warning-sequence", start);
+    return () => window.removeEventListener("pd001-warning-sequence", start);
+  }, [handleWarningSequence]);
+
   const handleAnalysis = useCallback((lines: string[]) => {
     setScanLines(lines);
     setScan("run");
