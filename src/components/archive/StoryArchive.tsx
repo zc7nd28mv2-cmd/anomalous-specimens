@@ -274,7 +274,9 @@ export function StoryArchive() {
         <div className="space-y-4">
           <p className="story-body">{STORY.city.lead}</p>
           <p className="story-body">{STORY.city.l1}</p>
-          <p className="story-body story-lift story-strong">{STORY.city.l2}</p>
+          <p className="story-body story-lift story-strong story-breathe">
+            {STORY.city.l2}
+          </p>
         </div>
 
         <section id="sec-pd001" className="mt-16">

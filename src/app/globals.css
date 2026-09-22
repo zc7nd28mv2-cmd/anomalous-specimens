@@ -814,6 +814,20 @@ body {
   font-weight: 700;
 }
 
+.story-breathe {
+  animation: story-breathe 4.6s ease-in-out infinite;
+}
+
+@keyframes story-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 .story-lift {
   font-size: 15px;
 }
@@ -2067,6 +2081,7 @@ body {
   .grant-breathe,
   .grant-mark.is-breathe,
   .integrity-stuck,
+  .story-breathe,
   .boot-fault-in,
   .archive-cut-slice,
   .hub-build .hub-l1,
@@ -2118,7 +2133,8 @@ body {
   }
 
   .rise,
-  .fade {
+  .fade,
+  .story-breathe {
     opacity: 1;
     transform: none;
   }
