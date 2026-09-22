@@ -156,6 +156,14 @@ export function isCrashPhase(phase: WarningSequenceState) {
   return phase === "crash";
 }
 
+export function isCollapseFlash(phase: WarningSequenceState) {
+  return isCrashPhase(phase);
+}
+
+export function isCollapseCut(phase: WarningSequenceState) {
+  return isCrashPhase(phase);
+}
+
 export function warningLevel(phase: WarningSequenceState): 1 | 2 | 3 | 4 | 5 | 0 {
   if (phase === "warning_01") {
     return 1;
