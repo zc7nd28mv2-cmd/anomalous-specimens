@@ -1418,7 +1418,7 @@ function InvestigationTrigger({ onOpen }: { onOpen: () => void }) {
         }}
         className="invest-open is-enter mt-5"
       >
-        [ {INVESTIGATION.prompt} ]
+        {INVESTIGATION.prompt}
       </button>
     </div>
   );
