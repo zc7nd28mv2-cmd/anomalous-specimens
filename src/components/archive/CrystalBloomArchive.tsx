@@ -8,7 +8,11 @@ import { PulseNode } from "@/components/dialogue/PulseNode";
 import { SimpleFieldLog } from "@/components/dialogue/SimpleFieldLog";
 import { InfectionOverlay } from "@/components/finale/InfectionOverlay";
 import { resetYumeProtocol } from "@/components/finale/YumeProtocol";
-import { CRYSTAL_BLOOM_BLOCKS, CRYSTAL_BLOOM_LOG_META } from "@/lib/crystal-bloom";
+import {
+  CRYSTAL_BLOOM_BLOCKS,
+  CRYSTAL_BLOOM_DOSSIER,
+  CRYSTAL_BLOOM_LOG_META,
+} from "@/lib/crystal-bloom";
 import { cn } from "@/lib/cn";
 
 export function CrystalBloomArchive() {
@@ -98,6 +102,15 @@ export function CrystalBloomArchive() {
         <p className="aux-en mt-2">01 / ORIGINAL FILES</p>
         <h1 className="title-product mt-5 text-ink">晶蕊體</h1>
         <p className="aux-en mt-2">CRYSTAL BLOOM</p>
+
+        <dl className="mt-12 space-y-4">
+          {CRYSTAL_BLOOM_DOSSIER.map(([label, value]) => (
+            <div key={label}>
+              <dt className="sys-meta">{label}</dt>
+              <dd className="aux-en mt-1 text-ink">{value}</dd>
+            </div>
+          ))}
+        </dl>
 
         <div className="mt-12 space-y-4">
           {CRYSTAL_BLOOM_BLOCKS.map((block, index) => (

@@ -87,7 +87,18 @@ Missing
 
 丨“那件东西，还能用吗？”`;
 
-export const CRYSTAL_BLOOM_BLOCKS = CRYSTAL_BLOOM_ARCHIVE.split(/\n{2,}/);
+export const CRYSTAL_BLOOM_DOSSIER = [
+  ["ENTITY：", "MO-R808"],
+  ["Classification：", "Synthetic Vocal Performer"],
+  ["Status：", "Missing"],
+  ["Corporate Access：", "Restricted"],
+] as const;
+
+const HEADER_END = CRYSTAL_BLOOM_ARCHIVE.indexOf("MO-R808 是 MO 系列");
+
+export const CRYSTAL_BLOOM_BLOCKS = CRYSTAL_BLOOM_ARCHIVE.slice(
+  HEADER_END >= 0 ? HEADER_END : 0,
+).split(/\n{2,}/);
 
 export const CRYSTAL_BLOOM_LOG_META = {
   title: "ARCHIVE LOG",
