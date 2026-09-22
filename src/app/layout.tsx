@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { IBM_Plex_Mono, JetBrains_Mono, Noto_Sans_SC } from "next/font/google";
+import { AsciiBackground } from "@/components/effects/AsciiBackground";
 import "./globals.css";
 
 const ibmPlexMono = IBM_Plex_Mono({
@@ -43,7 +45,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="zh-Hans"
       className={`${ibmPlexMono.variable} ${jetbrainsMono.variable} ${notoSansSC.variable} h-full bg-bg antialiased`}
     >
-      <body className="min-h-full bg-bg font-sans text-ink">{children}</body>
+      <body className="min-h-full bg-bg font-sans text-ink">
+        <AsciiBackground />
+        <div className="archive-root">{children}</div>
+        <Script
+          src="https://cdn.aidesigner.ai/effects/runtime/v1.js"
+          strategy="afterInteractive"
+        />
+      </body>
     </html>
   );
 }

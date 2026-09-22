@@ -27,6 +27,32 @@ body {
   scrollbar-color: #2d6638 transparent;
 }
 
+.ascii-plasma {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ascii-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.archive-root {
+  position: relative;
+  z-index: 1;
+  min-height: 100%;
+}
+
+.archive-root .bg-bg {
+  background-color: transparent;
+}
+
 ::-webkit-scrollbar {
   width: 5px;
 }
