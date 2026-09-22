@@ -106,6 +106,24 @@ body {
   }
 }
 
+@keyframes title-flicker {
+  0%,
+  14%,
+  22%,
+  48%,
+  56%,
+  78%,
+  86%,
+  100% {
+    opacity: 1;
+  }
+  15%,
+  49%,
+  79% {
+    opacity: 0.16;
+  }
+}
+
 @keyframes rise {
   from {
     opacity: 0;
@@ -400,6 +418,10 @@ body {
   animation: micro-flicker 8s step-end infinite;
 }
 
+.title-flicker {
+  animation: title-flicker 2.8s step-end infinite;
+}
+
 .rise {
   animation: rise 600ms ease-out both;
 }
@@ -446,7 +468,7 @@ body {
   display: inline-block;
   max-width: 100%;
   padding: 0 12px;
-  background: #2d6638;
+  background: rgba(45, 102, 56, 0.5);
   color: #59e878;
 }
 
@@ -692,7 +714,7 @@ body {
 .field-titlebar {
   margin: 0;
   border: none;
-  background: #2d6638;
+  background: rgba(45, 102, 56, 0.5);
   padding: 8px 14px;
   font-family: var(--font-zh), "Noto Sans SC", sans-serif;
   font-size: 14px;
@@ -849,7 +871,7 @@ body {
   display: inline-flex;
   align-items: center;
   border: none;
-  background: #2d6638;
+  background: rgba(45, 102, 56, 0.5);
   color: #59e878;
   font-family: var(--font-sys), "IBM Plex Mono", ui-monospace, monospace;
   font-size: 11px;
@@ -865,7 +887,7 @@ body {
 }
 
 .invest-exit:hover {
-  background: #2d6638;
+  background: rgba(45, 102, 56, 0.5);
   color: #59e878;
 }
 
@@ -1731,6 +1753,7 @@ body {
   .cursor-glyph.is-blink,
   .term-caret.is-blink,
   .micro-flicker,
+  .title-flicker,
   .rise,
   .fade,
   .signal-ring,

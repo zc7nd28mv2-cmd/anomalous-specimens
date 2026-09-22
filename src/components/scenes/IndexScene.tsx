@@ -96,7 +96,7 @@ export function IndexScene({ onComplete }: { onComplete: () => void }) {
       <div className="story-content mx-auto md:ml-[6vw]">
         <div className="rise">
           <h1 className="title-system text-ink">{SYSTEM.titleZh}</h1>
-          <p className="aux-en mt-3">{SYSTEM.title}</p>
+          <p className="aux-en title-flicker mt-3">{SYSTEM.title}</p>
           <p className="mt-8 font-sans text-[13px] text-mute">{SYSTEM.index}</p>
         </div>
 
