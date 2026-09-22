@@ -75,12 +75,12 @@ export function BootScene({ onComplete }: { onComplete: () => void }) {
         setPhase(2);
       });
     } else if (phase === 2) {
-      later(680, () => {
+      later(200, () => {
         audioRef.current.bootOk();
         setPhase(3);
       });
     } else if (phase === 3) {
-      later(680, () => {
+      later(200, () => {
         audioRef.current.bootOk();
         setPhase(4);
       });
@@ -102,7 +102,7 @@ export function BootScene({ onComplete }: { onComplete: () => void }) {
           return;
         }
         setPercent(value);
-      }, scale(72));
+      }, scale(22));
     } else if (phase === 6) {
       later(1200, () => {
         audioRef.current.bootWarn();
